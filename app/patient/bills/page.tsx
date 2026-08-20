@@ -1,86 +1,85 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Receipt, HelpCircle, ShieldCheck, CreditCard } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RoleGuard } from "@/components/shared/role-guard";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { BillCard, PatientBillProps } from "@/components/patient/bill-card";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function PatientBillsPage() {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<"current" | "past">("current");
+
+  const isRahul = user?.identifier === "PAT-1001";
+
+  const bills: PatientBillProps[] = isRahul ? [
+    {
+      id: "BIL-1001",
+      facilityName: "City Hospital (Bhubaneswar)",
+      encounterId: "ENC-1001",
+      date: "20 Aug 2026",
+      totalGross: 1770.0,
+      insuranceCovered: 1200.0,
+      governmentSubsidy: 300.0,
+      patientPaid: 270.0,
+      status: "settled",
+      items: [
+        { name: "Specialist OPD Consultation (Dr. Ananya Sharma)", eventType: "consultation", eventId: "ENC-1001", amount: 500.0 },
+        { name: "Complete Blood Count Lab Panel", eventType: "lab_order", eventId: "LAB-ORD-1024", amount: 850.0 },
+        { name: "Pharmacy Medications Dispensed (Telmisartan + Aspirin)", eventType: "prescription", eventId: "RX-1001", amount: 420.0 },
+      ],
+    },
+  ] : [];
+
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
-      <div className="space-y-4">
+      <div className="space-y-5 animate-in fade-in-50 duration-150">
         <PageHeader
-          title="Transparent Hospital Invoices"
-          description="Itemized clinical billing with explicit event lineage and 'Why Was I Charged?' auditability."
+          title="Hospital Invoices & Payments"
+          description="Transparent, itemized billing with explicit medical event lineage and 'Why Was I Charged?' auditability."
           breadcrumbs={[{ label: "Patient Portal", href: "/patient" }, { label: "Bills & Payments" }]}
         />
 
-        {/* Sample Transparent Bill Preview */}
-        <Card className="bg-white border-purple-200 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded">
-                BIL-1001
-              </span>
-              <Badge variant="teal" className="text-[10px]">
-                ● Settled via UPI
-              </Badge>
-            </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              City Hospital — Outpatient Cardiology Encounter
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Encounter: ENC-1001 • Date: 20 Aug 2026
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-2 text-xs">
-            <div className="divide-y divide-slate-100">
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-600">Specialist OPD Consultation (Dr. Ananya Sharma)</span>
-                <span className="font-bold text-slate-900">₹500.00</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-600">Complete Blood Count (LAB-ORD-1024)</span>
-                <span className="font-bold text-slate-900">₹850.00</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-600">Pharmacy Dispensing (RX-1001)</span>
-                <span className="font-bold text-slate-900">₹420.00</span>
-              </div>
-            </div>
+        {/* Tab Filters */}
+        <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold text-slate-600">
+          <button
+            type="button"
+            onClick={() => setActiveTab("current")}
+            className={`flex-1 py-2 rounded-lg transition-all ${
+              activeTab === "current" ? "bg-white text-purple-900 font-bold shadow-xs" : "hover:text-slate-900"
+            }`}
+          >
+            Settled Invoices ({bills.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("past")}
+            className={`flex-1 py-2 rounded-lg transition-all ${
+              activeTab === "past" ? "bg-white text-purple-900 font-bold shadow-xs" : "hover:text-slate-900"
+            }`}
+          >
+            Pending Payment (0)
+          </button>
+        </div>
 
-            <div className="p-2.5 rounded-lg bg-purple-50/50 border border-purple-100 text-[11px] space-y-1">
-              <div className="flex justify-between font-semibold text-purple-950">
-                <span>Total Gross:</span>
-                <span>₹1,770.00</span>
-              </div>
-              <div className="flex justify-between text-emerald-700">
-                <span>Insurance Pre-Auth (ABC Insurance):</span>
-                <span>-₹1,200.00</span>
-              </div>
-              <div className="flex justify-between text-blue-700">
-                <span>Government Assistance (BSKY Subsidy):</span>
-                <span>-₹300.00</span>
-              </div>
-              <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-purple-200">
-                <span>Patient Net Paid:</span>
-                <span>₹270.00</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <EmptyState
-          icon={<Receipt className="h-6 w-6 text-purple-600" />}
-          title="Lineage-Backed Transparent Invoices"
-          description="Every bill item in MEDORA traces backward to the exact consultation, lab order, or medication that generated it."
-          phase="Phase 10 — Itemized Billing & Why Charged"
-          actionHref="/patient"
-          actionLabel="Return to Patient Home"
-        />
+        {bills.length > 0 ? (
+          <div className="space-y-3">
+            {bills.map((bill) => (
+              <BillCard key={bill.id} {...bill} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<Receipt className="h-6 w-6 text-purple-600" />}
+            title="No Invoices Available"
+            description="Itemized hospital bills with multi-source split settlement (Insurance + Govt Subsidy + Patient Contribution) will appear here after clinical encounters."
+            phase="Phase 10 — Itemized Billing & Why Charged"
+            actionHref="/patient"
+            actionLabel="Return to Patient Home"
+          />
+        )}
       </div>
     </RoleGuard>
   );

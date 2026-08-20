@@ -1,8 +1,9 @@
 # 🏗️ MEDORA — Build Status & System Health
 
-> **Current Position:** Phase 2 — Prompt 1 Completed & Verified ✅  
+> **Current Position:** Phase 2.2 (Patient Mobile Shell) & Phase 2.3 (Professional Workspaces) Completed & Verified ✅  
+> **Next Up:** Phase 3 (Patient Profile & ABHA/Aadhaar) ⏳  
 > **TypeScript Check:** `0 errors` (`tsc --noEmit` exit code 0)  
-> **Production Build:** `79/79 routes compiled successfully`  
+> **Production Build:** `85/85 routes compiled successfully`  
 > **Development Server:** Active on `http://localhost:3000`  
 
 ---
@@ -13,7 +14,7 @@
 | :---: | :--- | :---: |
 | **0** | Project Setup & Docs Architecture | `VERIFIED` ✅ |
 | **1** | Auth & Role Base | `VERIFIED` ✅ |
-| **2** | App Shell & Role Dashboards (Prompt 1) | `VERIFIED` ✅ |
+| **2** | App Shell & Role Dashboards (Phases 2.1, 2.2, 2.3) | `VERIFIED` ✅ |
 | **3** | Patient Profile & ABHA/Aadhaar | `NOT_STARTED` ⏳ |
 | **4** | Doctor Schedule & Availability | `NOT_STARTED` ⏳ |
 | **5** | Hospital, Department & Facility | `NOT_STARTED` ⏳ |
@@ -34,7 +35,7 @@
 
 ---
 
-## 🧭 Active Route Inventory (All 79 Compiled)
+## 🧭 Active Route Inventory (All 85 Compiled)
 ### Public & System Routes
 * `/` — Public Homepage & Ecosystem Overview
 * `/login` — Unified Authentication (14 Fast-Launcher Personas)
@@ -45,17 +46,22 @@
 * `/verify/lab/[id]` — Certified NABL Pathology Report Slip (Public)
 
 ### Patient Routes (`PatientShell` — Mobile First)
-* `/patient` — Home Dashboard
-* `/patient/appointments` — OPD Appointment Calendar
-* `/patient/records` — Longitudinal Medical Timeline
-* `/patient/prescriptions` — Digital Prescriptions & Slips
-* `/patient/reports` — Diagnostic Lab Reports & Slips
-* `/patient/pharmacy` — Connected Pharmacy & Pickup
-* `/patient/bills` — Itemized Transparent Invoices & Lineage
-* `/patient/emergency` — Emergency Card & Critical SOS
-* `/patient/profile` — Digital Passport & ABHA
-* `/patient/care` — Active Care Plans & Advice
+* `/patient` — Home Dashboard with upcoming OPD token, ID card, and quick actions
+* `/patient/appointments` — OPD Appointment Calendar with tab filters
+* `/patient/records` — Longitudinal Medical Timeline with category filters
+* `/patient/prescriptions` — Digital Prescriptions with dosage schedule & QR slips
+* `/patient/reports` — Diagnostic Lab Reports with physiological reference ranges
+* `/patient/pharmacy` — Connected Pharmacy & Open Pickup Desk
+* `/patient/bills` — Itemized Transparent Invoices & "Why Was I Charged?" Lineage
+* `/patient/emergency` — Emergency Card, Critical SOS trigger & contacts
+* `/patient/profile` — Digital Health Passport & ABHA
+* `/patient/care` — Active Care Plans & Clinical Advice
 * `/patient/health` — Vitals & Chronic Care Hub
+* `/patient/more` — All Patient Healthcare Services Drawer
+* `/patient/settings` — App & Security Preferences
+* `/patient/language` — Multilingual Selector (English, Hindi, Odia)
+* `/patient/consent` — Time-Bound Record Sharing Guard (Phase 15)
+* `/patient/help` — Patient FAQs & Support Helpline
 
 ### Doctor Routes (`ProfessionalShell` — Clinical Workspace)
 * `/doctor` — Clinical Dashboard & Practice Overview
@@ -69,8 +75,9 @@
 * `/doctor/profile` — Doctor Credentials & Affiliations
 * `/doctor/settings` — Workspace Preferences
 
-### Hospital Routes (`ProfessionalShell` — Operations Desk)
+### Hospital & Clinic Routes (`ProfessionalShell` — Operations Desk)
 * `/hospital` — Hospital Command Center
+* `/clinic` — Outpatient Clinic Operations Desk
 * `/hospital/patients` — Hospital Inpatients & Outpatients
 * `/hospital/doctors` — Medical Staff Roster & Affiliation Review Desk
 * `/hospital/departments` — Clinical & Operational Departments

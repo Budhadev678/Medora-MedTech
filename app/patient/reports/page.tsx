@@ -1,65 +1,90 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { FlaskConical, FileText, ArrowRight, ShieldCheck } from "lucide-react";
+import React, { useState } from "react";
+import { FlaskConical, FileText, Filter } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RoleGuard } from "@/components/shared/role-guard";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ReportCard, PatientReportProps } from "@/components/patient/report-card";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function PatientReportsPage() {
+  const { user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const isRahul = user?.identifier === "PAT-1001";
+
+  const reports: PatientReportProps[] = isRahul ? [
+    {
+      id: "RPT-1024",
+      testName: "Complete Blood Count (CBC) with Differential",
+      category: "Laboratory",
+      labName: "ABC Diagnostics (LAB-1001)",
+      pathologistName: "Dr. B. Mohapatra, MD (Pathology)",
+      date: "20 Aug 2026",
+      status: "certified",
+      parameters: [
+        { name: "Hemoglobin", value: "14.2", unit: "g/dL", referenceRange: "13.0 - 17.0", flag: "NORMAL" },
+        { name: "Total Leukocyte Count (WBC)", value: "7,800", unit: "/uL", referenceRange: "4,000 - 11,000", flag: "NORMAL" },
+        { name: "Platelet Count", value: "245,000", unit: "/uL", referenceRange: "150,000 - 450,000", flag: "NORMAL" },
+      ],
+    },
+  ] : [];
+
+  const filteredReports = selectedCategory === "all"
+    ? reports
+    : reports.filter(r => r.category.toLowerCase() === selectedCategory);
+
+  const categories = [
+    { key: "all", label: "All Reports" },
+    { key: "laboratory", label: "Laboratory" },
+    { key: "imaging", label: "Imaging & X-Ray" },
+    { key: "pathology", label: "Pathology" },
+  ];
+
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
-      <div className="space-y-4">
+      <div className="space-y-5 animate-in fade-in-50 duration-150">
         <PageHeader
-          title="Diagnostic Laboratory Reports"
-          description="NABL-certified pathology reports, specimen analysis, and diagnostic test results."
+          title="Diagnostic Lab Reports"
+          description="NABL-certified pathology reports, diagnostic tests, and specimen investigation results."
           breadcrumbs={[{ label: "Patient Portal", href: "/patient" }, { label: "Lab Reports" }]}
         />
 
-        {/* Sample Report Slip Card */}
-        <Card className="bg-white border-blue-200 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">
-                RPT-1024
-              </span>
-              <Badge variant="success" className="text-[10px]">
-                ● NABL Certified
-              </Badge>
-            </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              Complete Blood Count (CBC) with Differential
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              ABC Diagnostics (LAB-1001) • Verified by Dr. B. Mohapatra, MD (Path)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-2">
-            <div className="text-xs text-slate-600 space-y-1 mb-3">
-              <p>• <strong>Hemoglobin:</strong> 14.2 g/dL (Normal: 13.0 - 17.0)</p>
-              <p>• <strong>Total WBC Count:</strong> 7,800 /uL (Normal: 4,000 - 11,000)</p>
-              <p>• <strong>Platelet Count:</strong> 245,000 /uL (Normal: 150,000 - 450,000)</p>
-            </div>
-            <Link href="/verify/lab/LAB-1024" target="_blank">
-              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 text-blue-700 border-blue-200 hover:bg-blue-50">
-                <FileText className="h-3.5 w-3.5" /> View Certified Digital Pathology Report (Slip)
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {categories.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setSelectedCategory(c.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedCategory === c.key
+                  ? "bg-blue-700 text-white shadow-2xs font-bold"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
 
-        <EmptyState
-          icon={<FlaskConical className="h-6 w-6 text-blue-600" />}
-          title="Diagnostic Report Repository"
-          description="Certified pathology results and imaging reports will be delivered directly here upon laboratory verification."
-          phase="Phase 8 — Connected Laboratory System"
-          actionHref="/patient"
-          actionLabel="Return to Patient Home"
-        />
+        {filteredReports.length > 0 ? (
+          <div className="space-y-3">
+            {filteredReports.map((rpt) => (
+              <ReportCard key={rpt.id} {...rpt} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<FlaskConical className="h-6 w-6 text-blue-600" />}
+            title="No Diagnostic Reports in this Category"
+            description="Verified laboratory reports will be uploaded here directly by accredited diagnostic testing centers."
+            phase="Phase 8 — Connected Laboratory System"
+            actionHref="/patient"
+            actionLabel="Return to Patient Home"
+          />
+        )}
       </div>
     </RoleGuard>
   );
