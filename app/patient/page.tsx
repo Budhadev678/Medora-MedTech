@@ -16,215 +16,210 @@ import {
   CheckCircle2,
   Share2,
   User,
-  Plus
+  Search,
+  Building2,
+  Stethoscope,
+  ChevronRight,
+  Bell,
+  Sparkles,
+  QrCode
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Timeline, type TimelineItemData } from "@/components/ui/timeline";
 import { RoleGuard } from "@/components/shared/role-guard";
+import { useAuth } from "@/lib/auth/auth-context";
 
-export default function PatientDashboard() {
-  const sampleTimeline: TimelineItemData[] = [
-    {
-      id: "tl-1",
-      type: "consultation",
-      title: "Consultation Completed",
-      summary: "Dr. Rajesh Sharma recorded clinical assessment for mild hypertension and created RX-1001.",
-      timestamp: "2026-08-19T10:30:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Apex Multispeciality Hospital",
-    },
-    {
-      id: "tl-2",
-      type: "prescription",
-      title: "Digital Prescription RX-1001 Issued",
-      summary: "Prescribed Amoxicillin 500mg (5 days) & Paracetamol 650mg SOS. Sent to Hospital Pharmacy.",
-      timestamp: "2026-08-19T10:35:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Apex Multispeciality Hospital",
-    },
-    {
-      id: "tl-3",
-      type: "lab_order",
-      title: "Diagnostic Test Order LAB-1001 Dispatched",
-      summary: "Complete Blood Count (CBC) ordered. Sample collection scheduled at Central Pathology.",
-      timestamp: "2026-08-19T10:40:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Central Pathology Lab",
-    },
-    {
-      id: "tl-4",
-      type: "pharmacy_dispense",
-      title: "Medication Packaging Complete",
-      summary: "Apex Hospital Pharmacy verified Rx and marked medicines ready for physical pickup.",
-      timestamp: "2026-08-19T11:15:00Z",
-      actor: "Pharmacy Desk",
-      organization: "Apex Pharmacy",
-    },
-  ];
+export default function PatientHomePage() {
+  const { user } = useAuth();
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
-      <div className="space-y-6">
-      {/* Patient Greeting & Status Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-teal-200 bg-teal-50/50 p-5 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900">
-              Welcome back, Rahul Verma
+      <div className="space-y-5 animate-in fade-in-50 duration-200">
+        {/* Mobile Header / Patient Greeting */}
+        <div className="flex items-center justify-between pb-1">
+          <div>
+            <span className="text-xs font-semibold text-slate-500 block">
+              Welcome back,
+            </span>
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              {user?.full_name || "Rahul Verma"}
             </h1>
-            <Badge variant="teal" className="text-xs">
-              MED-PAT-1001
-            </Badge>
           </div>
-          <p className="text-xs text-slate-600 mt-1">
-            Simulated ABHA ID: <span className="font-mono text-teal-800 font-semibold">91-4521-8890-1234</span> • Aadhaar: <span className="font-mono text-slate-700">XXXX XXXX 8912</span>
-          </p>
+          <Link href="/patient/emergency">
+            <button className="flex items-center gap-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-xs transition-all">
+              <AlertTriangle className="h-3.5 w-3.5 animate-pulse" />
+              <span>SOS</span>
+            </button>
+          </Link>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="emergency" size="sm" className="gap-1.5 text-xs">
-            <AlertTriangle className="h-3.5 w-3.5" /> Emergency SOS
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs bg-white">
-            <Share2 className="h-3.5 w-3.5 text-teal-600" /> Share Records (24h)
-          </Button>
-        </div>
-      </div>
-
-      {/* Action Banners / Pending Next Steps */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Next Appointment */}
-        <Card className="border-teal-200 bg-white">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-teal-600" /> Upcoming Visit
+        {/* Digital Medora ID Card (Mobile-First) */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-700 via-teal-800 to-teal-950 p-5 text-white shadow-md">
+          <div className="flex items-start justify-between relative z-10">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-teal-600/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-teal-100">
+                  Patient Health ID
+                </span>
+                <span className="text-[10px] font-semibold text-teal-200">MEDORA Network</span>
+              </div>
+              <span className="font-mono text-lg font-extrabold tracking-wider block mt-2">
+                MED-PAT-1001
               </span>
-              <StatusBadge status="booked" size="sm" />
-            </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              Dr. Rajesh Sharma
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Cardiology • Apex Multispeciality Hospital
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="rounded-md bg-slate-50 p-2 text-xs text-slate-700 my-2">
-              <span className="font-semibold block">Today • 10:00 AM</span>
-              <span className="text-[11px] text-slate-500">Token Number: #04 (Room 102)</span>
-            </div>
-            <Button variant="outline" size="sm" className="w-full text-xs">
-              View Appointment Details
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Pharmacy Ready for Pickup */}
-        <Card className="border-emerald-200 bg-white">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Pill className="h-3.5 w-3.5 text-emerald-600" /> Pharmacy Pickup
+              <span className="text-xs text-teal-100/90 font-medium block">
+                {user?.full_name || "Rahul Verma"}
               </span>
-              <StatusBadge status="ready_for_pickup" size="sm" />
             </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              RX-1001 (2 Medicines)
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Packaged at Hospital Pharmacy Desk
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="rounded-md bg-emerald-50 p-2 text-xs text-emerald-900 my-2">
-              <span className="font-semibold block">Medora ID required: MED-PAT-1001</span>
-              <span className="text-[11px] text-emerald-700">Present ID at Counter 3</span>
+            <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white">
+              <QrCode className="h-5 w-5" />
             </div>
-            <Button variant="default" size="sm" className="w-full text-xs bg-emerald-700 hover:bg-emerald-800">
-              Show Pickup QR Code
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Transparent Bill Overview */}
-        <Card className="border-purple-200 bg-white">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Receipt className="h-3.5 w-3.5 text-purple-600" /> Outstanding Bill
-              </span>
-              <StatusBadge status="generated" size="sm" />
-            </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              Invoice BILL-1001: ₹1,550
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Consultation + CBC Test + Medicines
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="rounded-md bg-purple-50 p-2 text-xs text-purple-900 my-2">
-              <span className="font-semibold block">Patient Responsibility: ₹1,550</span>
-              <span className="text-[11px] text-purple-700">Itemized Breakdown & Traceability Available</span>
-            </div>
-            <Button variant="outline" size="sm" className="w-full text-xs border-purple-300 text-purple-900 hover:bg-purple-100">
-              Inspect "Why Was I Charged?"
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Connected Healthcare Journey Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-teal-600" />
-              Connected Healthcare Journey Timeline
-            </h2>
-            <Badge variant="outline" className="text-xs text-slate-600">
-              Traceable Events
-            </Badge>
           </div>
 
-          <Timeline items={sampleTimeline} />
+          <div className="mt-4 pt-3 border-t border-teal-600/40 flex items-center justify-between text-[11px] text-teal-200 relative z-10">
+            <span>Blood Group: <strong className="text-white">O+</strong></span>
+            <span>Status: <strong className="text-emerald-300">Verified Active</strong></span>
+          </div>
+
+          {/* Decorative background glow */}
+          <div className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-teal-500/20 blur-2xl pointer-events-none" />
         </div>
 
-        {/* Quick Health Summary & Vitals Card */}
-        <div className="space-y-4">
-          <div className="border-b border-border pb-2">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <User className="h-4 w-4 text-slate-700" />
-              Emergency Health Snapshot
+        {/* Mobile Quick Action Pills (Large Touch Targets) */}
+        <section aria-label="Quick Actions">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Quick Actions
             </h2>
           </div>
+          <div className="grid grid-cols-4 gap-2.5">
+            <Link 
+              href="/patient/care" 
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50/40 transition-all active:scale-95 text-center group"
+            >
+              <div className="h-10 w-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                <Stethoscope className="h-5 w-5" />
+              </div>
+              <span className="text-[11px] font-bold text-slate-800 leading-tight">Find Doctor</span>
+            </Link>
 
-          <Card className="bg-white">
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Blood Group</span>
-                <span className="font-bold text-rose-700">O Positive (O+)</span>
+            <Link 
+              href="/patient/care" 
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50/40 transition-all active:scale-95 text-center group"
+            >
+              <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                <Building2 className="h-5 w-5" />
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Known Allergies</span>
-                <span className="font-semibold text-slate-900">Penicillin, Peanuts</span>
+              <span className="text-[11px] font-bold text-slate-800 leading-tight">Hospitals</span>
+            </Link>
+
+            <Link 
+              href="/patient/health" 
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50/40 transition-all active:scale-95 text-center group"
+            >
+              <div className="h-10 w-10 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                <FlaskConical className="h-5 w-5" />
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Chronic Conditions</span>
-                <span className="font-semibold text-slate-900">Mild Hypertension</span>
+              <span className="text-[11px] font-bold text-slate-800 leading-tight">Reports</span>
+            </Link>
+
+            <Link 
+              href="/patient/health" 
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50/40 transition-all active:scale-95 text-center group"
+            >
+              <div className="h-10 w-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                <Pill className="h-5 w-5" />
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Emergency Contact</span>
-                <span className="font-semibold text-slate-900">Anita Verma (+91 98765 43210)</span>
+              <span className="text-[11px] font-bold text-slate-800 leading-tight">Medicines</span>
+            </Link>
+          </div>
+        </section>
+
+        {/* Upcoming Appointments Section */}
+        <section aria-label="Upcoming Care">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Your Upcoming Care
+            </h2>
+            <Link href="/patient/care" className="text-[11px] font-semibold text-teal-700 hover:underline">
+              View All
+            </Link>
+          </div>
+
+          <Card className="border-teal-200 bg-white shadow-xs">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    DR
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Dr. Rajesh Sharma</h3>
+                    <p className="text-xs text-slate-500">Cardiology • Apex Multispeciality</p>
+                  </div>
+                </div>
+                <StatusBadge status="booked" size="sm" />
+              </div>
+
+              <div className="mt-3.5 rounded-xl bg-slate-50 border border-slate-100 p-2.5 flex items-center justify-between text-xs text-slate-700">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-teal-600" />
+                  <span className="font-semibold">Today, 10:00 AM</span>
+                </div>
+                <span className="font-mono text-slate-500 font-medium">Token #04</span>
               </div>
             </CardContent>
           </Card>
+        </section>
+
+        {/* Recent Healthcare Activity */}
+        <section aria-label="Recent Activity">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Recent Activity
+            </h2>
+            <Link href="/patient/health" className="text-[11px] font-semibold text-teal-700 hover:underline">
+              Full Timeline
+            </Link>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">
+                  <Pill className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">RX-1001 Ready for Pickup</span>
+                  <span className="text-[11px] text-slate-500">Apex Hospital Pharmacy Desk</span>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
+                  <FlaskConical className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">CBC Diagnostic Ordered</span>
+                  <span className="text-[11px] text-slate-500">Sample Collection Pending</span>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </div>
+          </div>
+        </section>
+
+        {/* Important Notice & Guidance */}
+        <div className="rounded-xl border border-slate-200 bg-slate-100/70 p-3 text-xs text-slate-600 flex items-start gap-2.5">
+          <ShieldCheck className="h-4 w-4 text-teal-600 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] leading-relaxed">
+            All medical events in MEDORA are cryptographically linked to your patient identity and audit trail.
+          </p>
         </div>
-      </div>
       </div>
     </RoleGuard>
   );

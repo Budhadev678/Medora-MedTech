@@ -1,29 +1,45 @@
-# 📜 MEDORA — Project Changelog
+# 📝 MEDORA Project Changelog
 
-All notable changes, phase completions, and milestone updates are recorded chronologically here.
-
----
-
-## [Phase 1 Complete: Multi-Role Authentication & Role System] — 2026-08-20
-
-### Added
-- **Database Schema:** Created [`supabase/schema.sql`](file:///c:/Users/Dell/Downloads/Medora-MedTech/supabase/schema.sql) with normalized tables, custom enums (`user_role`, `doctor_status`, `triage_priority`), and RLS policies.
-- **Authentication State Engine:** Built [`lib/auth/auth-context.tsx`](file:///c:/Users/Dell/Downloads/Medora-MedTech/lib/auth/auth-context.tsx) supporting persistent multi-role session management, registration, and live persona switching.
-- **Unified Sign-In Portal:** Built [`app/(auth)/login/page.tsx`](file:///c:/Users/Dell/Downloads/Medora-MedTech/app/%28auth%29/login/page.tsx) with standard credentials input and the One-Click SIH Demo Role Launcher across all 9 personas.
-- **Patient Onboarding Flow:** Built [`app/(auth)/register/page.tsx`](file:///c:/Users/Dell/Downloads/Medora-MedTech/app/%28auth%29/register/page.tsx) with 3-step progressive onboarding (Personal Profile $\rightarrow$ Simulated Aadhaar Verification $\rightarrow$ ABHA ID creation).
-- **Route Guarding:** Created [`middleware.ts`](file:///c:/Users/Dell/Downloads/Medora-MedTech/middleware.ts) for session cookie validation and route interception.
-- **Verified Build:** 15/15 static pages and middleware compiled cleanly with zero TypeScript errors.
+All notable changes to the MEDORA platform are documented in this file.
 
 ---
 
-## [Phase 0 Complete: Foundation & Application Setup] — 2026-08-19
+## [Phase 2] - 2026-08-20 — App Shell + Role Workspaces + Responsive Experience
 
 ### Added
-- **Project Scaffolding:** Configured Next.js 14+ App Router, TypeScript (`tsconfig.json`), Tailwind CSS (`tailwind.config.ts`, `postcss.config.js`), and Next config (`next.config.mjs`).
-- **Design Tokens & Theme:** Configured Medora clinical design system in `app/globals.css` (Teal `#0D9488`, slate background `#F8FAFC`, semantic tokens, and 4-tier emergency triage colors).
-- **Core Primitives:** Built reusable components in `components/ui/` (`Button`, `Card`, `Badge`, `StatusBadge`, `Input`, `Label`, `Timeline`, `EmptyState`, `Skeleton`, `Table`).
-- **Shared Layout & App Shell:** Created `Navbar`, `RoleSidebar`, `RoleBottomNav`, `AppShell`, and SIH `DemoSwitcher` supporting instant role switching.
-- **Relational Types & Utilities:** Added `types/database.types.ts`, `lib/constants.ts`, `lib/utils.ts`, and Supabase SSR helpers in `lib/supabase/`.
-- **Master Platform Gateway:** Created `app/page.tsx` displaying the connected healthcare vision, state machine, and role launchpad.
-- **Role Dashboard Skeletons:** Implemented base views for all 8 roles (`/patient`, `/doctor`, `/hospital`, `/lab`, `/pharmacy`, `/emergency`, `/blood-bank`, `/finance`, `/admin`).
-- **Documentation Suite:** Established 13 tracking and specification files in `/docs`.
+- **Patient Mobile-First Shell**:
+  - `components/shared/role-bottom-nav.tsx`: 5-tab mobile bottom navigation (`Home`, `Health`, `Care`, `Emergency`, `Profile`) with active badges and emergency quick trigger.
+  - `app/patient/page.tsx`: Mobile consumer healthcare homepage with digital Medora ID card (`MED-PAT-1001`), touch-optimized quick action cards (`Find Doctor`, `Hospitals`, `Reports`, `Medicines`), upcoming visit card, recent activity list, and audit notice.
+  - `app/patient/health/page.tsx`: Structural health hub with scrollable navigation pills (`Journey Timeline`, `Prescriptions`, `Lab Reports`, `All Records`) and empty state placeholders.
+  - `app/patient/care/page.tsx`: Care discovery hub with specialty search, doctor directory cards, hospital listings, and visit token schedules.
+  - `app/patient/emergency/page.tsx`: Prominent emergency hub with one-tap national helpline triggers (112, 108), emergency medical vitals snapshot, and nearest trauma center link.
+  - `app/patient/profile/page.tsx`: Personal profile destination with account status indicator, ABHA placeholder card, timed record sharing link, and sign-out control.
+- **Operational Tablet/Desktop Workspaces**:
+  - `app/doctor/page.tsx`: Clinical workspace with live duty status selector, operational overview metrics, tabbed queue, slot schedule, and pending diagnostic reviews.
+  - `app/hospital/page.tsx`: Command center with department roster, occupancy tracking, and audit links.
+  - `app/lab/page.tsx`: Diagnostic laboratory queue, testing states, and pathologist approvals.
+  - `app/pharmacy/page.tsx`: Prescription dispensing queue with counter pickup patient verification desk.
+  - `app/admin/page.tsx`: Master system audit stream and security posture matrix.
+  - `app/emergency/page.tsx`, `app/blood-bank/page.tsx`, `app/finance/page.tsx`: Role workspaces with RoleGuard protection, empty states, and phase notices.
+- **Responsive Container Strategy**:
+  - `components/shared/app-shell.tsx`: Automatically switches between centered consumer mobile container for Patients (`max-w-xl md:max-w-2xl`) and high-density full workspace for Doctors/Hospitals/Admins.
+
+---
+
+## [Phase 1] - 2026-08-20 — Authentication & Role Foundation
+
+### Added
+- Master PostgreSQL relational schema (`supabase/schema.sql`) with 15 tables and RLS security policies.
+- Centralized auth provider (`lib/auth/auth-context.tsx`) with Supabase client integration and multi-role session persistence.
+- Unified login portal (`app/(auth)/login/page.tsx`) with password show/hide toggle and SIH Demo Role Launcher.
+- 3-Step Patient Onboarding (`app/(auth)/register/page.tsx`) with ABHA ID generation.
+- Role protection guard (`components/shared/role-guard.tsx`) and 403 Forbidden access denial page (`app/access-denied/page.tsx`).
+
+---
+
+## [Phase 0] - 2026-08-20 — Project Scaffolding & Design System
+
+### Added
+- Next.js 14 App Router setup with Tailwind CSS and custom tokens.
+- Standardized UI component primitives in `components/ui/`.
+- Shared App Shell, Navbar, and SIH Demo Persona Switcher in `components/shared/`.

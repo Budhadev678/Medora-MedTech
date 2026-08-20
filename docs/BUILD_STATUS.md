@@ -1,8 +1,8 @@
 # 📊 MEDORA — Live Build Status Dashboard
 
 > **Last Updated:** 2026-08-20  
-> **Current Phase:** Phase 1 Completed & Verified | Ready for Phase 2  
-> **Overall Progress:** 25% Complete (Auth Engine, Multi-Step Onboarding, Role Guards, RLS Schema & Session Recovery Verified)
+> **Current Phase:** Phase 2 Completed & Verified | Ready for Phase 3  
+> **Overall Progress:** 35% Complete (Phase 0 Foundation, Phase 1 Auth Engine, Phase 2 App Shell & Role Workspaces Verified)
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Field | Current Value |
 | :--- | :--- |
-| **Active Milestone** | `PHASE-1: Multi-Role Authentication & Role System` |
-| **Status** | `VERIFIED` ✅ (Git Commit: `47e78d3`, Next.js 14 Build passing with 16/16 routes) |
-| **Next Task** | `PHASE-2: Patient Foundation & Full Profile / Emergency Card Suite` |
-| **Active Blocker** | None (Awaiting user confirmation to begin Phase 2) |
+| **Active Milestone** | `PHASE-2: App Shell & Role Dashboards Skeletons` |
+| **Status** | `VERIFIED` ✅ (Patient Mobile Shell, 5 Patient Hubs, 7 Operational Workspaces, Responsive Bottom Nav & 20/20 Routes Built) |
+| **Next Task** | `PHASE-3: Patient Profile & ABHA/Aadhaar Simulation` |
+| **Active Blocker** | None (Awaiting explicit instruction for Phase 3) |
 
 ---
 
@@ -21,12 +21,12 @@
 
 | Phase # | Module / Phase Name | Status | Key Deliverables | Verification |
 | :---: | :--- | :---: | :--- | :---: |
-| **00** | **Project Setup & Foundation** | `VERIFIED` | Next.js 14 scaffold, design tokens, primitives, 8 role dashboard shells, demo persona switcher | ✅ |
+| **00** | **Project Setup & Foundation** | `VERIFIED` | Next.js 14 scaffold, design tokens, primitives, 8 role dashboard shells, demo switcher | ✅ |
 | **01** | **Auth & Role Architecture** | `VERIFIED` | Supabase schema (`schema.sql`), unified `/login`, `/register` onboarding, `auth-context`, `RoleGuard`, `/access-denied`, role middleware | ✅ |
-| **02** | **Patient Foundation & Profile**| `NOT_STARTED` | Vitals manager, emergency medical card, ABHA QR card | ⬜ |
-| **03** | **Doctor Schedule & Availability** | `NOT_STARTED` | Duty status, queue, schedule manager | ⬜ |
-| **04** | **Hospital & Department Engine** | `NOT_STARTED` | Departments, doctors list, ward setup | ⬜ |
-| **05** | **Patient–Doctor Discovery** | `NOT_STARTED` | Hospital locator, doctor search, specialty filter | ⬜ |
+| **02** | **App Shell & Role Workspaces** | `VERIFIED` | Patient mobile-first container (`/patient`, `/patient/health`, `/patient/care`, `/patient/emergency`, `/patient/profile`), bottom nav, 7 desktop operational workspaces, metrics & empty states | ✅ |
+| **03** | **Patient Foundation & Profile**| `NOT_STARTED` | Vitals manager, emergency medical card, ABHA QR card | ⬜ |
+| **04** | **Doctor Schedule & Availability** | `NOT_STARTED` | Duty status, queue, schedule manager | ⬜ |
+| **05** | **Hospital & Department Engine** | `NOT_STARTED` | Departments, doctors list, ward setup | ⬜ |
 | **06** | **Appointments & Token Queue** | `NOT_STARTED` | Slot booking, token engine, live queue | ⬜ |
 | **07** | **Digital Consultation & Rx** | `NOT_STARTED` | Clinical notes, structured Rx instructions | ⬜ |
 | **08** | **Connected Laboratory** | `NOT_STARTED` | Lab Order → Sample → Report approval | ⬜ |
@@ -44,19 +44,3 @@
 
 *Status Legend:*  
 `NOT_STARTED` ⬜ | `IN_PROGRESS` ⏳ | `BUILT` 🔨 | `TESTING` 🧪 | `VERIFIED` ✅ | `BLOCKED` 🛑
-
----
-
-## 📋 Quick Reference: What was completed vs What is next
-
-### ✅ Completed in Phase 1
-- Created complete PostgreSQL migration and DDL script in `supabase/schema.sql` with RLS policies and seed definitions.
-- Implemented `lib/auth/auth-context.tsx` with full session persistence, persona switching, and registration.
-- Created `/login` page with standard authentication, password show/hide toggle, + One-Click SIH Demo Role Launcher across 9 personas.
-- Created multi-step `/register` onboarding flow with personal demographics, simulated identity check (Aadhaar last 4), and simulated ABHA card creation.
-- Implemented `RoleGuard` (`components/shared/role-guard.tsx`) and `/access-denied` (403 handler) to block unauthorized role access.
-- Implemented `middleware.ts` for route handling and session cookie checks.
-- Verified zero errors via `tsc --noEmit` and `next build` (16/16 static pages and middleware compiled).
-
-### ⏭️ Next Up (Phase 2)
-- Phase 2: Patient Foundation & Full Profile (Vitals manager, Emergency medical snapshot card, Simulated ABHA QR card view, and Allergy/Chronic condition manager).
