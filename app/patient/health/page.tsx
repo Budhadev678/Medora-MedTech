@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   HeartPulse, 
@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   ChevronRight,
   ShieldCheck,
-  Share2
+  Share2,
+  Stethoscope,
+  Building2
 } from "lucide-react";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +23,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Timeline, type TimelineItemData } from "@/components/ui/timeline";
+import { useAuth } from "@/lib/auth/auth-context";
+import { getPatientEncounters, HealthcareEncounter } from "@/lib/data/encounter-store";
 
 export default function PatientHealthPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"timeline" | "prescriptions" | "reports" | "records">("timeline");
+  const [encounters, setEncounters] = useState<HealthcareEncounter[]>([]);
 
-  const sampleTimeline: TimelineItemData[] = [
+  const refreshData = () => {
+    if (!user) return;
+    const data = getPatientEncounters(user.identifier || user.id);
+    setEncounters(data);
+  };
+
+  useEffect(() => {
+    refreshData();
+    window.addEventListener("medora-encounters-updated", refreshData);
+    return () => window.removeEventListener("medora-encounters-updated", refreshData);
+  }, [user]);
+
+  const dynamicTimeline: TimelineItemData[] = encounters.map((enc) => ({
+    id: enc.id,
+    type: "consultation",
+    title: `${enc.encounter_type.replace(/_/g, " ")} (${enc.status})`,
+    summary: `${enc.provider_name} conducted a ${enc.encounter_type.toLowerCase()} for: "${enc.reason_for_visit}" at ${enc.department_name}.`,
+    timestamp: enc.started_at,
+    actor: enc.provider_name,
+    organization: enc.organization_name,
+  }));
+
+  const sampleTimeline: TimelineItemData[] = dynamicTimeline.length > 0 ? dynamicTimeline : [
     {
       id: "tl-1",
       type: "consultation",
@@ -34,24 +62,6 @@ export default function PatientHealthPage() {
       timestamp: "2026-08-19T10:30:00Z",
       actor: "Dr. Rajesh Sharma",
       organization: "Apex Multispeciality Hospital",
-    },
-    {
-      id: "tl-2",
-      type: "prescription",
-      title: "Digital Prescription RX-1001 Issued",
-      summary: "Prescribed Amoxicillin 500mg & Paracetamol 650mg. Transmitted to Hospital Pharmacy.",
-      timestamp: "2026-08-19T10:35:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Apex Multispeciality Hospital",
-    },
-    {
-      id: "tl-3",
-      type: "lab_order",
-      title: "Complete Blood Count (CBC) Ordered",
-      summary: "Diagnostic order LAB-1001 generated for routine hematology examination.",
-      timestamp: "2026-08-19T10:40:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Central Pathology Lab",
     },
   ];
 

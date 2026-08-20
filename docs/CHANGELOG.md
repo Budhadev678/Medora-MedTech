@@ -1,6 +1,15 @@
 # 📝 MEDORA — Engineering Changelog
 
-## [Phase 3.3 & 3.4 - Consent, Relationships, Access Decision Engine & Final Integration] - 2026-08-20
+## [Phase 4.1 - Healthcare Encounter Core] - 2026-08-20
+### Added
+- **Central Domain Entity & Store (`lib/data/encounter-store.ts`):** Implemented authoritative `HealthcareEncounter` model (`ENC-*`) connecting Patient (`PAT-*`), Practitioner (`DOC-*`), and Organization (`HSP-*`, `CLN-*`) at explicit timestamps.
+- **Doctor Encounter Workbench (`app/doctor/consultations/page.tsx`):** Interactive clinical workbench with hospital practice context switcher, status filter tabs (`ACTIVE`, `COMPLETED`), authorized patient search, Phase 3 pre-encounter access check, and double-click protected encounter creation/completion modals.
+- **Patient Healthcare Visits Stream (`app/patient/records/page.tsx` & `app/patient/health/page.tsx`):** Connected live encounter store to the patient records portal, rendering mobile-first visit cards with facility badges, timestamps, clinical reasons, and interactive encounter detail sheets.
+- **Hospital & Clinic Encounter Desks (`app/hospital/encounters/page.tsx` & `app/clinic/encounters/page.tsx`):** Operational tables for hospital administrators and clinic staff to monitor ongoing OPD sessions and historical visit logs.
+- **Audit Ledger & Access Engine Integration:** Added `ENCOUNTER_CREATED`, `ENCOUNTER_STARTED`, and `ENCOUNTER_COMPLETED` audit events to `lib/data/audit-store.ts` with zero credential leakage.
+- **Automated Verification:** 20/20 test assertions passed in `scripts/test-phase4-encounter.ts`, covering patient isolation, doctor multi-hospital scoping, ended affiliations rejection, lifecycle state transitions, idempotency, and audit logging across 110 compiled routes.
+
+---
 ### Added
 - **Phase 3.3 (Consent, Identity Relationships & Access Control Foundation):**
   - **Explicit Consent Store (`lib/data/consent-store.ts`):** Implemented purpose-bound (`treatment`, `diagnostic_review`, etc.), time-limited consent model with granular data scopes (`medical_history`, `prescriptions`, `lab_reports`, `diagnostic_reports`, `billing_info`, `insurance_info`). Added `grantConsentRequest`, `denyConsentRequest`, `revokeConsent`, and server-side expiration evaluation.

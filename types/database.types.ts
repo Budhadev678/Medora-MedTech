@@ -383,7 +383,13 @@ export type AuditEventType =
   | "RELATIONSHIP_ENDED"
   | "ABHA_LINKED"
   | "ABHA_UNLINKED"
-  | "ACCESS_EVALUATED";
+  | "ACCESS_EVALUATED"
+  | "ENCOUNTER_CREATED"
+  | "ENCOUNTER_STARTED"
+  | "ENCOUNTER_UPDATED"
+  | "ENCOUNTER_COMPLETED"
+  | "ENCOUNTER_CANCELLED"
+  | "ENCOUNTER_CLOSED";
 
 export interface StoredAuditEvent {
   id: string;
@@ -403,6 +409,58 @@ export interface StoredAuditEvent {
 // ============================================================
 // CATEGORY C — HEALTHCARE EVENTS & TRANSACTIONS
 // ============================================================
+
+export type EncounterType =
+  | "CONSULTATION"
+  | "FOLLOW_UP"
+  | "DIAGNOSTIC_VISIT"
+  | "OUTPATIENT"
+  | "EMERGENCY"
+  | "INPATIENT"
+  | "TELECONSULTATION"
+  | "OTHER";
+
+export type EncounterStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "CLOSED";
+
+export type EncounterSourceType =
+  | "DIRECT_CONSULTATION"
+  | "APPOINTMENT"
+  | "REFERRAL"
+  | "EMERGENCY"
+  | "LAB"
+  | "OTHER";
+
+export interface HealthcareEncounter {
+  id: string; // e.g. ENC-1001
+  encounter_reference?: string; // Human-friendly ref (e.g. ENC-1001)
+  patient_id: string; // FK -> patients.medora_id (PAT-1001)
+  patient_name: string;
+  patient_gender?: string;
+  patient_dob?: string;
+  patient_blood_group?: string;
+  provider_id: string; // FK -> doctors.identifier (DOC-1001)
+  provider_name: string;
+  provider_role: string; // e.g. "Consultant Cardiologist"
+  organization_id: string; // FK -> organizations.identifier (HSP-1001)
+  organization_name: string;
+  facility_id?: string;
+  facility_name?: string;
+  department_id?: string;
+  department_name?: string; // e.g. "Cardiology OPD"
+  encounter_type: EncounterType;
+  status: EncounterStatus;
+  source_type: EncounterSourceType;
+  reason_for_visit: string; // Clinical chief reason (not diagnosis)
+  location?: string; // e.g. "Room 204, OPD Block A"
+  started_at: string;
+  ended_at?: string;
+  created_by: string;
+  created_by_role: string;
+  created_at: string;
+  updated_at?: string;
+  consent_id?: string;
+  notes_placeholder?: string;
+}
 
 export type AppointmentStatus =
   | "REQUESTED"

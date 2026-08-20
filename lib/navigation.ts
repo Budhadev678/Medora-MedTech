@@ -72,12 +72,12 @@ export const PATIENT_MORE_NAV: NavItem[] = [
 // 3. Doctor Workspace Navigation
 export const DOCTOR_NAV: NavItem[] = [
   { label: "Clinical Overview", href: "/doctor", icon: Activity, exact: true },
-  { label: "Patients", href: "/doctor/patients", icon: Users, comingSoon: true, phase: "Phase 6" },
+  { label: "Encounter Workbench", href: "/doctor/consultations", icon: Stethoscope },
+  { label: "Patient Registry", href: "/doctor/patients", icon: Users },
   { label: "Appointments", href: "/doctor/appointments", icon: Calendar, comingSoon: true, phase: "Phase 6" },
   { label: "Schedule & Hours", href: "/doctor/schedule", icon: Clock, comingSoon: true, phase: "Phase 4" },
-  { label: "Consultation Suite", href: "/doctor/consultations", icon: Stethoscope, comingSoon: true, phase: "Phase 7" },
-  { label: "Prescriptions", href: "/doctor/prescriptions", icon: Pill, comingSoon: true, phase: "Phase 7" },
-  { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: FlaskConical, comingSoon: true, phase: "Phase 8" },
+  { label: "Prescriptions", href: "/doctor/prescriptions", icon: Pill, comingSoon: true, phase: "Phase 4.3" },
+  { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: FlaskConical, comingSoon: true, phase: "Phase 4.3" },
   { label: "Referrals", href: "/doctor/referrals", icon: Share2, comingSoon: true, phase: "Phase 7" },
   { label: "Doctor Profile", href: "/doctor/profile", icon: User },
 ];
@@ -85,6 +85,7 @@ export const DOCTOR_NAV: NavItem[] = [
 // 4. Hospital Command Center Navigation
 export const HOSPITAL_NAV: NavItem[] = [
   { label: "Command Center", href: "/hospital", icon: Building2, exact: true },
+  { label: "Operational Encounters", href: "/hospital/encounters", icon: Activity },
   { label: "Patients", href: "/hospital/patients", icon: Users, comingSoon: true, phase: "Phase 6" },
   { label: "Medical Staff & Doctors", href: "/hospital/doctors", icon: Stethoscope },
   { label: "Departments", href: "/hospital/departments", icon: Layers, comingSoon: true, phase: "Phase 5" },

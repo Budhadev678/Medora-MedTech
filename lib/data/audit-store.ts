@@ -133,6 +133,35 @@ export function logAuditEvent(params: {
 }
 
 /**
+ * Convenience helper to append an audit event with positional arguments.
+ */
+export function appendAuditEvent(
+  event_type: AuditEventType,
+  actor_id: string,
+  actor_name: string,
+  actor_role: string,
+  summary: string,
+  patient_id?: string,
+  organization_id?: string,
+  organization_name?: string,
+  reference_id?: string,
+  metadata?: Record<string, string | number | boolean | null>
+): StoredAuditEvent {
+  return logAuditEvent({
+    event_type,
+    actor_id,
+    actor_name,
+    actor_role,
+    summary,
+    patient_id,
+    organization_id,
+    organization_name,
+    reference_id,
+    metadata,
+  });
+}
+
+/**
  * Returns user-facing, human-readable timeline for a specific patient.
  * Strictly scopes events to the requested patient and filters internal noise.
  */
