@@ -1,5 +1,20 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 2.4 - Real-World Workspace Architecture Correction] - 2026-08-20
+### Fixed & Re-Architected
+- **Root Cause Resolution:** Eliminated all generic dashboard assumptions and removed fallbacks that previously directed non-doctor roles into doctor or hospital navigation.
+- **Strict Workspace Resolver (`lib/workspaces.ts`):** Implemented `resolveWorkspace(user, role)` mapping identities, roles, and organizations into 13 authentic workspaces.
+- **Dedicated Workspaces Added:**
+  - **Government Assistance Workspace (`/government`)**: State scheme administration (BSKY/PM-JAY), beneficiary applications, subsidy approvals, and treasury disbursements.
+  - **Emergency Dispatch Console (`/ambulance`)**: Real-time road accident queue, fleet GPS telemetry, ALS/BLS readiness, and hospital trauma pre-alerts.
+  - **Healthcare Financing Workspace (`/finance`)**: CarePay patient micro-financing applications, zero-cost EMI plans, multi-source splits, and lender ledger.
+  - **Blood Coordination Desk (`/blood-bank`)**: Blood request queue, PRBC/FFP inventory, voluntary donor registry, serological cross-match lab, and cold-chain dispatch.
+  - **Outpatient Clinic Operations (`/clinic`)**: Day clinic visiting physicians, walk-in OPD token queue, and OPD billing.
+- **Safe Fallback Barrier:** Unassigned or unconfigured accounts render a clean, secure `Workspace Setup Pending` screen rather than exposing unauthorized clinical tools.
+- **Build Verification:** 106 static and dynamic routes compiled cleanly in Next.js 14 (`npm run build`).
+
+---
+
 ## [Phase 2.4 - Final Shell Polish, Localization & QA] - 2026-08-20
 ### Added
 - Centralized Multilingual Localization Engine (`lib/localization.ts`) supporting English (`en`), Hindi (`hi`), and Odia (`or`) with safe fallbacks and persistent storage.

@@ -13,15 +13,17 @@ import {
   LogOut, 
   ShieldCheck, 
   Building2,
-  Sparkles
+  Sparkles,
+  ShieldAlert
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { OrganizationSwitcher } from "@/components/shared/organization-switcher";
 import { NotificationPanel } from "@/components/shared/notification-panel";
 import { UserMenu } from "@/components/shared/user-menu";
-import { getNavigationForRole, NavItem } from "@/lib/navigation";
-import { ROLE_LABELS, type UserRole } from "@/lib/constants";
+import { resolveWorkspace, WorkspaceDefinition } from "@/lib/workspaces";
+import { NavItem } from "@/lib/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ProfessionalShellProps {
@@ -34,9 +36,37 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const effectiveRole: UserRole = role || "doctor";
-  const navItems: NavItem[] = getNavigationForRole(effectiveRole);
-  const roleTitle = ROLE_LABELS[effectiveRole] || "Professional Workspace";
+  const workspace: WorkspaceDefinition | null = resolveWorkspace(user, role);
+
+  // If no valid workspace could be resolved, show a safe account configuration screen
+  if (!workspace) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div className="h-12 w-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="h-6 w-6" />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">Workspace Setup Pending</h1>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Your account (<strong>{user?.fullName || "User"}</strong>) is authenticated, but your MEDORA operational workspace has not been assigned yet.
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <Button size="sm" onClick={() => logout()} variant="outline" className="text-xs font-semibold">
+              <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sign Out
+            </Button>
+            <Link href="/">
+              <Button size="sm" className="text-xs font-semibold bg-teal-700 hover:bg-teal-800">
+                Return to Gateway
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const navItems: NavItem[] = workspace.navItems;
+  const roleTitle = workspace.displayName;
 
   const renderNavLinks = (isMobile = false) => {
     return (
@@ -44,7 +74,7 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
         {navItems.map((item) => {
           const isActive = item.exact 
             ? pathname === item.href 
-            : pathname === item.href || (item.href !== `/${effectiveRole}` && pathname.startsWith(item.href));
+            : pathname === item.href || (item.href !== workspace.landingRoute && pathname.startsWith(item.href));
           const Icon = item.icon;
 
           return (
@@ -99,146 +129,133 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo & Brand Identity */}
-          <Link href={`/${effectiveRole === "hospital_admin" ? "hospital" : effectiveRole}`} className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white shadow-xs transition-transform group-hover:scale-105">
+          {/* Platform Identity */}
+          <Link href={workspace.landingRoute} className="flex items-center gap-2.5 group">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white shadow-xs group-hover:bg-teal-700 transition-colors">
               <Activity className="h-5 w-5" />
             </div>
             <div className="hidden sm:block">
-              <div className="flex items-center gap-1.5">
-                <span className="text-base font-bold tracking-tight text-slate-900">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black tracking-tight text-slate-900">
                   MEDORA
                 </span>
-                <span className="rounded bg-teal-50 px-1.5 py-0.2 text-[9px] font-bold text-teal-800 uppercase font-mono">
-                  {user?.identifier || "PRO"}
-                </span>
+                <Badge variant="outline" className="text-[9px] font-bold text-teal-800 bg-teal-50 border-teal-200 py-0">
+                  {workspace.badgeText}
+                </Badge>
               </div>
-              <span className="text-[10px] text-slate-500 tracking-tight block -mt-0.5">
+              <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[200px]">
                 {roleTitle}
               </span>
             </div>
           </Link>
-
-          {/* Organization & Facility Practice Switcher */}
-          <div className="ml-2 sm:ml-4">
-            <OrganizationSwitcher />
-          </div>
         </div>
 
-        {/* Right Action Tools */}
+        {/* TopBar Tools */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <OrganizationSwitcher />
           <NotificationPanel />
           <UserMenu />
         </div>
       </header>
 
-      {/* 2. Main Workspace Layout (Sidebar + Content) */}
-      <div className="flex-1 flex w-full">
-        {/* Desktop / Tablet Collapsible Sidebar */}
+      {/* 2. Workspace Body (Collapsible Sidebar + Main Content) */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Desktop Collapsible Sidebar */}
         <aside
           className={cn(
-            "hidden md:flex flex-col border-r border-slate-200 bg-white transition-all duration-200 z-20",
-            collapsed ? "w-16" : "w-60 lg:w-64"
+            "hidden md:flex flex-col border-r border-slate-200 bg-white transition-all duration-200 z-20 select-none",
+            collapsed ? "w-16" : "w-64"
           )}
         >
-          {/* Sidebar Section Header */}
-          <div className="flex items-center justify-between p-3.5 border-b border-slate-100">
+          {/* Workspace Title & Collapse Trigger */}
+          <div className="flex h-12 items-center justify-between px-3.5 border-b border-slate-100">
             {!collapsed && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
-                Workspace Menu
+              <span className="text-xs font-bold text-slate-900 truncate">
+                {roleTitle}
               </span>
             )}
             <button
               type="button"
               onClick={() => setCollapsed(!collapsed)}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 mx-auto"
+              className={cn(
+                "rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors",
+                collapsed && "mx-auto"
+              )}
               title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
           </div>
 
-          {/* Nav Items List */}
-          <div className="flex-1 overflow-y-auto px-2 py-2">
+          {/* Navigation Links */}
+          <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
             {renderNavLinks(false)}
           </div>
 
-          {/* Sidebar Footer Controls */}
-          <div className="p-3 border-t border-slate-100 space-y-1">
-            <Link
-              href={`/${effectiveRole === "hospital_admin" ? "hospital" : effectiveRole}/settings`}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors",
-                collapsed ? "justify-center" : ""
-              )}
-              title={collapsed ? "Settings" : undefined}
-            >
-              <Settings className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              {!collapsed && <span>Settings</span>}
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => logout()}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors",
-                collapsed ? "justify-center" : ""
-              )}
-              title={collapsed ? "Sign Out" : undefined}
-            >
-              <LogOut className="h-4 w-4 text-red-500 flex-shrink-0" />
-              {!collapsed && <span>Sign Out</span>}
-            </button>
+          {/* Sidebar Footer */}
+          <div className="p-3 border-t border-slate-100">
+            {!collapsed ? (
+              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <span className="font-mono">{user?.identifier || "USER"}</span>
+                <span className="text-teal-700 font-semibold">{workspace.badgeText}</span>
+              </div>
+            ) : (
+              <div className="text-center font-mono text-[9px] text-slate-400">
+                {user?.identifier?.slice(0, 3)}
+              </div>
+            )}
           </div>
         </aside>
 
-        {/* 3. Main Workspace Content Area */}
-        <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Mobile / Tablet Drawer */}
+        {mobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs animate-in fade-in-50" 
+              onClick={() => setMobileDrawerOpen(false)} 
+            />
+            <div className="relative flex w-72 max-w-[85vw] flex-1 flex-col bg-white p-4 shadow-2xl animate-in slide-in-from-left duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">
+                    {roleTitle}
+                  </span>
+                  <span className="text-[10px] text-teal-700 font-mono">
+                    {user?.identifier}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-2">
+                {renderNavLinks(true)}
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Operational Content Container */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
       </div>
-
-      {/* 4. Mobile Drawer for Tablets/Phones */}
-      {mobileDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150">
-          <div className="fixed inset-0" onClick={() => setMobileDrawerOpen(false)} />
-          
-          <div className="relative z-50 w-72 max-w-[85vw] h-full bg-white p-4 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded bg-teal-600 text-white">
-                  <Activity className="h-4 w-4" />
-                </div>
-                <span className="font-bold text-sm text-slate-900">MEDORA</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileDrawerOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-2">
-              {renderNavLinks(true)}
-            </div>
-
-            <div className="pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileDrawerOpen(false);
-                  logout();
-                }}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold"
-              >
-                <LogOut className="h-4 w-4" /> Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

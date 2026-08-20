@@ -29,9 +29,14 @@ import {
   Shield, 
   Bell, 
   Activity,
+  Truck,
+  FileSpreadsheet,
+  HandHeart,
   LucideIcon
 } from "lucide-react";
-import { UserRole } from "@/types/database.types";
+import { UserRole } from "@/lib/constants";
+import { StoredIdentity } from "@/lib/data/identity-store";
+import { resolveWorkspace } from "@/lib/workspaces";
 
 export interface NavItem {
   label: string;
@@ -65,7 +70,7 @@ export const PATIENT_MORE_NAV: NavItem[] = [
 
 // 3. Doctor Workspace Navigation
 export const DOCTOR_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/doctor", icon: Activity, exact: true },
+  { label: "Clinical Overview", href: "/doctor", icon: Activity, exact: true },
   { label: "Patients", href: "/doctor/patients", icon: Users, comingSoon: true, phase: "Phase 6" },
   { label: "Appointments", href: "/doctor/appointments", icon: Calendar, comingSoon: true, phase: "Phase 6" },
   { label: "Schedule & Hours", href: "/doctor/schedule", icon: Clock, comingSoon: true, phase: "Phase 4" },
@@ -93,9 +98,18 @@ export const HOSPITAL_NAV: NavItem[] = [
   { label: "Facility Settings", href: "/hospital/settings", icon: Settings },
 ];
 
-// 5. Diagnostic Laboratory Navigation
+// 5. Outpatient Clinic Navigation
+export const CLINIC_NAV: NavItem[] = [
+  { label: "Clinic Overview", href: "/clinic", icon: Building2, exact: true },
+  { label: "Visiting Doctors", href: "/hospital/doctors", icon: Stethoscope },
+  { label: "OPD Appointments", href: "/hospital/appointments", icon: Calendar, comingSoon: true, phase: "Phase 6" },
+  { label: "OPD Billing & Receipts", href: "/hospital/billing", icon: Receipt, comingSoon: true, phase: "Phase 10" },
+  { label: "Clinic Staff", href: "/hospital/staff", icon: Users, comingSoon: true, phase: "Phase 5" },
+];
+
+// 6. Diagnostic Laboratory Navigation
 export const LAB_NAV: NavItem[] = [
-  { label: "Lab Overview", href: "/lab", icon: FlaskConical, exact: true },
+  { label: "Work Queue", href: "/lab", icon: FlaskConical, exact: true },
   { label: "Test Orders Queue", href: "/lab/orders", icon: ClipboardList, comingSoon: true, phase: "Phase 8" },
   { label: "Sample Intake", href: "/lab/samples", icon: Layers, comingSoon: true, phase: "Phase 8" },
   { label: "Diagnostic Testing", href: "/lab/testing", icon: Clock, comingSoon: true, phase: "Phase 8" },
@@ -105,9 +119,9 @@ export const LAB_NAV: NavItem[] = [
   { label: "Lab Settings", href: "/lab/settings", icon: Settings },
 ];
 
-// 6. Pharmacy Dispensing Desk Navigation
+// 7. Pharmacy Dispensing Desk Navigation
 export const PHARMACY_NAV: NavItem[] = [
-  { label: "Pharmacy Overview", href: "/pharmacy", icon: Pill, exact: true },
+  { label: "Pharmacy Work Queue", href: "/pharmacy", icon: Pill, exact: true },
   { label: "Prescriptions Queue", href: "/pharmacy/prescriptions", icon: ClipboardList, comingSoon: true, phase: "Phase 9" },
   { label: "Orders", href: "/pharmacy/orders", icon: Package, comingSoon: true, phase: "Phase 9" },
   { label: "Preparation", href: "/pharmacy/preparation", icon: Clock, comingSoon: true, phase: "Phase 9" },
@@ -118,7 +132,7 @@ export const PHARMACY_NAV: NavItem[] = [
   { label: "Pharmacy Settings", href: "/pharmacy/settings", icon: Settings },
 ];
 
-// 7. Insurance & Claims Desk Navigation
+// 8. Insurance & Claims Desk Navigation
 export const INSURANCE_NAV: NavItem[] = [
   { label: "Claims Overview", href: "/insurance", icon: Shield, exact: true },
   { label: "Active Policies", href: "/insurance/policies", icon: FileText, comingSoon: true, phase: "Phase 12" },
@@ -129,15 +143,54 @@ export const INSURANCE_NAV: NavItem[] = [
   { label: "Insurance Settings", href: "/insurance/settings", icon: Settings },
 ];
 
-// 8. Healthcare Staff Navigation
-export const STAFF_NAV: NavItem[] = [
-  { label: "Staff Dashboard", href: "/staff", icon: Activity, exact: true },
-  { label: "My Clinical Tasks", href: "/staff/tasks", icon: ClipboardList, comingSoon: true, phase: "Phase 5" },
-  { label: "Assigned Patients", href: "/staff/patients", icon: Users, comingSoon: true, phase: "Phase 5" },
-  { label: "Staff Profile", href: "/staff/profile", icon: User },
+// 9. Government Assistance Desk Navigation
+export const GOVERNMENT_NAV: NavItem[] = [
+  { label: "Assistance Overview", href: "/government", icon: Landmark, exact: true },
+  { label: "Assistance Cases", href: "/government/cases", icon: ClipboardList, comingSoon: true, phase: "Phase 12" },
+  { label: "Scheme Applications", href: "/government/applications", icon: FileText, comingSoon: true, phase: "Phase 12" },
+  { label: "Beneficiaries", href: "/government/beneficiaries", icon: Users, comingSoon: true, phase: "Phase 12" },
+  { label: "Subsidy Approvals", href: "/government/approvals", icon: CheckCircle2, comingSoon: true, phase: "Phase 12" },
+  { label: "Disbursements", href: "/government/disbursements", icon: CreditCard, comingSoon: true, phase: "Phase 12" },
+  { label: "Scheme Settings", href: "/government/settings", icon: Settings },
 ];
 
-// 9. Platform Admin Navigation
+// 10. Healthcare Financing Partner Navigation
+export const FINANCE_NAV: NavItem[] = [
+  { label: "Financing Overview", href: "/finance", icon: CreditCard, exact: true },
+  { label: "Patient Applications", href: "/finance/applications", icon: FileSpreadsheet, comingSoon: true, phase: "Phase 12" },
+  { label: "Micro-Financing Plans", href: "/finance/plans", icon: HandHeart, comingSoon: true, phase: "Phase 12" },
+  { label: "Multi-Source Splits", href: "/finance/splits", icon: Receipt, comingSoon: true, phase: "Phase 10" },
+  { label: "Disbursement Ledger", href: "/finance/ledger", icon: CheckCircle2, comingSoon: true, phase: "Phase 12" },
+];
+
+// 11. Ambulance Emergency Dispatch Navigation
+export const AMBULANCE_NAV: NavItem[] = [
+  { label: "Dispatch Console", href: "/ambulance", icon: Truck, exact: true },
+  { label: "Emergency Queue", href: "/ambulance/queue", icon: AlertTriangle, comingSoon: true, phase: "Phase 18" },
+  { label: "Available Fleet", href: "/ambulance/fleet", icon: Activity, comingSoon: true, phase: "Phase 18" },
+  { label: "Active Trips & Transit", href: "/ambulance/trips", icon: Clock, comingSoon: true, phase: "Phase 18" },
+  { label: "Hospital Transfers", href: "/ambulance/transfers", icon: Building2, comingSoon: true, phase: "Phase 18" },
+  { label: "Dispatcher Settings", href: "/ambulance/settings", icon: Settings },
+];
+
+// 12. Blood Centre Navigation
+export const BLOOD_NAV: NavItem[] = [
+  { label: "Blood Request Queue", href: "/blood-bank", icon: Droplet, exact: true },
+  { label: "Blood Inventory", href: "/blood-bank/inventory", icon: Layers, comingSoon: true, phase: "Phase 14" },
+  { label: "Donor Registry", href: "/blood-bank/donors", icon: Users, comingSoon: true, phase: "Phase 14" },
+  { label: "Cross-Match Requests", href: "/blood-bank/matching", icon: FlaskConical, comingSoon: true, phase: "Phase 14" },
+  { label: "Dispatch Logistics", href: "/blood-bank/dispatch", icon: Truck, comingSoon: true, phase: "Phase 14" },
+];
+
+// 13. Healthcare Staff Navigation
+export const STAFF_NAV: NavItem[] = [
+  { label: "Shift Workspace", href: "/staff", icon: Activity, exact: true },
+  { label: "Clinical Handover Tasks", href: "/staff/tasks", icon: ClipboardList, comingSoon: true, phase: "Phase 5" },
+  { label: "Assigned Inpatients", href: "/staff/patients", icon: Users, comingSoon: true, phase: "Phase 5" },
+  { label: "Staff Profile & ID", href: "/staff/profile", icon: User },
+];
+
+// 14. Platform Admin Navigation
 export const ADMIN_NAV: NavItem[] = [
   { label: "Governance Overview", href: "/admin", icon: ShieldCheck, exact: true },
   { label: "User Accounts", href: "/admin/users", icon: Users, comingSoon: true, phase: "Phase 5" },
@@ -148,16 +201,14 @@ export const ADMIN_NAV: NavItem[] = [
   { label: "Platform Settings", href: "/admin/settings", icon: Settings },
 ];
 
-export function getNavigationForRole(role: UserRole): NavItem[] {
-  switch (role) {
-    case "patient": return PATIENT_PRIMARY_NAV;
-    case "doctor": return DOCTOR_NAV;
-    case "hospital_admin": return HOSPITAL_NAV;
-    case "lab_staff": return LAB_NAV;
-    case "pharmacy_staff": return PHARMACY_NAV;
-    case "insurance_staff": return INSURANCE_NAV;
-    case "staff": return STAFF_NAV;
-    case "admin": return ADMIN_NAV;
-    default: return DOCTOR_NAV;
+export function getNavigationForUser(user: StoredIdentity | null, role: UserRole | null): NavItem[] {
+  const workspace = resolveWorkspace(user, role);
+  if (!workspace) {
+    return [];
   }
+  return workspace.navItems;
+}
+
+export function getNavigationForRole(role: UserRole): NavItem[] {
+  return getNavigationForUser(null, role);
 }

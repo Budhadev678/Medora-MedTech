@@ -35,24 +35,30 @@
 
 ---
 
-## 4. Phase 2 Application Shell & Role Layout System
+## 4. Phase 2 Real-World Workspace Resolution System
 ```
-Authentication Session
+Authenticated User (Session)
         ↓
-Resolved MEDORA Identity & Role (PAT-1001, DOC-1001, HSP-1001, etc.)
+MEDORA Identity (Identifier: PAT-1001, DOC-1001, HSP-1001, CLN-1001, LAB-1001, PHA-1001, GOV-1001, AMB-1001, etc.)
         ↓
-Active Organization Context (OrganizationSwitcher for Multi-Hospital Doctors)
+Role & Organization Membership (doctor_affiliations, staff_memberships)
         ↓
-Application Shell Selection:
-        ├── PatientShell:
-        │   ├── Mobile-First Consumer Layout (max-w-2xl)
-        │   ├── Top Header: Brand + Emergency SOS Badge + Notifications + Profile
-        │   ├── Primary Bottom Navigation: Home, Appointments, Records, Emergency
-        │   └── "More" Slide-up Drawer: Prescriptions, Reports, Pharmacy, Bills, Care Plans, Profile
-        │
-        └── ProfessionalShell:
-            ├── High-Density Operational Workspace (max-w-7xl)
-            ├── Universal TopBar: Logo + Organization Context Switcher + Notifications + User Menu
-            ├── Collapsible Workspace Sidebar: Expanded labels / Collapsed icons + active route indicator
-            └── Responsive Drawer for tablet/mobile screen widths
+Workspace Resolver (resolveWorkspace(user, role))
+        ├── PATIENT ROLE → Patient Mobile App (/patient)
+        ├── DOCTOR ROLE → Clinical Workspace (/doctor)
+        ├── HOSPITAL ADMIN (Hospital) → Hospital Command Center (/hospital)
+        ├── HOSPITAL ADMIN (Clinic) → Outpatient Clinic Operations (/clinic)
+        ├── LAB STAFF → Laboratory Diagnostic Workbench (/lab)
+        ├── PHARMACY STAFF → Pharmacy Dispensing Desk (/pharmacy)
+        ├── INSURANCE STAFF → Insurance Claims & Pre-Auth (/insurance)
+        ├── GOVERNMENT STAFF → Government Assistance Desk (/government)
+        ├── FINANCE STAFF → Healthcare Financing Workspace (/finance)
+        ├── AMBULANCE STAFF → Emergency Dispatch Console (/ambulance)
+        ├── BLOOD STAFF → Blood Coordination Desk (/blood-bank)
+        ├── STAFF ROLE → Healthcare Staff Duty Desk (/staff)
+        └── PLATFORM ADMIN → Platform Governance Overview (/admin)
+        ↓
+Dedicated Navigation & Landing Experience (Zero Doctor / Generic Dashboard Fallbacks)
+        ↓
+Row-Level Security & RoleGuard Protection
 ```

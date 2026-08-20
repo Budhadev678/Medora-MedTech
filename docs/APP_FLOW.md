@@ -73,33 +73,31 @@
 
 ---
 
-## 3. Global Application Shell & Role Routing Flow (Phase 2.1)
+## 3. Real-World Workspace Resolution Flow (Phase 2.4 Correction)
 
 ```
 APPLICATION START
         ↓
 Check authentication session (Supabase Auth / Session Provider)
         ↓
-No authenticated session?
+Resolve authenticated MEDORA identity (PAT-1001, DOC-1001, HSP-1001, CLN-1001, LAB-1001, PHA-1001, GOV-1001, AMB-1001, etc.)
         ↓
-PUBLIC ROUTES (Landing, Login, Register, QR Verification Slips)
-
-OR
-
-Authenticated session
+Workspace Resolver (resolveWorkspace(user, role)):
+        ├── PATIENT → Patient Mobile App (/patient)
+        ├── DOCTOR → Doctor Clinical Workspace (/doctor)
+        ├── HOSPITAL ADMIN (Hospital) → Hospital Command Center (/hospital)
+        ├── HOSPITAL ADMIN (Clinic) → Outpatient Clinic Operations (/clinic)
+        ├── LAB STAFF → Laboratory Diagnostic Workbench (/lab)
+        ├── PHARMACY STAFF → Pharmacy Dispensing Desk (/pharmacy)
+        ├── INSURANCE STAFF → Insurance Claims & Pre-Auth Desk (/insurance)
+        ├── GOVERNMENT STAFF → Government Assistance Desk (/government)
+        ├── FINANCE STAFF → Healthcare Financing Workspace (/finance)
+        ├── AMBULANCE STAFF → Emergency Dispatch Console (/ambulance)
+        ├── BLOOD STAFF → Blood Coordination Desk (/blood-bank)
+        ├── HEALTHCARE STAFF → Staff Shift Workspace (/staff)
+        └── PLATFORM ADMIN → Platform Governance Overview (/admin)
         ↓
-Resolve authenticated MEDORA identity (PAT-1001, DOC-1001, HSP-1001, LAB-1001, etc.)
-        ↓
-Determine Role-Aware Layout Shell:
-        ├── PATIENT ROLE (PAT-1001 / PAT-1002 / PAT-1003):
-        │   └── PatientShell (Mobile-first app layout, Header with SOS + Notifications, Bottom Nav: Home, Appointments, Records, More Drawer)
-        │
-        └── PROFESSIONAL ROLES (Doctor, Hospital, Clinic, Lab, Pharmacy, Insurance, Staff, Admin):
-            └── ProfessionalShell (TopBar with OrganizationSwitcher + UserMenu, Collapsible Sidebar, Responsive Drawer, max-w-7xl content area)
-        ↓
-Role Guard Route Enforcement:
-        ├── Direct URL access to unauthorized role route → Access Restricted barrier + Safe Return
-        └── Session logout → Complete memory and state flush → Redirect to /login
+Strict RoleGuard Route Protection (Zero fallbacks to Doctor Workspace)
 ```
 
 ---
@@ -135,76 +133,46 @@ PATIENT PORTAL (/patient)
 
 ---
 
-## 5. Professional Workspaces Architecture (Phase 2.3)
+## 5. Professional Workspaces Architecture (Phase 2.3 & 2.4)
 
 ```
-PROFESSIONAL WORKSPACES
-├── Doctor Clinical Workspace (/doctor)
-│   ├── TopBar: Dr. Ananya Sharma (DOC-1001) + Practice Switcher (City Hospital, Green Care Hospital, Green Care Clinic)
-│   ├── Dashboard (/doctor) → Clinical overview, today's schedule, pending tasks
-│   ├── Patients (/doctor/patients) → Patient registry with consent-controlled access
-│   ├── Appointments (/doctor/appointments) → Outpatient consultation calendar
-│   ├── Schedule (/doctor/schedule) → Multi-hospital practice hours & room assignments
-│   ├── Consultations (/doctor/consultations) → Clinical encounter suite (Phase 7)
-│   ├── Prescriptions (/doctor/prescriptions) → Digital Rx authoring & signature
-│   ├── Lab Orders (/doctor/lab-orders) → Investigation requests & report review
-│   ├── Referrals (/doctor/referrals) → Specialist referral network
-│   ├── Profile (/doctor/profile) → Medical council credentials & active affiliations
-│   └── Settings (/doctor/settings) → Workspace preferences
+13 REAL-WORLD WORKSPACES
+├── 1. Doctor Clinical Workspace (/doctor)
+│   └── TopBar: Dr. Ananya Sharma (DOC-1001) + Multi-Hospital Practice Switcher (City Hospital, Green Care Hospital, Green Care Clinic)
 │
-├── Hospital Command Center (/hospital)
-│   ├── Operations Overview (/hospital) → Bed occupancy, OPD queues, trauma readiness
-│   ├── Patients (/hospital/patients) → Inpatient/outpatient directory
-│   ├── Doctors (/hospital/doctors) → Medical staff roster & affiliation approval desk
-│   ├── Departments (/hospital/departments) → Clinical department capacities
-│   ├── Appointments (/hospital/appointments) → Central OPD queue & token dispenser
-│   ├── Admissions (/hospital/admissions) → Inpatient bed occupancy (Phase 5)
-│   ├── Emergency (/hospital/emergency) → Trauma unit & specialist escalation (Phase 13)
-│   ├── Laboratory (/hospital/laboratory) → Hospital diagnostic lab desk
-│   ├── Pharmacy (/hospital/pharmacy) → Hospital pharmacy dispensing desk
-│   ├── Billing (/hospital/billing) → Lineage-backed hospital invoices
-│   ├── Insurance (/hospital/insurance) → Cashless insurance pre-auth desk
-│   ├── Staff (/hospital/staff) → Clinical staff appointments & rotas
-│   └── Settings (/hospital/settings) → Facility license & multi-branch settings
+├── 2. Hospital Command Center (/hospital)
+│   └── Operations Overview, Medical Staff Roster & Affiliation Reviews, OPD Queues, Bed Admissions, Trauma Unit, Lineage Invoicing
 │
-├── Outpatient Clinic Workspace (/clinic)
-│   ├── OPD Operations (/clinic) → Day clinic queue & room allocation
-│   ├── Consulting Doctors (/hospital/doctors) → General physicians & visiting specialists
-│   └── OPD Invoicing (/hospital/billing) → Transparent outpatient billing
+├── 3. Outpatient Clinic Workspace (/clinic)
+│   └── Day Clinic Queue, Visiting Specialists, Walk-in OPD Tokens, OPD Billing
 │
-├── Diagnostic Laboratory (/lab)
-│   ├── Lab Overview (/lab) → Sample intake, instrument queues, report approvals
-│   ├── Orders (/lab/orders) → Test orders queue
-│   ├── Samples (/lab/samples) → Specimen accessioning & barcoding (Phase 8)
-│   ├── Testing (/lab/testing) → Analyzer worklist & value entry
-│   ├── Verification (/lab/verification) → Pathologist sign-off & digital signature
-│   ├── Reports (/lab/reports) → Released NABL pathology reports archive
-│   ├── Staff (/lab/staff) → Pathologist & technician roster
-│   └── Settings (/lab/settings) → NABL accreditation settings
+├── 4. Diagnostic Laboratory Workbench (/lab)
+│   └── Test Orders Queue, Specimen Intake & Barcoding, Instrument Worklists, Pathologist Verification, Certified Report Slips
 │
-├── Pharmacy Dispensing Desk (/pharmacy)
-│   ├── Overview (/pharmacy) → Incoming prescriptions & preparation worktable
-│   ├── Prescriptions (/pharmacy/prescriptions) → Prescription intake queue
-│   ├── Orders (/pharmacy/orders) → Packaging worklist
-│   ├── Preparation (/pharmacy/preparation) → Batch verification & labels
-│   ├── Pickup (/pharmacy/pickup) → Patient counter pickup OTP/QR check
-│   ├── Dispensing (/pharmacy/dispensing) → Authoritative dispensing ledger
-│   ├── Inventory (/pharmacy/inventory) → Medication stock & batches
-│   ├── Staff (/pharmacy/staff) → Registered pharmacist roster
-│   └── Settings (/pharmacy/settings) → Retail drug license
+├── 5. Pharmacy Dispensing Desk (/pharmacy)
+│   └── Prescriptions Intake Queue, Medication Preparation Worktable, Patient Counter Pickup Verification, Dispensing Ledger, Batches
 │
-├── Insurance & Payer Portal (/insurance)
-│   ├── Overview (/insurance) → Cashless claims, pre-auths, disbursements
-│   ├── Policies (/insurance/policies) → Policyholder coverage registry (Phase 12)
-│   ├── Claims (/insurance/claims) → Cashless claims adjudication desk
-│   ├── Review (/insurance/review) → Medical officer pre-auth station
-│   ├── Approvals (/insurance/approvals) → Decision vouchers & deductions
-│   ├── Payments (/insurance/payments) → Direct hospital settlement disbursements
-│   └── Settings (/insurance/settings) → IRDAI settings
+├── 6. Insurance & Claims Desk (/insurance)
+│   └── Cashless Claims Review Station, Policy Registry, Pre-Auth Approvals, Direct Hospital Settlement Disbursements
 │
-└── Staff Shift Workspace (/staff)
-    ├── Overview (/staff) → Active department appointment & duty tasks
-    ├── Tasks (/staff/tasks) → Clinical handover & vitals rounds
-    ├── Patients (/staff/patients) → Assigned ward inpatients
-    └── Profile (/staff/profile) → Staff credentials & ID badge
+├── 7. Government Health Assistance Desk (/government)
+│   └── State Scheme Administration (BSKY, PM-JAY), Beneficiary Applications, Subsidy Pre-Auth Approvals, Treasury Disbursements
+│
+├── 8. Healthcare Financing Workspace (/finance)
+│   └── CarePay Micro-Financing Applications, Zero-Cost EMI Plans, Multi-Source Split Accounting, Lender Ledger
+│
+├── 9. Emergency Dispatch Console (/ambulance)
+│   └── Road Accident Detection Queue, Live Ambulance Fleet Telemetry, Active Transit Logs, Hospital Emergency Pre-Alerts
+│
+├── 10. Blood Coordination Desk (/blood-bank)
+│   └── Blood Request Queue, PRBC/FFP Component Inventory, Voluntary Donor Registry, Serological Cross-Matching, Cold-Chain Dispatch
+│
+├── 11. Healthcare Staff Duty Desk (/staff)
+│   └── Shift Handover Tasks, Assigned Ward Inpatients, Staff Credentials
+│
+├── 12. Platform Administration (/admin)
+│   └── User Accounts Registry, Organizations & Facilities, Credential Verification Desk, Immutable Append-Only Audit Stream
+│
+└── 13. Patient Mobile Application (/patient)
+    └── Dedicated Mobile-First Consumer Layout with Instant SOS, Bottom Navigation & Zero Enterprise Sidebars
 ```

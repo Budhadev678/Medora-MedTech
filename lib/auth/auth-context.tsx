@@ -425,11 +425,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (targetPath.startsWith("/patient")) return role === "patient" || role === "admin";
     if (targetPath.startsWith("/doctor")) return role === "doctor" || role === "admin";
     if (targetPath.startsWith("/hospital")) return role === "hospital_admin" || role === "staff" || role === "admin";
+    if (targetPath.startsWith("/clinic")) return role === "hospital_admin" || role === "doctor" || role === "staff" || role === "admin";
     if (targetPath.startsWith("/lab")) return role === "lab_staff" || role === "admin";
     if (targetPath.startsWith("/pharmacy")) return role === "pharmacy_staff" || role === "admin";
+    if (targetPath.startsWith("/government")) return role === "government_staff" || role === "admin";
+    if (targetPath.startsWith("/ambulance")) return role === "ambulance_staff" || role === "emergency_staff" || role === "admin";
     if (targetPath.startsWith("/emergency")) return role === "emergency_staff" || role === "ambulance_staff" || role === "admin";
     if (targetPath.startsWith("/blood-bank")) return role === "blood_staff" || role === "admin";
-    if (targetPath.startsWith("/finance")) return role === "finance_staff" || role === "insurance_staff" || role === "government_staff" || role === "admin";
+    if (targetPath.startsWith("/insurance")) return role === "insurance_staff" || role === "admin";
+    if (targetPath.startsWith("/finance")) return role === "finance_staff" || role === "admin";
     if (targetPath.startsWith("/admin")) return role === "admin";
     return true;
   }, [currentIdentity]);

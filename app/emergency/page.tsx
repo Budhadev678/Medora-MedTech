@@ -28,7 +28,7 @@ export default function EmergencyWorkspacePage() {
   ];
 
   return (
-    <RoleGuard allowedRoles={["emergency_staff", "admin"]}>
+    <RoleGuard allowedRoles={["emergency_staff", "hospital_admin", "doctor", "admin"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200">
         {/* Emergency Command Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-red-300 bg-red-50/50 p-5 shadow-xs">
