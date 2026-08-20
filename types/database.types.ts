@@ -405,7 +405,14 @@ export type AuditEventType =
   | "LAB_ORDER_UPDATED"
   | "LAB_ORDER_ORDERED"
   | "LAB_ORDER_CANCELLED"
-  | "LAB_ORDER_VIEWED";
+  | "LAB_ORDER_VIEWED"
+  | "DOCUMENT_CREATED"
+  | "DOCUMENT_VIEWED"
+  | "DOCUMENT_DOWNLOADED"
+  | "DOCUMENT_UPDATED"
+  | "DOCUMENT_REVOKED"
+  | "DOCUMENT_VERSION_CREATED"
+  | "TIMELINE_GENERATED";
 
 export interface StoredAuditEvent {
   id: string;
@@ -690,6 +697,99 @@ export interface HealthcareLabOrder {
   updated_at: string;
   cancelled_at?: string;
   cancellation_reason?: string;
+}
+
+// ============================================================
+// MEDICAL DOCUMENT DOMAIN MODEL (PHASE 4.4)
+// Provenance-backed medical documents and diagnostic reports.
+// ============================================================
+
+export type MedicalDocumentType =
+  | "CONSULTATION_NOTE"
+  | "LAB_REPORT"
+  | "PRESCRIPTION_DOCUMENT"
+  | "DISCHARGE_SUMMARY"
+  | "DIAGNOSTIC_REPORT"
+  | "REFERRAL"
+  | "OTHER";
+
+export type DocumentSourceType = "PROVIDER_GENERATED" | "PATIENT_UPLOADED";
+
+export type MedicalDocumentStatus = "ACTIVE" | "ARCHIVED" | "REVOKED";
+
+export interface DocumentVersionSnapshot {
+  version: number;
+  title: string;
+  storage_reference: string;
+  mime_type: string;
+  file_size_bytes: number;
+  file_hash_sha256?: string;
+  updated_at: string;
+  updated_by_id: string;
+  updated_by_name: string;
+  update_reason: string;
+}
+
+export interface HealthcareMedicalDocument {
+  id: string; // e.g. "DOC-1001"
+  document_reference: string; // e.g. "DOC-1001"
+  patient_id: string; // FK -> patients.medora_id (PAT-1001)
+  patient_name: string;
+  encounter_id?: string; // FK -> HealthcareEncounter (ENC-1001)
+  clinical_record_id?: string; // FK -> ClinicalRecord (CR-1001)
+  prescription_id?: string; // FK -> HealthcarePrescription (RX-1001)
+  lab_order_id?: string; // FK -> HealthcareLabOrder (LAB-ORD-1001)
+  document_type: MedicalDocumentType;
+  title: string;
+  description?: string;
+  source_type: DocumentSourceType;
+  source_organization_id?: string; // FK -> organizations.identifier (HSP-1001, LAB-1001)
+  source_organization_name?: string;
+  source_professional_id?: string; // FK -> doctors.identifier (DOC-1001)
+  source_professional_name?: string;
+  source_professional_role?: string;
+  storage_reference: string; // Virtual private storage reference (e.g. "sec-storage://patients/PAT-1001/docs/DOC-1001.pdf")
+  mime_type: string; // e.g. "application/pdf", "image/jpeg", "image/png"
+  file_size_bytes: number;
+  file_hash_sha256?: string;
+  status: MedicalDocumentStatus;
+  version: number;
+  version_history?: DocumentVersionSnapshot[];
+  revocation_reason?: string;
+  revoked_at?: string;
+  created_at: string;
+  updated_at: string;
+  created_by_id: string;
+  created_by_name: string;
+}
+
+// ============================================================
+// HEALTH JOURNEY TIMELINE MODEL (PHASE 4.4)
+// Lightweight dynamic aggregation layer referencing canonical records.
+// ============================================================
+
+export type TimelineEventType =
+  | "ENCOUNTER"
+  | "CLINICAL_RECORD"
+  | "PRESCRIPTION"
+  | "LAB_ORDER"
+  | "MEDICAL_DOCUMENT";
+
+export interface TimelineEvent {
+  id: string; // Dynamic composite e.g. "tle-enc-1001"
+  patient_id: string;
+  event_type: TimelineEventType;
+  reference_id: string; // e.g. "ENC-1001", "RX-1001", "DOC-1001"
+  title: string;
+  summary: string;
+  status: string; // e.g. "COMPLETED", "ISSUED", "ORDERED", "ACTIVE", "CANCELLED", "REVOKED"
+  occurred_at: string; // Canonical clinical timestamp for chronological sorting
+  organization_name?: string;
+  organization_id?: string;
+  professional_name?: string;
+  professional_id?: string;
+  deep_link: string; // Route to view canonical record or open modal
+  metadata?: Record<string, any>;
 }
 
 export type AppointmentStatus =

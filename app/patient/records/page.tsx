@@ -7,6 +7,7 @@ import {
   Stethoscope, 
   FlaskConical, 
   Pill, 
+  FolderOpen,
   ShieldCheck, 
   Filter, 
   Building2, 
@@ -130,6 +131,22 @@ export default function PatientRecordsPage() {
           title="Longitudinal Medical Records"
           description="Authoritative clinical consultations, symptoms, vitals, assessments, and diagnoses across all your MEDORA healthcare visits."
           breadcrumbs={[{ label: "Patient Portal", href: "/patient" }, { label: "Medical Records" }]}
+          actions={
+            <div className="flex items-center gap-2">
+              <Link href="/patient/health">
+                <Button variant="outline" size="sm" className="text-xs h-8 text-teal-800 border-teal-200 hover:bg-teal-50 gap-1.5 font-bold">
+                  <HeartPulse className="h-3.5 w-3.5" />
+                  <span>Health Journey</span>
+                </Button>
+              </Link>
+              <Link href="/patient/documents">
+                <Button variant="outline" size="sm" className="text-xs h-8 text-indigo-800 border-indigo-200 hover:bg-indigo-50 gap-1.5 font-bold">
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  <span>Document Vault</span>
+                </Button>
+              </Link>
+            </div>
+          }
         />
 
         {/* Filter Pills */}

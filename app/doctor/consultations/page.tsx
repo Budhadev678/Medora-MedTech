@@ -78,6 +78,7 @@ import {
   placeLabOrder
 } from "@/lib/data/lab-order-store";
 import { getAllIdentities, findIdentityById, StoredIdentity } from "@/lib/data/identity-store";
+import { getPatientHealthJourney } from "@/lib/services/health-journey-service";
 import { AccessEngine } from "@/lib/services/access-engine";
 import { useLocalization } from "@/lib/localization";
 
@@ -170,6 +171,9 @@ export default function DoctorConsultationsPage() {
   const [labReason, setLabReason] = useState("");
   const [labInstructions, setLabInstructions] = useState("");
   const [labFeedback, setLabFeedback] = useState<string | null>(null);
+
+  // Health Journey Modal State (Phase 4.4)
+  const [journeyEncounterModal, setJourneyEncounterModal] = useState<HealthcareEncounter | null>(null);
 
   // Refresh Encounters & Attached Objects
   const refreshEncounters = () => {
@@ -712,6 +716,17 @@ export default function DoctorConsultationsPage() {
                         >
                           <FileEdit className="h-3.5 w-3.5" />
                           <span>{clinicalRec ? "Edit Record" : "Record"}</span>
+                        </Button>
+
+                        {/* Health Journey History Button */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setJourneyEncounterModal(encounter)}
+                          className="text-xs font-bold text-indigo-800 border-indigo-200 hover:bg-indigo-50 h-8 gap-1"
+                        >
+                          <Activity className="h-3.5 w-3.5 text-indigo-600" />
+                          <span>Journey</span>
                         </Button>
 
                         {/* Prescribe Medication Button */}
@@ -1286,6 +1301,86 @@ export default function DoctorConsultationsPage() {
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={() => setShowCompleteEncounterModal(null)} className="text-xs">Cancel</Button>
                 <Button size="sm" onClick={handleCompleteEncounter} disabled={isSubmitting} className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs">Confirm & End Visit</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Clinician Health Journey Viewer Modal (Phase 4.4) */}
+        {journeyEncounterModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-2xl max-h-[90vh] rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl flex flex-col space-y-4 overflow-hidden">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+                    <Activity className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900">
+                      Longitudinal Health Journey — {journeyEncounterModal.patient_name}
+                    </h3>
+                    <span className="text-xs text-slate-500 font-mono">
+                      Patient ID: {journeyEncounterModal.patient_id} • Consent Verified
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setJourneyEncounterModal(null)}
+                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Timeline Stream */}
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                {getPatientHealthJourney(journeyEncounterModal.patient_id, {}).map((event) => (
+                  <div
+                    key={event.id}
+                    className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                          {event.reference_id}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] font-bold bg-white">
+                          {event.event_type}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] font-semibold">
+                          {event.status}
+                        </Badge>
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        {new Date(event.occurred_at).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-xs">
+                      {event.title}
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      {event.summary}
+                    </p>
+                    <div className="text-[10px] text-slate-400">
+                      Provenance: {event.professional_name || "Provider"} • {event.organization_name || "Facility"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end pt-3 border-t border-slate-100 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={() => setJourneyEncounterModal(null)}
+                  className="text-xs"
+                >
+                  Close History
+                </Button>
               </div>
             </div>
           </div>

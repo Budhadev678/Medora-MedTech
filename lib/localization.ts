@@ -153,6 +153,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "lab.place_order": "Place Lab Order",
     "lab.save_draft": "Save Draft",
     "lab.cancel_order": "Cancel Lab Order",
+
+    // Medical Documents & Health Journey (Phase 4.4)
+    "journey.title": "My Health Journey",
+    "journey.subtitle": "Unified chronological history across visits, prescriptions, lab orders, and medical documents.",
+    "journey.all_activity": "All Activity",
+    "journey.visits": "Visits & Encounters",
+    "journey.records": "Clinical Records",
+    "journey.prescriptions": "Prescriptions",
+    "journey.lab_orders": "Lab Orders",
+    "journey.documents": "Medical Documents",
+    "journey.no_activity": "No healthcare activity recorded yet.",
+    "doc.title": "Medical Documents Vault",
+    "doc.provider_generated": "Provider Generated",
+    "doc.patient_uploaded": "Uploaded by Patient",
+    "doc.view": "View Document",
+    "doc.download": "Download",
+    "doc.revoked": "Revoked",
+    "doc.version": "Version",
+    "doc.no_documents": "No medical documents found.",
   },
   hi: {
     // Navigation & Shell
@@ -293,6 +312,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "lab.place_order": "जांच आदेश दर्ज करें",
     "lab.save_draft": "ड्राफ्ट सुरक्षित करें",
     "lab.cancel_order": "जांच आदेश रद्द करें",
+
+    // Medical Documents & Health Journey (Phase 4.4)
+    "journey.title": "मेरी स्वास्थ्य यात्रा",
+    "journey.subtitle": "परामर्श, दवा पर्ची, लैब जांच और मेडिकल दस्तावेजों का संयुक्त कालक्रम।",
+    "journey.all_activity": "सभी गतिविधियां",
+    "journey.visits": "परामर्श व भेंट",
+    "journey.records": "चिकित्सीय रिकॉर्ड",
+    "journey.prescriptions": "दवा पर्चियां",
+    "journey.lab_orders": "लैब जांच आदेश",
+    "journey.documents": "चिकित्सा दस्तावेज",
+    "journey.no_activity": "कोई स्वास्थ्य गतिविधि दर्ज नहीं है।",
+    "doc.title": "चिकित्सा दस्तावेज",
+    "doc.provider_generated": "चिकित्सक द्वारा प्रमाणित",
+    "doc.patient_uploaded": "मरीज द्वारा अपलोड",
+    "doc.view": "दस्तावेज देखें",
+    "doc.download": "डाउनलोड",
+    "doc.revoked": "रद्द",
+    "doc.version": "संस्करण",
+    "doc.no_documents": "कोई दस्तावेज उपलब्ध नहीं है।",
   },
   or: {
     // Navigation & Shell
@@ -433,6 +471,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "lab.place_order": "ପରୀକ୍ଷା ଅର୍ଡର କରନ୍ତୁ",
     "lab.save_draft": "ଡ୍ରାଫ୍ଟ ସାଇତନ୍ତୁ",
     "lab.cancel_order": "ପରୀକ୍ଷା ଅର୍ଡର ବାତିଲ କରନ୍ତୁ",
+
+    // Medical Documents & Health Journey (Phase 4.4)
+    "journey.title": "ମୋର ସ୍ୱାସ୍ଥ୍ୟ ଯାତ୍ରା",
+    "journey.subtitle": "ଡାକ୍ତରୀ ସାକ୍ଷାତ, ଔଷଧ ଚିଠା, ପରୀକ୍ଷା ଓ ମେଡିକାଲ ଦଲିଲର ଏକତ୍ରିତ କାଳକ୍ରମିକ ବିବରଣୀ।",
+    "journey.all_activity": "ସମସ୍ତ ଗତିବିଧି",
+    "journey.visits": "ଡାକ୍ତରୀ ସାକ୍ଷାତ",
+    "journey.records": "ଚିକିତ୍ସା ରେକର୍ଡ",
+    "journey.prescriptions": "ଔଷଧ ଚିଠା",
+    "journey.lab_orders": "ପରୀକ୍ଷା ଅର୍ଡର",
+    "journey.documents": "ଚିକିତ୍ସା ଦଲିଲ",
+    "journey.no_activity": "କୌଣସି ସ୍ୱାସ୍ଥ୍ୟ ଗତିବିଧି ରେକର୍ଡ ନାହିଁ।",
+    "doc.title": "ଚିକିତ୍ସା ଦଲିଲ",
+    "doc.provider_generated": "ପ୍ରମାଣିତ ଉତ୍ସ",
+    "doc.patient_uploaded": "ରୋଗୀଙ୍କ ଦ୍ୱାରା ଅପଲୋଡ",
+    "doc.view": "ଦଲିଲ ଦେଖନ୍ତୁ",
+    "doc.download": "ଡାଉନଲୋଡ",
+    "doc.revoked": "ବାତିଲ",
+    "doc.version": "ସଂସ୍କରଣ",
+    "doc.no_documents": "କୌଣସି ଦଲିଲ ଉପଲବ୍ଧ ନାହିଁ।",
   },
 };
 

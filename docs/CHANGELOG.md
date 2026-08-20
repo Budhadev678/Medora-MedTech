@@ -1,6 +1,20 @@
 # 📝 MEDORA — Engineering Changelog
 
-## [Phase 4.3 - Prescription & Lab Order Foundation] - 2026-08-20
+## [Phase 4.4 - Medical Documents & Unified Patient Health Journey] - 2026-08-20
+### Added
+- **Medical Document Domain Store (`lib/data/medical-document-store.ts`):** Implemented authoritative `HealthcareMedicalDocument` model (`DOC-*`) with structured provenance (`patient_id`, `encounter_id`, `clinical_record_id`, `prescription_id`, `lab_order_id`).
+- **Strict Document Provenance & Trust Separation:** Clearly distinguishes `PROVIDER_GENERATED` (verified hospital & laboratory reports) from `PATIENT_UPLOADED` (personal records, never falsely labeled verified).
+- **Security Validation & Storage Constraints:** Enforces 15MB file size ceiling, validates MIME types (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`), attaches SHA-256 cryptographic hashes, and maps to private virtual storage references (`sec-storage://...`).
+- **Document Versioning & Controlled Revocation:** Requires documented reasons for updating versions ($1 \rightarrow 2$) with historical snapshot retention, and provides a formal revocation pipeline (`REVOKED`).
+- **Secure Access Token Generation:** Generates short-lived, signed tokens for document viewing and downloading while blocking access to revoked files.
+- **Unified Health Journey Service (`lib/services/health-journey-service.ts`):** Zero-duplication presentation layer dynamically aggregating visits, clinical records, prescriptions, lab orders, and documents into a chronological timeline with date grouping, search, and category filtering.
+- **Patient Health Hub (`app/patient/health/page.tsx`):** Upgraded to the Unified Health Journey view with summary metrics, filter pills, date range selector, and in-app secure document previewer.
+- **Dedicated Medical Documents Vault (`app/patient/documents/page.tsx`):** Mobile-first vault with type filtering, trust indicators, patient upload wizard, and secure download token generator.
+- **Clinician Health Journey Viewer (`app/doctor/consultations/page.tsx`):** Added a dedicated `[Journey]` button on doctor encounter cards to inspect the patient's full longitudinal health timeline within consent.
+- **Append-Only Audit & Tri-Lingual Localization:** Added `DOCUMENT_CREATED`, `DOCUMENT_VIEWED`, `DOCUMENT_DOWNLOADED`, `DOCUMENT_UPDATED`, `DOCUMENT_REVOKED`, `DOCUMENT_VERSION_CREATED`, `TIMELINE_GENERATED` audit events, and full English, Hindi, and Odia translations.
+- **Automated Verification:** 54/54 assertions passed in `scripts/test-phase4-health-journey.ts` and 181/181 total assertions passed across all regression suites across 111 cleanly compiled routes.
+
+---
 ### Added
 - **Prescription Core Entity & Store (`lib/data/prescription-store.ts`):** Implemented authoritative `HealthcarePrescription` model (`RX-*`) attached to parent `HealthcareEncounter` (`ENC-*`).
 - **Structured Multi-Medicine Prescription Items:** Medicine name, strength, dosage, route (`ORAL`, `TOPICAL`, `INHALATION`, `INJECTION`, `OTHER`), frequency, duration, quantity, and specific intake instructions.
