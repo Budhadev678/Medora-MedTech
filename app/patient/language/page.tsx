@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Globe, Check, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useLocalization, LanguageCode } from "@/lib/localization";
 
 export default function PatientLanguagePage() {
-  const [selectedLang, setSelectedLang] = useState<"en" | "hi" | "or">("en");
+  const { language, changeLanguage, languages } = useLocalization();
 
-  const languages = [
-    { code: "en", name: "English", script: "English", note: "Default System Language" },
-    { code: "hi", name: "Hindi", script: "हिन्दी", note: "National Language (Phase 19 Localization)" },
-    { code: "or", name: "Odia", script: "ଓଡ଼ିଆ", note: "Regional Language (Phase 19 Localization)" },
-  ];
+  const languageNotes: Record<LanguageCode, string> = {
+    en: "Default System Language across all interfaces",
+    hi: "National Language (Phase 19 Localization support)",
+    or: "Regional Language (Odisha Health Network)",
+  };
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
@@ -27,11 +27,11 @@ export default function PatientLanguagePage() {
 
         <div className="space-y-2">
           {languages.map((lang) => {
-            const isSelected = selectedLang === lang.code;
+            const isSelected = language === lang.code;
             return (
               <Card
                 key={lang.code}
-                onClick={() => setSelectedLang(lang.code as any)}
+                onClick={() => changeLanguage(lang.code)}
                 className={`cursor-pointer transition-all ${
                   isSelected ? "border-teal-500 bg-teal-50/40 shadow-xs" : "hover:border-slate-300"
                 }`}
@@ -40,9 +40,11 @@ export default function PatientLanguagePage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900">{lang.name}</span>
-                      <span className="text-xs text-teal-700 font-semibold">({lang.script})</span>
+                      <span className="text-xs text-teal-700 font-semibold">({lang.nativeName})</span>
                     </div>
-                    <span className="text-[11px] text-slate-500 block mt-0.5">{lang.note}</span>
+                    <span className="text-[11px] text-slate-500 block mt-0.5">
+                      {languageNotes[lang.code]}
+                    </span>
                   </div>
 
                   {isSelected && (

@@ -1,5 +1,16 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 2.4 - Final Shell Polish, Localization & QA] - 2026-08-20
+### Added
+- Centralized Multilingual Localization Engine (`lib/localization.ts`) supporting English (`en`), Hindi (`hi`), and Odia (`or`) with safe fallbacks and persistent storage.
+- Global Error Boundary (`app/error.tsx`) providing clean user recovery without exposing stack traces, internal IDs, or SQL/database secrets.
+- Verified 404 Not Found screen (`app/not-found.tsx`) with instant navigation back to the ecosystem gateway.
+- Conducted full responsive QA across Mobile (320px–414px), Tablet (768px–1024px), and Desktop (1280px–1920px).
+- Completed security verification matrix (Cross-account isolation, doctor multi-facility context, staff role restrictions, and direct URL protection).
+- Master Phase 2 officially marked `VERIFIED`.
+
+---
+
 ## [Phase 2.2 & 2.3] - 2026-08-20
 ### Added
 - **Phase 2.2 (Complete Patient Mobile Experience)**:

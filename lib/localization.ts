@@ -1,0 +1,228 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
+export type LanguageCode = "en" | "hi" | "or";
+
+export interface LanguageMeta {
+  code: LanguageCode;
+  name: string;
+  nativeName: string;
+}
+
+export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
+  { code: "en", name: "English", nativeName: "English" },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी" },
+  { code: "or", name: "Odia", nativeName: "ଓଡ଼ିଆ" },
+];
+
+export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
+  en: {
+    // Navigation & Shell
+    "nav.home": "Home",
+    "nav.appointments": "Appointments",
+    "nav.records": "Records",
+    "nav.more": "More",
+    "nav.emergency": "Emergency",
+    "nav.prescriptions": "Prescriptions",
+    "nav.reports": "Lab Reports",
+    "nav.pharmacy": "Pharmacy",
+    "nav.bills": "Bills",
+    "nav.profile": "Profile",
+    "nav.settings": "Settings",
+    "nav.help": "Help",
+    "nav.logout": "Sign Out",
+    "nav.dashboard": "Dashboard",
+    "nav.patients": "Patients",
+    "nav.schedule": "Schedule",
+    "nav.consultations": "Consultations",
+    "nav.lab_orders": "Lab Orders",
+    "nav.referrals": "Referrals",
+    "nav.departments": "Departments",
+    "nav.admissions": "Admissions",
+    "nav.staff": "Staff",
+    "nav.insurance": "Insurance",
+    "nav.policies": "Policies",
+    "nav.claims": "Claims",
+    "nav.inventory": "Inventory",
+    "nav.dispensing": "Dispensing",
+
+    // Common Headings & Actions
+    "common.welcome": "Welcome back",
+    "common.good_morning": "Good morning",
+    "common.quick_actions": "Quick Actions",
+    "common.recent_activity": "Recent Healthcare Activity",
+    "common.upcoming_schedule": "Upcoming Schedule",
+    "common.no_appointments": "No upcoming appointments",
+    "common.no_records": "No healthcare records yet",
+    "common.view_all": "View All",
+    "common.search_placeholder": "Search by ID, name, or keyword...",
+    "common.active": "Active",
+    "common.confirmed": "Confirmed",
+    "common.completed": "Completed",
+    "common.cancelled": "Cancelled",
+    "common.pending": "Pending",
+    "common.verified": "Verified Active",
+    "common.why_charged": "Why Was I Charged? (Lineage Breakdown)",
+    "common.sos_emergency": "SOS Emergency Assistance",
+  },
+  hi: {
+    // Navigation & Shell
+    "nav.home": "होम",
+    "nav.appointments": "अपॉइंटमेंट",
+    "nav.records": "स्वास्थ्य रिकॉर्ड",
+    "nav.more": "अन्य सेवाएं",
+    "nav.emergency": "आपातकालीन",
+    "nav.prescriptions": "दवा पर्ची (Rx)",
+    "nav.reports": "जांच रिपोर्ट",
+    "nav.pharmacy": "दवाखाना (फार्मेसी)",
+    "nav.bills": "अस्पताल बिल",
+    "nav.profile": "प्रोफ़ाइल",
+    "nav.settings": "सेटिंग्स",
+    "nav.help": "सहायता",
+    "nav.logout": "लॉग आउट",
+    "nav.dashboard": "डैशबोर्ड",
+    "nav.patients": "मरीज",
+    "nav.schedule": "समय सारणी",
+    "nav.consultations": "परामर्श",
+    "nav.lab_orders": "लैब जांच",
+    "nav.referrals": "रेफरल",
+    "nav.departments": "विभाग",
+    "nav.admissions": "भर्ती (एडमिशन)",
+    "nav.staff": "स्टाफ",
+    "nav.insurance": "बीमा (इंश्योरेंस)",
+    "nav.policies": "पॉलिसी",
+    "nav.claims": "दावे (क्लेम्स)",
+    "nav.inventory": "दवा स्टॉक",
+    "nav.dispensing": "दवा वितरण",
+
+    // Common Headings & Actions
+    "common.welcome": "स्वागत है",
+    "common.good_morning": "सुप्रभात",
+    "common.quick_actions": "त्वरित सेवाएं",
+    "common.recent_activity": "हालिया स्वास्थ्य गतिविधियां",
+    "common.upcoming_schedule": "आगामी कार्यक्रम",
+    "common.no_appointments": "कोई आगामी अपॉइंटमेंट नहीं है",
+    "common.no_records": "कोई स्वास्थ्य रिकॉर्ड उपलब्ध नहीं है",
+    "common.view_all": "सभी देखें",
+    "common.search_placeholder": "आईडी, नाम या शब्द द्वारा खोजें...",
+    "common.active": "सक्रिय",
+    "common.confirmed": "पुष्ट",
+    "common.completed": "पूर्ण",
+    "common.cancelled": "रद्द",
+    "common.pending": "लंबित",
+    "common.verified": "सत्यापित सक्रिय",
+    "common.why_charged": "मुझसे यह शुल्क क्यों लिया गया? (विस्तार)",
+    "common.sos_emergency": "आपातकालीन एसओएस सहायता",
+  },
+  or: {
+    // Navigation & Shell
+    "nav.home": "ମୂଳପୃଷ୍ଠା",
+    "nav.appointments": "ଡାକ୍ତରୀ ସାକ୍ଷାତ",
+    "nav.records": "ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ",
+    "nav.more": "ଅନ୍ୟାନ୍ୟ ସେବା",
+    "nav.emergency": "ଜରୁରୀକାଳୀନ",
+    "nav.prescriptions": "ଔଷଧ ଚିଠା (Rx)",
+    "nav.reports": "ପରୀକ୍ଷା ରିପୋର୍ଟ",
+    "nav.pharmacy": "ଔଷଧାଳୟ",
+    "nav.bills": "ହସପିଟାଲ ବିଲ୍",
+    "nav.profile": "ପ୍ରୋଫାଇଲ୍",
+    "nav.settings": "ସେଟିଙ୍ଗ୍ସ",
+    "nav.help": "ସାହାଯ୍ୟ",
+    "nav.logout": "ଲଗ୍ ଆଉଟ୍",
+    "nav.dashboard": "ଡ୍ୟାସବୋର୍ଡ",
+    "nav.patients": "ରୋଗୀ ତାଲିକା",
+    "nav.schedule": "କାର୍ଯ୍ୟ ନିର୍ଘଣ୍ଟ",
+    "nav.consultations": "ପରାମର୍ଶ",
+    "nav.lab_orders": "ପରୀକ୍ଷା ଅର୍ଡର",
+    "nav.referrals": "ରେଫରାଲ୍",
+    "nav.departments": "ବିଭାଗ",
+    "nav.admissions": "ଭର୍ତ୍ତି (ଆଡମିଶନ)",
+    "nav.staff": "କର୍ମଚାରୀ",
+    "nav.insurance": "ବୀମା ସେବା",
+    "nav.policies": "ପଲିସି",
+    "nav.claims": "କ୍ଲେମ୍",
+    "nav.inventory": "ଔଷଧ ମହଜୁଦ",
+    "nav.dispensing": "ଔଷଧ ବିତରଣ",
+
+    // Common Headings & Actions
+    "common.welcome": "ସ୍ୱାଗତମ୍",
+    "common.good_morning": "ଶୁଭ ସକାଳ",
+    "common.quick_actions": "ତ୍ୱରିତ ସେବା",
+    "common.recent_activity": "ନିକଟ ଅତୀତର ସ୍ୱାସ୍ଥ୍ୟ ତଥ୍ୟ",
+    "common.upcoming_schedule": "ଆଗାମୀ କାର୍ଯ୍ୟକ୍ରମ",
+    "common.no_appointments": "କୌଣସି ଆଗାମୀ ସାକ୍ଷାତ ନାହିଁ",
+    "common.no_records": "କୌଣସି ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ ନାହିଁ",
+    "common.view_all": "ସବୁ ଦେଖନ୍ତୁ",
+    "common.search_placeholder": "ଆଇଡି, ନାମ ବା ଶବ୍ଦ ଦ୍ୱାରା ଖୋଜନ୍ତୁ...",
+    "common.active": "ସକ୍ରିୟ",
+    "common.confirmed": "ନିଶ୍ଚିତ",
+    "common.completed": "ସମ୍ପୂର୍ଣ୍ଣ",
+    "common.cancelled": "ବାତିଲ",
+    "common.pending": "ବକେୟା",
+    "common.verified": "ପ୍ରମାଣିତ ସକ୍ରିୟ",
+    "common.why_charged": "ଏହି ଶୁଳ୍କ କାହିଁକି ନିଆଗଲା? (ବିବରଣୀ)",
+    "common.sos_emergency": "ଜରୁରୀକାଳୀନ SOS ସହାୟତା",
+  },
+};
+
+const STORAGE_KEY = "medora_preferred_language";
+
+export function getStoredLanguage(): LanguageCode {
+  if (typeof window === "undefined") return "en";
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && (saved === "en" || saved === "hi" || saved === "or")) {
+      return saved as LanguageCode;
+    }
+  } catch (e) {
+    // Local storage access error fallback
+  }
+  return "en";
+}
+
+export function setStoredLanguage(lang: LanguageCode) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, lang);
+    window.dispatchEvent(new Event("medora-language-change"));
+  } catch (e) {
+    // Local storage write error fallback
+  }
+}
+
+export function t(key: string, lang: LanguageCode = "en"): string {
+  const dictionary = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  return dictionary[key] || TRANSLATIONS.en[key] || key;
+}
+
+export function useLocalization() {
+  const [currentLang, setCurrentLang] = useState<LanguageCode>("en");
+
+  useEffect(() => {
+    setCurrentLang(getStoredLanguage());
+
+    const handleLanguageChange = () => {
+      setCurrentLang(getStoredLanguage());
+    };
+
+    window.addEventListener("medora-language-change", handleLanguageChange);
+    return () => {
+      window.removeEventListener("medora-language-change", handleLanguageChange);
+    };
+  }, []);
+
+  const changeLanguage = (newLang: LanguageCode) => {
+    setCurrentLang(newLang);
+    setStoredLanguage(newLang);
+  };
+
+  const translate = (key: string) => t(key, currentLang);
+
+  return {
+    language: currentLang,
+    changeLanguage,
+    t: translate,
+    languages: SUPPORTED_LANGUAGES,
+  };
+}
