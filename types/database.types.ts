@@ -94,6 +94,52 @@ export interface Department {
   created_at: string;
 }
 
+export interface PatientAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  district: string;
+  state: string;
+  pincode: string;
+  country: string;
+}
+
+export interface PatientEmergencyContact {
+  name: string;
+  relation: string;
+  phone: string;
+  altPhone?: string;
+  isPrimary: boolean;
+}
+
+export type AbhaLinkStatus =
+  | "NOT_LINKED"
+  | "VERIFICATION_PENDING"
+  | "VERIFIED"
+  | "LINKED"
+  | "LINK_FAILED"
+  | "IDENTITY_MISMATCH"
+  | "ALREADY_LINKED"
+  | "UNLINK_PENDING"
+  | "UNLINKED"
+  | "INTEGRATION_UNAVAILABLE";
+
+export type VerificationSource = "ABDM" | "SANDBOX" | "SELF_DECLARED" | "HOSPITAL_VERIFIED";
+
+export interface PatientAbhaLink {
+  id: string;
+  patient_id: string; // e.g. PAT-1001
+  abha_number: string; // e.g. "XX-XXXX-XXXX-4821"
+  abha_address: string; // e.g. "rahulverma@abdm"
+  link_status: AbhaLinkStatus;
+  verification_status: VerificationStatus;
+  verification_source: VerificationSource;
+  aadhaar_masked?: string; // e.g. "XXXX XXXX 5892"
+  linked_at: string;
+  unlinked_at?: string;
+  last_verified_at?: string;
+}
+
 export interface Patient {
   id: string;
   user_id: string; // FK -> profiles.id
@@ -103,13 +149,18 @@ export interface Patient {
   dob: string;
   gender: "male" | "female" | "other";
   blood_group: string;
+  blood_group_source?: "patient_reported" | "clinical_verified";
+  blood_group_verified_by?: string;
   allergies: string[];
   chronic_conditions: string[];
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
+  address?: PatientAddress;
+  emergency_contacts: PatientEmergencyContact[];
+  preferred_language: "en" | "hi" | "or";
+  abha_link?: PatientAbhaLink;
   status: AccountStatus;
   verification_status: VerificationStatus;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Doctor {

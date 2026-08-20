@@ -10,6 +10,9 @@
 | **`facilities`** | `id UUID` | `organization_id` | Physical hospital campuses / clinic branches. |
 | **`departments`** | `id UUID` | `organization_id`, `facility_id` | Clinical & operational hospital departments. |
 | **`patients`** | `id UUID` | `user_id -> profiles.id` | Patient health record, ABHA link, emergency contacts. |
+| **`patient_addresses`** | `id UUID` | `patient_id -> patients.id` | Structured residential address (line1, city, district, state, pincode). |
+| **`patient_emergency_contacts`** | `id UUID` | `patient_id -> patients.id` | Emergency contacts with relation, priority, and phone numbers. |
+| **`patient_abha_links`** | `id UUID` | `patient_id -> patients.id` | ABHA number, ABHA handle, verification source, masked Aadhaar, and link state. |
 | **`doctors`** | `id UUID` | `user_id -> profiles.id` | Medical practitioner credentials and registration. |
 
 ---
@@ -58,3 +61,52 @@
 | **`financing_applications`** | `id UUID` | `patient_id`, `bill_id`, `financing_partner_org_id` | CarePay treatment micro-financing & EMI agreements. |
 | **`bill_disputes`** | `id UUID` | `bill_id`, `patient_id` | Patient bill item dispute review and resolution. |
 | **`audit_logs`** | `id UUID` | `actor_id -> profiles.id` | Append-only ledger of critical system events. |
+
+---
+
+## 2. Phase 3.1 & 3.2 Patient Identity & ABHA Data Architecture
+
+```sql
+-- Phase 3.1: Structured Patient Profile
+CREATE TABLE patient_addresses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  line1 TEXT NOT NULL,
+  line2 TEXT,
+  city TEXT NOT NULL,
+  district TEXT NOT NULL,
+  state TEXT NOT NULL,
+  pincode VARCHAR(6) NOT NULL,
+  country VARCHAR(50) DEFAULT 'India',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE patient_emergency_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  relation VARCHAR(50) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  alt_phone VARCHAR(20),
+  is_primary BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Phase 3.2: ABHA Linking & Identity Verification
+CREATE TABLE patient_abha_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id UUID UNIQUE NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  abha_number VARCHAR(20) NOT NULL, -- e.g. 91-4589-2041-5892
+  abha_address VARCHAR(50) NOT NULL, -- e.g. rahulverma@abdm
+  link_status VARCHAR(30) NOT NULL DEFAULT 'LINKED',
+  verification_status VARCHAR(30) NOT NULL DEFAULT 'verified',
+  verification_source VARCHAR(30) NOT NULL DEFAULT 'SANDBOX', -- 'ABDM' | 'SANDBOX'
+  aadhaar_masked VARCHAR(20), -- e.g. XXXX XXXX 5892
+  linked_at TIMESTAMPTZ DEFAULT NOW(),
+  unlinked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```

@@ -56,15 +56,33 @@ export interface StoredPatientData {
   dob: string;
   gender: "male" | "female" | "other";
   bloodGroup: string;
+  bloodGroupSource?: "patient_reported" | "clinical_verified";
+  bloodGroupVerifiedBy?: string;
   aadhaarMasked?: string;
   abhaId?: string;
+  abhaNumber?: string;
+  abhaAddress?: string;
+  abhaStatus?: "NOT_LINKED" | "VERIFICATION_PENDING" | "VERIFIED" | "LINKED" | "LINK_FAILED" | "IDENTITY_MISMATCH" | "ALREADY_LINKED" | "UNLINKED";
+  abhaLinkedAt?: string;
   allergies: string[];
   chronicConditions: string[];
+  address?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    district: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
   emergencyContact: {
     name: string;
     phone: string;
     relation?: string;
+    altPhone?: string;
+    isPrimary?: boolean;
   };
+  preferredLanguage?: "en" | "hi" | "or";
 }
 
 export interface StoredDoctorData {
@@ -136,7 +154,7 @@ export const SEEDED_FACILITIES: StoredFacility[] = [
 ];
 
 export const SEEDED_IDENTITIES: StoredIdentity[] = [
-  // 1. Patient A: Rahul Verma
+  // 1. Patient A: Rahul Verma (ABHA Linked)
   {
     id: "a0000001-0000-0000-0000-000000000001",
     email: "patient@medora.health",
@@ -153,18 +171,35 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
       dob: "1995-05-14",
       gender: "male",
       bloodGroup: "O+",
-      aadhaarMasked: "5892",
+      bloodGroupSource: "patient_reported",
+      aadhaarMasked: "XXXX XXXX 5892",
       abhaId: "rahulverma@abdm",
+      abhaNumber: "91-4589-2041-5892",
+      abhaAddress: "rahulverma@abdm",
+      abhaStatus: "LINKED",
+      abhaLinkedAt: "2026-01-20T10:30:00Z",
       allergies: ["Penicillin", "Peanuts"],
       chronicConditions: ["Mild Hypertension"],
+      address: {
+        line1: "Plot 42, Saheed Nagar",
+        line2: "Near High School",
+        city: "Bhubaneswar",
+        district: "Khordha",
+        state: "Odisha",
+        pincode: "751007",
+        country: "India",
+      },
       emergencyContact: {
         name: "Anita Verma",
         phone: "+91 98765 43210",
         relation: "Mother",
+        altPhone: "+91 98765 43211",
+        isPrimary: true,
       },
+      preferredLanguage: "en",
     },
   },
-  // 2. Patient B: Priya Sharma
+  // 2. Patient B: Priya Sharma (ABHA Unlinked - Ready for Linking)
   {
     id: "a0000001-0000-0000-0000-000000000002",
     email: "priya@medora.health",
@@ -181,18 +216,30 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
       dob: "1998-09-22",
       gender: "female",
       bloodGroup: "B+",
-      aadhaarMasked: "8821",
-      abhaId: "priyasharma@abdm",
+      bloodGroupSource: "clinical_verified",
+      bloodGroupVerifiedBy: "City Hospital Pathology Lab",
+      aadhaarMasked: "XXXX XXXX 8821",
+      abhaStatus: "NOT_LINKED",
       allergies: ["Sulfa drugs"],
       chronicConditions: ["Asthma"],
+      address: {
+        line1: "House 12, Cantonment Road",
+        city: "Cuttack",
+        district: "Cuttack",
+        state: "Odisha",
+        pincode: "753001",
+        country: "India",
+      },
       emergencyContact: {
         name: "Rohan Sharma",
         phone: "+91 91234 56781",
         relation: "Brother",
+        isPrimary: true,
       },
+      preferredLanguage: "or",
     },
   },
-  // 3. Patient C: Amit Das
+  // 3. Patient C: Amit Das (ABHA Unlinked)
   {
     id: "a0000001-0000-0000-0000-000000000003",
     email: "amit@medora.health",
@@ -209,15 +256,26 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
       dob: "1982-12-03",
       gender: "male",
       bloodGroup: "A+",
-      aadhaarMasked: "3319",
-      abhaId: "amitdas@abdm",
+      bloodGroupSource: "patient_reported",
+      aadhaarMasked: "XXXX XXXX 3319",
+      abhaStatus: "NOT_LINKED",
       allergies: [],
       chronicConditions: ["Type 2 Diabetes"],
+      address: {
+        line1: "Marine Drive, Sea Beach Road",
+        city: "Puri",
+        district: "Puri",
+        state: "Odisha",
+        pincode: "752001",
+        country: "India",
+      },
       emergencyContact: {
         name: "Sunita Das",
         phone: "+91 99887 76656",
         relation: "Spouse",
+        isPrimary: true,
       },
+      preferredLanguage: "hi",
     },
   },
   // 4. Doctor A: Dr. Ananya Sharma (3 Multi-Hospital/Clinic Affiliations under 1 Doctor ID)
@@ -844,3 +902,279 @@ export function endDoctorAffiliation(
   saveIdentity(doctor);
   return { success: true };
 }
+
+// ============================================================
+// PHASE 3.1 & 3.2: PATIENT PROFILE & ABHA IDENTITY STORE HELPERS
+// ============================================================
+
+export interface ProfileCompletenessResult {
+  percentage: number;
+  isComplete: boolean;
+  missingRequired: string[];
+  missingRecommended: string[];
+  missingOptional: string[];
+}
+
+export function calculateProfileCompleteness(
+  identity: StoredIdentity | null
+): ProfileCompletenessResult {
+  if (!identity || identity.role !== "patient") {
+    return { percentage: 100, isComplete: true, missingRequired: [], missingRecommended: [], missingOptional: [] };
+  }
+
+  const pData = identity.patientData;
+  const missingRequired: string[] = [];
+  const missingRecommended: string[] = [];
+  const missingOptional: string[] = [];
+
+  // Required: Full Name, DOB, Gender, Mobile Phone (Weight: 40%)
+  let requiredScore = 0;
+  if (identity.fullName?.trim()) requiredScore += 10; else missingRequired.push("Full Legal Name");
+  if (pData?.dob?.trim()) requiredScore += 10; else missingRequired.push("Date of Birth");
+  if (pData?.gender) requiredScore += 10; else missingRequired.push("Gender");
+  if (identity.phone?.trim()) requiredScore += 10; else missingRequired.push("Mobile Number");
+
+  // Recommended: Address, Emergency Contact, Preferred Language (Weight: 35%)
+  let recommendedScore = 0;
+  if (pData?.address?.line1?.trim() && pData?.address?.city?.trim() && pData?.address?.pincode?.trim()) {
+    recommendedScore += 15;
+  } else {
+    missingRecommended.push("Residential Address");
+  }
+
+  if (pData?.emergencyContact?.name?.trim() && pData?.emergencyContact?.phone?.trim()) {
+    recommendedScore += 15;
+  } else {
+    missingRecommended.push("Emergency Contact");
+  }
+
+  if (pData?.preferredLanguage) {
+    recommendedScore += 5;
+  } else {
+    missingRecommended.push("Preferred Language");
+  }
+
+  // Optional: Email, Blood Group, ABHA Link (Weight: 25%)
+  let optionalScore = 0;
+  if (identity.email?.trim()) optionalScore += 8; else missingOptional.push("Email Address");
+  if (pData?.bloodGroup?.trim() && pData.bloodGroup !== "Unknown") optionalScore += 8; else missingOptional.push("Blood Group");
+  if (pData?.abhaStatus === "LINKED") optionalScore += 9; else missingOptional.push("ABHA Health ID");
+
+  const percentage = Math.min(100, Math.round(requiredScore + recommendedScore + optionalScore));
+  const isComplete = missingRequired.length === 0 && missingRecommended.length === 0;
+
+  return { percentage, isComplete, missingRequired, missingRecommended, missingOptional };
+}
+
+// Update basic patient personal & contact info
+export function updatePatientProfile(
+  patientIdentifier: string,
+  updates: {
+    fullName?: string;
+    dob?: string;
+    gender?: "male" | "female" | "other";
+    email?: string;
+    preferredLanguage?: "en" | "hi" | "or";
+    allergies?: string[];
+    chronicConditions?: string[];
+  }
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient") {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  if (!patient.patientData) {
+    patient.patientData = {
+      dob: "",
+      gender: "male",
+      bloodGroup: "Unknown",
+      allergies: [],
+      chronicConditions: [],
+      emergencyContact: { name: "", phone: "", relation: "" },
+    };
+  }
+
+  if (updates.fullName !== undefined) patient.fullName = updates.fullName.trim();
+  if (updates.email !== undefined) patient.email = updates.email.trim();
+  if (updates.dob !== undefined) patient.patientData.dob = updates.dob;
+  if (updates.gender !== undefined) patient.patientData.gender = updates.gender;
+  if (updates.preferredLanguage !== undefined) patient.patientData.preferredLanguage = updates.preferredLanguage;
+  if (updates.allergies !== undefined) patient.patientData.allergies = updates.allergies;
+  if (updates.chronicConditions !== undefined) patient.patientData.chronicConditions = updates.chronicConditions;
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+
+// Update patient structured address
+export function updatePatientAddress(
+  patientIdentifier: string,
+  address: {
+    line1: string;
+    line2?: string;
+    city: string;
+    district: string;
+    state: string;
+    pincode: string;
+    country: string;
+  }
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient" || !patient.patientData) {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  // Validate Indian PIN code format (6 digits)
+  if (!/^\d{6}$/.test(address.pincode.trim())) {
+    return { success: false, error: "Enter a valid 6-digit Indian PIN code." };
+  }
+
+  if (!address.line1.trim() || !address.city.trim() || !address.state.trim()) {
+    return { success: false, error: "Address line 1, city, and state are required." };
+  }
+
+  patient.patientData.address = {
+    line1: address.line1.trim(),
+    line2: address.line2?.trim() || "",
+    city: address.city.trim(),
+    district: address.district.trim(),
+    state: address.state.trim(),
+    pincode: address.pincode.trim(),
+    country: address.country.trim() || "India",
+  };
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+
+// Update patient emergency contact
+export function updatePatientEmergencyContact(
+  patientIdentifier: string,
+  contact: {
+    name: string;
+    relation: string;
+    phone: string;
+    altPhone?: string;
+    isPrimary?: boolean;
+  }
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient" || !patient.patientData) {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  if (!contact.name.trim()) {
+    return { success: false, error: "Enter an emergency contact name." };
+  }
+  if (!contact.relation.trim()) {
+    return { success: false, error: "Select a relationship for the emergency contact." };
+  }
+  if (!contact.phone.trim() || contact.phone.length < 8) {
+    return { success: false, error: "Enter a valid mobile number for the emergency contact." };
+  }
+
+  patient.patientData.emergencyContact = {
+    name: contact.name.trim(),
+    relation: contact.relation.trim(),
+    phone: contact.phone.trim(),
+    altPhone: contact.altPhone?.trim() || "",
+    isPrimary: contact.isPrimary ?? true,
+  };
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+
+// Update patient blood group
+export function updatePatientBloodGroup(
+  patientIdentifier: string,
+  bloodGroup: string,
+  source: "patient_reported" | "clinical_verified" = "patient_reported",
+  verifiedBy?: string
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient" || !patient.patientData) {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  // If already clinically verified, do not allow silent patient overwrite
+  if (patient.patientData.bloodGroupSource === "clinical_verified" && source === "patient_reported") {
+    return { 
+      success: false, 
+      error: `Your blood group is clinically certified by ${patient.patientData.bloodGroupVerifiedBy || "an accredited lab"}. Please submit a correction request to change it.` 
+    };
+  }
+
+  patient.patientData.bloodGroup = bloodGroup;
+  patient.patientData.bloodGroupSource = source;
+  if (verifiedBy) patient.patientData.bloodGroupVerifiedBy = verifiedBy;
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+
+// Link ABHA ID and Masked Aadhaar
+export function linkPatientAbha(
+  patientIdentifier: string,
+  abhaData: {
+    abhaNumber: string;
+    abhaAddress: string;
+    aadhaarMasked?: string;
+  }
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient" || !patient.patientData) {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  // Check if this ABHA number or address is already linked to ANOTHER patient
+  const allIdentities = getAllIdentities();
+  const collision = allIdentities.find(
+    (i) => i.id !== patient.id && 
+           i.identifier !== patient.identifier &&
+           i.patientData &&
+           i.patientData.abhaStatus === "LINKED" &&
+           (i.patientData.abhaNumber === abhaData.abhaNumber || 
+            i.patientData.abhaAddress?.toLowerCase() === abhaData.abhaAddress.toLowerCase())
+  );
+
+  if (collision) {
+    return {
+      success: false,
+      error: "This ABHA is already associated with another MEDORA patient identity. For your security, accounts cannot be merged automatically.",
+    };
+  }
+
+  patient.patientData.abhaNumber = abhaData.abhaNumber;
+  patient.patientData.abhaAddress = abhaData.abhaAddress;
+  patient.patientData.abhaId = abhaData.abhaAddress;
+  patient.patientData.abhaStatus = "LINKED";
+  patient.patientData.abhaLinkedAt = new Date().toISOString();
+  if (abhaData.aadhaarMasked) {
+    patient.patientData.aadhaarMasked = abhaData.aadhaarMasked;
+  }
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+
+// Unlink ABHA ID
+export function unlinkPatientAbha(
+  patientIdentifier: string
+): { success: boolean; error?: string; updated?: StoredIdentity } {
+  const patient = findIdentityById(patientIdentifier);
+  if (!patient || patient.role !== "patient" || !patient.patientData) {
+    return { success: false, error: "Patient identity not found." };
+  }
+
+  patient.patientData.abhaStatus = "NOT_LINKED";
+  patient.patientData.abhaNumber = undefined;
+  patient.patientData.abhaAddress = undefined;
+  patient.patientData.abhaId = undefined;
+  patient.patientData.abhaLinkedAt = undefined;
+
+  saveIdentity(patient);
+  return { success: true, updated: patient };
+}
+

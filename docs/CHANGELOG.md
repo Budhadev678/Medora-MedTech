@@ -1,5 +1,22 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 3.1 & 3.2 - Patient Profile & ABHA Identity Foundation] - 2026-08-20
+### Added
+- **Phase 3.1 (Patient Identity & Profile Foundation):**
+  - **Data Models & Stores:** Added `PatientAddress`, `PatientEmergencyContact`, and `PatientAbhaLink` models to `types/database.types.ts` and `lib/data/identity-store.ts`.
+  - **Structured Patient Profile (`/patient/profile`):** Mobile-first, responsive profile interface featuring a dynamic Profile Completeness meter (0–100%), verified identity badge, and structured sections (Personal Information, Contact, Address, Basic Health, Emergency Contact, and ABHA Status).
+  - **Provenance Distinction:** Differentiated `patient_reported` vs `clinical_verified` sources for Blood Group with accredited lab attribution (`City Hospital Pathology Lab`).
+  - **Inline Validation & Edit Sheets:** Modal/sheet forms for editing personal details, residential address (with 6-digit Indian PIN format check), emergency contacts (with primary/alternate phone), and basic health information.
+  - **Strict Cross-Account Isolation:** Verified complete isolation between patient personas (`PAT-1001` Rahul Verma, `PAT-1002` Priya Sharma, `PAT-1003` Amit Das) with zero state leakage.
+- **Phase 3.2 (ABHA & Aadhaar Identity Verification):**
+  - **ABDM-Ready Sandbox Service (`lib/services/abha-service.ts`):** Architecture built around a controlled ABDM sandbox mode with explicit prototype environment labeling.
+  - **Multi-Step Linking Wizard (`/patient/profile/abha`):** Step 1: Verification method selection (Aadhaar OTP / Mobile OTP) $\rightarrow$ Step 2: Masked Aadhaar credential input with explicit consent declaration $\rightarrow$ Step 3: 6-digit OTP verification with 60s cooldown timer and attempt throttling $\rightarrow$ Step 4: External identity match engine (Exact match, Partial variation, Major mismatch rejection) $\rightarrow$ Step 5: Real-time `@abdm` handle availability check $\rightarrow$ Step 6: Confirmation & Digital ABHA Passport Card display.
+  - **Collision Prevention & Safe Unlinking:** Prevents duplicate ABHA binding collisions across distinct MEDORA accounts without automatic merging, and provides safe, confirmed unlinking.
+- **Multilingual Support:** Added English, Hindi, and Odia translation keys for all Profile and ABHA operations in `lib/localization.ts`.
+- **Route & Build Verification:** 107 total routes compiled cleanly (`npm run build` and `npm run typecheck` $\rightarrow$ 0 errors).
+
+---
+
 ## [Phase 2.4 - Real-World Workspace Architecture Correction] - 2026-08-20
 ### Fixed & Re-Architected
 - **Root Cause Resolution:** Eliminated all generic dashboard assumptions and removed fallbacks that previously directed non-doctor roles into doctor or hospital navigation.

@@ -33,10 +33,13 @@ import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AppointmentCard } from "@/components/patient/appointment-card";
 import { RecordCard } from "@/components/patient/record-card";
+import { findIdentityById, calculateProfileCompleteness } from "@/lib/data/identity-store";
 
 export default function PatientHomePage() {
   const { user } = useAuth();
-  const isRahul = user?.identifier === "PAT-1001";
+  const livePatient = user ? findIdentityById(user.identifier) || user : null;
+  const isRahul = livePatient?.identifier === "PAT-1001";
+  const completeness = calculateProfileCompleteness(livePatient);
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
@@ -48,7 +51,7 @@ export default function PatientHomePage() {
               Good morning,
             </span>
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              {user?.fullName || "Patient"}
+              {livePatient?.fullName || "Patient"}
             </h1>
           </div>
           <Link href="/patient/emergency">
@@ -70,10 +73,10 @@ export default function PatientHomePage() {
                 <span className="text-[10px] font-semibold text-teal-200">MEDORA Network</span>
               </div>
               <span className="font-mono text-lg font-extrabold tracking-wider block mt-2">
-                {user?.identifier || "PAT-1001"}
+                {livePatient?.identifier || "PAT-1001"}
               </span>
               <span className="text-xs text-teal-100/90 font-medium block">
-                {user?.fullName || "Patient"}
+                {livePatient?.fullName || "Patient"}
               </span>
             </div>
             <Link href="/patient/profile" className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
@@ -82,12 +85,36 @@ export default function PatientHomePage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-teal-600/40 flex items-center justify-between text-[11px] text-teal-200 relative z-10">
-            <span>Blood Group: <strong className="text-white">{user?.patientData?.bloodGroup || "O+"}</strong></span>
-            <span>Status: <strong className="text-emerald-300">Verified Active</strong></span>
+            <span>Blood Group: <strong className="text-white">{livePatient?.patientData?.bloodGroup || "O+"}</strong></span>
+            <span>
+              ABHA: <strong className={livePatient?.patientData?.abhaStatus === "LINKED" ? "text-emerald-300" : "text-amber-300"}>
+                {livePatient?.patientData?.abhaStatus === "LINKED" ? "Linked" : "Not Linked"}
+              </strong>
+            </span>
           </div>
 
           <div className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-teal-500/20 blur-2xl pointer-events-none" />
         </div>
+
+        {/* Profile Completeness Alert (if incomplete) */}
+        {!completeness.isComplete && (
+          <Link href="/patient/profile">
+            <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-50 transition-colors flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="h-7 w-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">
+                  {completeness.percentage}%
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">Complete Your Profile</span>
+                  <span className="text-[11px] text-slate-500 block">
+                    Add {completeness.missingRecommended[0] || "missing details"} to enable instant admissions
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </div>
+          </Link>
+        )}
 
         {/* 3. Important Upcoming Item */}
         <section aria-label="Important Information">
