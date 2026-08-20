@@ -13,3 +13,20 @@
 
 ## 3. IDOR & Parameter Tampering Protection
 - Database queries do not blindly trust client-supplied query parameters (e.g. `patient_id`). They are evaluated against the verified session `auth.uid()`.
+
+## 4. Multi-Factor Centralized Access Decision Engine (`AccessEngine`)
+- Access to clinical resources requires:
+  1. Authenticated actor with active account status.
+  2. Doctor/staff active affiliation with the requesting organization (`organizationId`).
+  3. Recorded care relationship between the patient and organization.
+  4. Active, non-expired, non-revoked patient consent grant (`CNS-*`).
+  5. Requested data category explicitly included in `granted_scopes`.
+
+## 5. Sanitized Append-Only Audit Ledger
+- Immutable audit trail recording every consent grant, decline, revocation, and identity correction.
+- Strict PII redaction: Aadhaar numbers, OTP codes, raw passwords, and secret tokens are stripped before persistence.
+
+## 6. Verified Identity Protection & Correction Pipeline
+- Patients cannot directly overwrite verified identity fields (`fullName`, `dob`, `gender`, `bloodGroup`, `aadhaarMasked`).
+- All changes must pass through the `identity_correction_requests` verification workflow.
+

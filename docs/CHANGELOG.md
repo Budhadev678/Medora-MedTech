@@ -1,5 +1,21 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 3.3 & 3.4 - Consent, Relationships, Access Decision Engine & Final Integration] - 2026-08-20
+### Added
+- **Phase 3.3 (Consent, Identity Relationships & Access Control Foundation):**
+  - **Explicit Consent Store (`lib/data/consent-store.ts`):** Implemented purpose-bound (`treatment`, `diagnostic_review`, etc.), time-limited consent model with granular data scopes (`medical_history`, `prescriptions`, `lab_reports`, `diagnostic_reports`, `billing_info`, `insurance_info`). Added `grantConsentRequest`, `denyConsentRequest`, `revokeConsent`, and server-side expiration evaluation.
+  - **Patient ↔ Organization Relationships (`lib/data/relationship-store.ts`):** Built healthcare connection tracker for hospitals, day clinics, and diagnostic labs without duplicating patient accounts.
+  - **Identity Correction Request Pipeline (`lib/data/correction-store.ts`):** Protected verified legal identity fields from raw client modification; added request submission, duplicate blocking, status transitions (`PENDING`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `CANCELLED`), and administrative approval execution.
+  - **Centralized Access Decision Engine (`lib/services/access-engine.ts`):** Built multi-factor authorization evaluator: Actor + Role + Organization + Care Relationship + Patient Consent + Required Scope.
+  - **Patient Privacy & Access Control Center (`app/patient/privacy/page.tsx`):** Unified patient control center for incoming consent requests, active permissions with instant revocation, connected healthcare facilities, correction requests, and security audit timeline.
+- **Phase 3.4 (Final Integration, Security QA & Hardening):**
+  - **Sanitized Append-Only Audit Ledger (`lib/data/audit-store.ts`):** Immutable log for all consent, identity, and authorization events, with automatic redaction of sensitive credentials (no Aadhaar, OTP, passwords, or secret tokens).
+  - **Tri-Lingual Localization:** Added English, Hindi, and Odia translation keys for all Consent, Privacy, Permission, and Relationship terms in `lib/localization.ts`.
+  - **Security & Gap Audits:** Generated `/docs/PHASE_3_GAP_REPORT.md` and `/docs/PHASE_3_COMPLETION_REPORT.md`.
+  - **Strict Build Verification:** 107 routes compiled cleanly (`npm run typecheck` & `npm run build` $\rightarrow$ 0 errors).
+
+---
+
 ## [Phase 3.1 & 3.2 - Patient Profile & ABHA Identity Foundation] - 2026-08-20
 ### Added
 - **Phase 3.1 (Patient Identity & Profile Foundation):**

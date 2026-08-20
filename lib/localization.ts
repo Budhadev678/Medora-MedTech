@@ -80,9 +80,24 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "profile.link_abha": "Link ABHA",
     "profile.manage_abha": "Manage ABHA",
     "profile.blood_group": "Blood Group",
-    "profile.allergies": "Known Allergies",
     "profile.conditions": "Existing Conditions",
     "profile.sign_out": "Sign Out of MEDORA",
+
+    // Privacy & Consent
+    "privacy.title": "Privacy & Access Control Center",
+    "privacy.pending_requests": "Pending Consent Requests",
+    "privacy.active_permissions": "Active Medical Access Permissions",
+    "privacy.connected_orgs": "Connected Healthcare Facilities",
+    "privacy.correction_tracker": "Identity Correction Requests",
+    "privacy.audit_trail": "Security & Privacy Audit Ledger",
+    "privacy.allow": "Allow Access",
+    "privacy.decline": "Decline",
+    "privacy.revoke": "Revoke Access",
+    "privacy.expired": "Expired",
+    "privacy.granted": "Active Access",
+    "privacy.purpose": "Purpose",
+    "privacy.duration": "Duration",
+    "privacy.scopes": "Data Scopes",
   },
   hi: {
     // Navigation & Shell
@@ -152,6 +167,22 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "profile.allergies": "ज्ञात एलर्जी",
     "profile.conditions": "पुरानी बीमारियां",
     "profile.sign_out": "लॉग आउट करें",
+
+    // Privacy & Consent
+    "privacy.title": "गोपनीयता एवं सहमति नियंत्रण केंद्र",
+    "privacy.pending_requests": "लंबित सहमति अनुरोध",
+    "privacy.active_permissions": "सक्रिय मेडिकल अनुमतियां",
+    "privacy.connected_orgs": "जुड़े हुए स्वास्थ्य केंद्र",
+    "privacy.correction_tracker": "पहचान सुधार अनुरोध",
+    "privacy.audit_trail": "सुरक्षा एवं गोपनीयता ऑडिट लेजर",
+    "privacy.allow": "पहुंच की अनुमति दें",
+    "privacy.decline": "अस्वीकार करें",
+    "privacy.revoke": "अनुमति वापस लें",
+    "privacy.expired": "समाप्त",
+    "privacy.granted": "सक्रिय पहुंच",
+    "privacy.purpose": "उद्देश्य",
+    "privacy.duration": "अवधि",
+    "privacy.scopes": "डेटा श्रेणियां",
   },
   or: {
     // Navigation & Shell
@@ -221,6 +252,22 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "profile.allergies": "ଏଲର୍ଜି",
     "profile.conditions": "ପୁରୁଣା ରୋଗ",
     "profile.sign_out": "ଲଗ୍ ଆଉଟ୍ କରନ୍ତୁ",
+
+    // Privacy & Consent
+    "privacy.title": "ଗୋପନୀୟତା ଏବଂ ସମ୍ମତି ନିୟନ୍ତ୍ରଣ କେନ୍ଦ୍ର",
+    "privacy.pending_requests": "ବକେୟା ସମ୍ମତି ଅନୁରୋଧ",
+    "privacy.active_permissions": "ସକ୍ରିୟ ଚିକିତ୍ସା ଅନୁମତି",
+    "privacy.connected_orgs": "ସଂଯୁକ୍ତ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର",
+    "privacy.correction_tracker": "ପରିଚୟ ସଂଶୋଧନ ଅନୁରୋଧ",
+    "privacy.audit_trail": "ସୁରକ୍ଷା ଓ ଗୋପନୀୟତା ଅଡିଟ୍ ଲେଜର",
+    "privacy.allow": "ଅନୁମତି ଦିଅନ୍ତୁ",
+    "privacy.decline": "ପ୍ରତ୍ୟାଖ୍ୟାନ କରନ୍ତୁ",
+    "privacy.revoke": "ଅନୁମତି ପ୍ରତ୍ୟାହାର କରନ୍ତୁ",
+    "privacy.expired": "ସମାପ୍ତ",
+    "privacy.granted": "ସକ୍ରିୟ ପହଞ୍ଚ",
+    "privacy.purpose": "ଉଦ୍ଦେଶ୍ୟ",
+    "privacy.duration": "ସମୟ ସୀମା",
+    "privacy.scopes": "ତଥ୍ୟ ବର୍ଗ",
   },
 };
 

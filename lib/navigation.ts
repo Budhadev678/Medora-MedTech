@@ -64,6 +64,7 @@ export const PATIENT_MORE_NAV: NavItem[] = [
   { label: "Connected Pharmacy", href: "/patient/pharmacy", icon: Package, comingSoon: true, phase: "Phase 9", description: "Select pharmacy & dispense status" },
   { label: "Itemized Hospital Bills", href: "/patient/bills", icon: Receipt, comingSoon: true, phase: "Phase 10", description: "Transparent breakdown & 'Why Was I Charged?'" },
   { label: "Health Passport & ABHA", href: "/patient/profile", icon: User, description: "Demographics, emergency QR & ABHA link" },
+  { label: "Privacy, Consent & Access", href: "/patient/privacy", icon: ShieldCheck, description: "Manage healthcare consents & data sharing" },
   { label: "Vitals & Chronic Care", href: "/patient/health", icon: Activity, description: "BP, pulse, allergies & health metrics" },
   { label: "Care Plans & Advice", href: "/patient/care", icon: Stethoscope, description: "Active clinical care instructions" },
 ];

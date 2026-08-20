@@ -176,3 +176,36 @@ PATIENT PORTAL (/patient)
 └── 13. Patient Mobile Application (/patient)
     └── Dedicated Mobile-First Consumer Layout with Instant SOS, Bottom Navigation & Zero Enterprise Sidebars
 ```
+
+---
+
+## 6. Patient Identity, ABHA, Privacy & Access Control Flow (Phase 3)
+
+```
+PATIENT ONBOARDING / LOGIN
+        ↓
+1. Identity & Profile Foundation (/patient/profile)
+   ├── Dynamic Profile Completeness Progress (0–100%)
+   ├── Personal Demographics (Name, DOB, Gender, Language)
+   ├── Residential Address Validation (6-digit Indian PIN)
+   ├── Basic Health Profile (Blood Group with Patient vs Certified Source)
+   ├── Emergency Contacts (Primary & Alternate)
+   └── Identity Rectification (Submit Correction Request → PENDING)
+
+2. National Health Identity (ABDM / ABHA) (/patient/profile/abha)
+   ├── Step 1: Verification Method Selection (Aadhaar OTP / Mobile OTP)
+   ├── Step 2: Masked Aadhaar Entry + Consent Declaration
+   ├── Step 3: 6-Digit OTP Verification (60s cooldown + Demo OTP 123456)
+   ├── Step 4: Identity Match Review (EXACT, PARTIAL, MISMATCH)
+   ├── Step 5: @abdm Handle Selection & Availability Check
+   ├── Step 6: Binding & Digital Health Passport Card
+   └── Unlink / Disconnect Management with confirmation barrier
+
+3. Privacy & Access Control Center (/patient/privacy)
+   ├── Pending Consent Requests Queue (Allow / Decline)
+   ├── Active Permissions (Purpose, Scopes, Expiration, Revoke Access)
+   ├── Connected Healthcare Facilities (Active / Ended care relationships)
+   ├── Identity Correction Tracker (Status: Pending / Under Review)
+   └── Security & Privacy Audit Ledger (Append-only timeline)
+```
+

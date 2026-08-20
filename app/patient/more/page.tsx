@@ -50,7 +50,7 @@ export default function PatientMorePage() {
       title: "Account & Preferences",
       items: [
         { label: "Health Passport & ABHA", href: "/patient/profile", icon: User, color: "text-slate-700 bg-slate-100" },
-        { label: "Consent & Record Privacy", href: "/patient/consent", icon: ShieldCheck, color: "text-teal-700 bg-teal-50", badge: "Phase 15" },
+        { label: "Privacy, Consent & Access", href: "/patient/privacy", icon: ShieldCheck, color: "text-teal-700 bg-teal-50", badge: "Active" },
         { label: "Language Settings", href: "/patient/language", icon: Globe, color: "text-blue-700 bg-blue-50" },
         { label: "App & Security Settings", href: "/patient/settings", icon: Settings, color: "text-slate-700 bg-slate-100" },
       ],

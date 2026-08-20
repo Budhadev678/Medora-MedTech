@@ -62,3 +62,58 @@ Dedicated Navigation & Landing Experience (Zero Doctor / Generic Dashboard Fallb
         ↓
 Row-Level Security & RoleGuard Protection
 ```
+
+---
+
+## 5. Phase 3 Patient Identity, ABHA, Consent & Access Architecture
+```
+                         MEDORA
+                            │
+                      AUTHENTICATION
+                            │
+                        USER ID
+                            │
+                     PATIENT IDENTITY (PAT-1001)
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+              PROFILE               VERIFICATION
+                 │                     │
+          ┌──────┼──────┐        ┌────┴────┐
+          │      │      │        │         │
+       Contact Address Health   Aadhaar    ABHA
+       Info             Info      │         │
+                                   └────┬────┘
+                                        │
+                                    ABHA LINK (rahulverma@abdm)
+                                        │
+                                        ↓
+                                 RELATIONSHIPS
+                                        │
+                              ┌─────────┴─────────┐
+                              │                   │
+                          Organizations        Providers
+                              │                   │
+                              └─────────┬─────────┘
+                                        │
+                                      CONSENT (Purpose + Scope + Expiry)
+                                        │
+                                  ACCESS CONTROL (AccessEngine.evaluateAccess)
+                                        │
+                               ┌────────┴────────┐
+                               │                 │
+                             ALLOW              DENY
+                               │
+                               ↓
+                        FUTURE HEALTH DATA
+                               │
+                             AUDIT (Append-Only Immutable Ledger)
+```
+
+### Core Identity & Access Principles
+1. **Separation of Concerns:** `IDENTITY` $\neq$ `ABHA` $\neq$ `RELATIONSHIP` $\neq$ `CONSENT` $\neq$ `PERMISSION` $\neq$ `ACCESS` $\neq$ `AUDIT`.
+2. **Patient Data Sovereignty:** Patients explicitly review who, why, what, and how long. Scope is never `ALL` by default.
+3. **Multi-Factor Access Decision:** Access decisions require Authenticated Actor + Active Org Membership + Care Relationship + Valid Non-Expired Non-Revoked Consent + Sufficient Scope.
+4. **Verified Field Protection:** Verified fields (Aadhaar, legal name, blood group certification) cannot be directly overwritten via raw client mutations; must go through the administrative `identity_correction_requests` pipeline.
+5. **Append-Only Immutability:** All security events are logged with sanitized metadata (no Aadhaar, OTP, or passwords).
+

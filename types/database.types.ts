@@ -240,16 +240,164 @@ export interface InsurancePolicy {
   created_at: string;
 }
 
-export interface ConsentRecord {
+export type RelationshipStatus = "ACTIVE" | "PENDING" | "ENDED" | "REVOKED" | "EXPIRED" | "SUSPENDED";
+
+export interface PatientOrganizationRelationship {
+  id: string;
+  patient_id: string; // e.g. PAT-1001
+  organization_id: string; // e.g. HSP-1001
+  organization_name: string;
+  organization_type: OrganizationType;
+  relationship_type: "care_provider" | "visiting_facility" | "diagnostic_lab" | "pharmacy_dispenser" | "emergency_responder" | "insurer";
+  status: RelationshipStatus;
+  connected_since: string;
+  ended_at?: string;
+  last_interaction_at?: string;
+  notes?: string;
+}
+
+export interface PatientDoctorRelationship {
   id: string;
   patient_id: string;
-  grantee_id: string; // Doctor or Hospital Profile/Org ID
-  purpose: string;
-  granted_scopes: string[]; // ['prescriptions', 'lab_reports', 'allergies', 'discharge_summary']
-  duration_hours: number;
-  status: "active" | "expired" | "revoked";
+  doctor_id: string; // e.g. DOC-1001
+  doctor_name: string;
+  organization_id: string;
+  organization_name: string;
+  role_title: string;
+  relationship_type: "consulting_doctor" | "primary_physician" | "specialist" | "temporary_care";
+  status: RelationshipStatus;
+  connected_since: string;
+  ended_at?: string;
+}
+
+export type ConsentStatus = "PENDING" | "GRANTED" | "DENIED" | "REVOKED" | "EXPIRED" | "CANCELLED";
+
+export type ConsentPurpose =
+  | "treatment"
+  | "diagnostic_review"
+  | "care_coordination"
+  | "insurance_processing"
+  | "emergency_access"
+  | "government_assistance"
+  | "record_transfer";
+
+export type ConsentDataScope =
+  | "profile"
+  | "medical_history"
+  | "prescriptions"
+  | "lab_reports"
+  | "hospital_records"
+  | "diagnostic_reports"
+  | "billing_info"
+  | "insurance_info";
+
+export interface ConsentRequest {
+  id: string; // e.g. REQ-1001
+  patient_id: string; // e.g. PAT-1001
+  requester_id: string; // e.g. DOC-1001 or staff ID
+  requester_name: string; // e.g. Dr. Ananya Sharma
+  requester_role: string; // e.g. Consultant Cardiologist
+  organization_id: string; // e.g. HSP-1001
+  organization_name: string; // e.g. City Hospital
+  purpose: ConsentPurpose;
+  purpose_description: string;
+  requested_scopes: ConsentDataScope[];
+  duration_days: number;
+  status: ConsentStatus;
+  requested_at: string;
   expires_at: string;
+  responded_at?: string;
+  is_demo?: boolean;
+}
+
+export interface ConsentRecord {
+  id: string; // e.g. CNS-1001
+  request_id?: string;
+  patient_id: string;
+  requester_id: string;
+  requester_name: string;
+  requester_role: string;
+  organization_id: string;
+  organization_name: string;
+  purpose: ConsentPurpose;
+  purpose_description: string;
+  granted_scopes: ConsentDataScope[];
+  status: ConsentStatus;
+  granted_at: string;
+  expires_at: string;
+  revoked_at?: string;
+  denied_at?: string;
   created_at: string;
+  updated_at?: string;
+  is_demo?: boolean;
+}
+
+export type CorrectionStatus = "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
+
+export interface IdentityCorrectionRequest {
+  id: string; // e.g. CORR-1001
+  patient_id: string; // e.g. PAT-1001
+  field_name: "fullName" | "dob" | "gender" | "bloodGroup" | "aadhaarMasked" | "address";
+  field_label: string;
+  current_value: string;
+  requested_value: string;
+  reason: string;
+  status: CorrectionStatus;
+  submitted_at: string;
+  reviewed_at?: string;
+  reviewer_role?: string;
+  admin_notes?: string;
+}
+
+export type AccessDecisionType =
+  | "ALLOW"
+  | "DENY"
+  | "CONSENT_REQUIRED"
+  | "RELATIONSHIP_REQUIRED"
+  | "CONSENT_EXPIRED"
+  | "CONSENT_REVOKED"
+  | "SCOPE_NOT_ALLOWED"
+  | "NOT_AUTHORIZED";
+
+export interface AccessCheckResult {
+  decision: AccessDecisionType;
+  allowed: boolean;
+  reason: string;
+  evaluated_at: string;
+  consent_id?: string;
+  relationship_id?: string;
+  authorized_scopes?: ConsentDataScope[];
+}
+
+export type AuditEventType =
+  | "CONSENT_REQUESTED"
+  | "CONSENT_GRANTED"
+  | "CONSENT_DENIED"
+  | "CONSENT_REVOKED"
+  | "CONSENT_EXPIRED"
+  | "IDENTITY_CORRECTION_REQUESTED"
+  | "IDENTITY_CORRECTION_CANCELLED"
+  | "IDENTITY_CORRECTION_APPROVED"
+  | "IDENTITY_CORRECTION_REJECTED"
+  | "RELATIONSHIP_CREATED"
+  | "RELATIONSHIP_ENDED"
+  | "ABHA_LINKED"
+  | "ABHA_UNLINKED"
+  | "ACCESS_EVALUATED";
+
+export interface StoredAuditEvent {
+  id: string;
+  timestamp: string;
+  event_type: AuditEventType;
+  actor_id: string; // User/Patient/Staff ID
+  actor_name: string;
+  actor_role: string;
+  patient_id?: string;
+  organization_id?: string;
+  organization_name?: string;
+  summary: string;
+  reference_id?: string;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 // ============================================================

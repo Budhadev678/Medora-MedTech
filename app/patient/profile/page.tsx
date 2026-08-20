@@ -26,7 +26,11 @@ import {
   Activity,
   Droplet,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Share2,
+  FileText,
+  Building2,
+  Clock
 } from "lucide-react";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -44,6 +48,9 @@ import {
   calculateProfileCompleteness,
   StoredIdentity 
 } from "@/lib/data/identity-store";
+import { getPatientConsentRequests, getPatientConsents } from "@/lib/data/consent-store";
+import { getPatientOrganizationRelationships } from "@/lib/data/relationship-store";
+import { getPatientCorrectionRequests, submitCorrectionRequest } from "@/lib/data/correction-store";
 
 export default function PatientProfilePage() {
   const { user, logout } = useAuth();
@@ -59,6 +66,12 @@ export default function PatientProfilePage() {
   const [activeModal, setActiveModal] = useState<"personal" | "address" | "emergency" | "health" | "correction" | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Privacy & Relationship metrics
+  const [pendingConsentCount, setPendingConsentCount] = useState(0);
+  const [activeConsentCount, setActiveConsentCount] = useState(0);
+  const [activeOrgCount, setActiveOrgCount] = useState(0);
+  const [activeCorrectionsCount, setActiveCorrectionsCount] = useState(0);
 
   // Form states
   const [personalForm, setPersonalForm] = useState({
@@ -92,12 +105,31 @@ export default function PatientProfilePage() {
     chronicConditions: "",
   });
 
+  // Correction Request state
+  const [correctionField, setCorrectionField] = useState<"fullName" | "dob" | "gender" | "bloodGroup">("fullName");
+  const [correctionFieldLabel, setCorrectionFieldLabel] = useState("Full Legal Name");
+  const [correctionCurrentValue, setCorrectionCurrentValue] = useState("");
+  const [correctionRequestedValue, setCorrectionRequestedValue] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
+
   // Sync state whenever authenticated user changes or updates
-  useEffect(() => {
+  const refreshData = () => {
     if (user) {
-      const liveData = findIdentityById(user.identifier) || user;
+      const pid = user.identifier || "PAT-1001";
+      const liveData = findIdentityById(pid) || user;
       setPatient(liveData);
       setCompleteness(calculateProfileCompleteness(liveData));
+
+      // Privacy metrics
+      const requests = getPatientConsentRequests(pid);
+      const consents = getPatientConsents(pid);
+      const orgs = getPatientOrganizationRelationships(pid);
+      const corrs = getPatientCorrectionRequests(pid);
+
+      setPendingConsentCount(requests.filter((r) => r.status === "PENDING").length);
+      setActiveConsentCount(consents.filter((c) => c.status === "GRANTED").length);
+      setActiveOrgCount(orgs.filter((o) => o.status === "ACTIVE").length);
+      setActiveCorrectionsCount(corrs.filter((c) => c.status === "PENDING" || c.status === "UNDER_REVIEW").length);
 
       if (liveData.patientData) {
         setPersonalForm({
@@ -136,9 +168,66 @@ export default function PatientProfilePage() {
         });
       }
     }
+  };
+
+  useEffect(() => {
+    refreshData();
+    window.addEventListener("medora-consent-updated", refreshData);
+    window.addEventListener("medora-corrections-updated", refreshData);
+    window.addEventListener("medora-relationships-updated", refreshData);
+
+    return () => {
+      window.removeEventListener("medora-consent-updated", refreshData);
+      window.removeEventListener("medora-corrections-updated", refreshData);
+      window.removeEventListener("medora-relationships-updated", refreshData);
+    };
   }, [user]);
 
-  // Handle Personal Info Save
+  // Open Identity Correction Sheet
+  const handleOpenCorrection = (
+    field: "fullName" | "dob" | "gender" | "bloodGroup",
+    label: string,
+    currentVal: string
+  ) => {
+    setCorrectionField(field);
+    setCorrectionFieldLabel(label);
+    setCorrectionCurrentValue(currentVal);
+    setCorrectionRequestedValue("");
+    setCorrectionReason("");
+    setActiveModal("correction");
+  };
+
+  // Submit Identity Correction Request
+  const handleSubmitCorrection = () => {
+    if (!patient) return;
+    setLoading(true);
+    setFeedbackMessage(null);
+
+    const res = submitCorrectionRequest(
+      patient.identifier,
+      correctionField,
+      correctionFieldLabel,
+      correctionCurrentValue,
+      correctionRequestedValue,
+      correctionReason,
+      patient.fullName
+    );
+
+    setLoading(false);
+
+    if (res.success) {
+      setActiveModal(null);
+      refreshData();
+      setFeedbackMessage({
+        type: "success",
+        text: `Correction request submitted for ${correctionFieldLabel}. It will be reviewed by the verification authority.`,
+      });
+    } else {
+      setFeedbackMessage({ type: "error", text: res.error || "Failed to submit correction request." });
+    }
+  };
+
+  // Handle Personal Info Save (for unverified fields)
   const handleSavePersonal = () => {
     if (!patient) return;
     setLoading(true);
@@ -207,10 +296,7 @@ export default function PatientProfilePage() {
     setLoading(true);
     setFeedbackMessage(null);
 
-    // Save blood group
     const bgRes = updatePatientBloodGroup(patient.identifier, healthForm.bloodGroup, "patient_reported");
-    
-    // Save allergies & conditions
     const allergiesArr = healthForm.allergies.split(",").map((s) => s.trim()).filter(Boolean);
     const conditionsArr = healthForm.chronicConditions.split(",").map((s) => s.trim()).filter(Boolean);
     const pRes = updatePatientProfile(patient.identifier, {
@@ -315,7 +401,37 @@ export default function PatientProfilePage() {
           </div>
         </div>
 
-        {/* 2. Identity & Verification Status Summary Card */}
+        {/* 2. Privacy & Consent Control Center Link Banner */}
+        <Link href="/patient/privacy">
+          <div className="p-4 rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-50 via-teal-50/50 to-white hover:border-teal-400 transition-all shadow-xs flex items-center justify-between group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900 group-hover:text-teal-900">
+                    Privacy, Consent & Permissions
+                  </span>
+                  {pendingConsentCount > 0 && (
+                    <Badge variant="destructive" className="text-[9px] py-0 px-1.5 font-mono">
+                      {pendingConsentCount} Pending
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500 block">
+                  {activeConsentCount} active permissions • {activeOrgCount} connected facilities
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700">
+              <span>Control</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </div>
+        </Link>
+
+        {/* 3. National Health IDs & Verification Card */}
         <Card className="bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100">
             <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -391,25 +507,45 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 3. Personal Information Card */}
+        {/* 4. Personal Information Card */}
         <Card className="bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
-            <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="h-4 w-4 text-teal-600" /> Personal Information
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActiveModal("personal")}
-              className="text-xs h-7 gap-1 text-slate-700"
-            >
-              <Edit2 className="h-3 w-3" /> Edit
-            </Button>
+            <div className="space-y-0.5">
+              <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <User className="h-4 w-4 text-teal-600" /> Personal Information
+              </CardTitle>
+              {activeCorrectionsCount > 0 && (
+                <span className="text-[10px] text-amber-700 font-semibold block">
+                  ● {activeCorrectionsCount} correction request under review
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenCorrection("fullName", "Full Legal Name", patient?.fullName || "")}
+                className="text-[10px] h-6 text-amber-800 bg-amber-50 border-amber-200 hover:bg-amber-100"
+              >
+                Request Correction
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveModal("personal")}
+                className="text-xs h-7 gap-1 text-slate-700"
+              >
+                <Edit2 className="h-3 w-3" /> Edit
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-4 pt-3 space-y-2.5 text-xs">
             <div className="flex justify-between py-1 border-b border-slate-100">
               <span className="text-slate-500">Full Legal Name</span>
-              <span className="font-semibold text-slate-900">{patient?.fullName}</span>
+              <div className="text-right">
+                <span className="font-semibold text-slate-900">{patient?.fullName}</span>
+                <span className="text-[9px] text-emerald-700 block">● Verified Field</span>
+              </div>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-100">
               <span className="text-slate-500">Date of Birth</span>
@@ -428,7 +564,7 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 4. Structured Address Card */}
+        {/* 5. Structured Address Card */}
         <Card className="bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -460,7 +596,7 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 5. Basic Health Information Card */}
+        {/* 6. Basic Health Information Card */}
         <Card className="bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -504,7 +640,7 @@ export default function PatientProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 6. Emergency Contact Card */}
+        {/* 7. Emergency Contact Card */}
         <Card className="bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -551,10 +687,88 @@ export default function PatientProfilePage() {
         </div>
 
         {/* ============================================================ */}
-        {/* EDIT MODALS                                                  */}
+        {/* MODAL: IDENTITY CORRECTION REQUEST                           */}
         {/* ============================================================ */}
+        {activeModal === "correction" && (
+          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-5 max-w-md w-full space-y-4 shadow-xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Request Identity Correction</h3>
+                    <span className="text-[11px] text-slate-500">Legal rectification for verified fields</span>
+                  </div>
+                </div>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-        {/* 1. Personal Information Modal */}
+              <div className="space-y-3 text-xs">
+                <div className="rounded-lg bg-slate-50 p-3 border border-slate-200">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                    Current Verified Value ({correctionFieldLabel})
+                  </span>
+                  <span className="font-bold text-slate-800 font-mono text-sm block mt-0.5">
+                    {correctionCurrentValue}
+                  </span>
+                </div>
+
+                <div>
+                  <Label htmlFor="req-val" className="text-xs font-semibold">
+                    Requested Corrected Value
+                  </Label>
+                  <Input
+                    id="req-val"
+                    placeholder="Enter the legally corrected name or value"
+                    value={correctionRequestedValue}
+                    onChange={(e) => setCorrectionRequestedValue(e.target.value)}
+                    className="text-xs mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="req-reason" className="text-xs font-semibold">
+                    Reason for Correction
+                  </Label>
+                  <Input
+                    id="req-reason"
+                    placeholder="e.g. Updated Aadhaar card / Gazette notification"
+                    value={correctionReason}
+                    onChange={(e) => setCorrectionReason(e.target.value)}
+                    className="text-xs mt-1"
+                  />
+                </div>
+
+                <div className="rounded-lg bg-amber-50 p-3 border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                  <span className="font-bold block">Verification Notice</span>
+                  <p className="text-[10px] text-amber-800 leading-normal">
+                    Verified legal identity fields cannot be overwritten immediately. Your request will be queued for administrative review.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button variant="outline" size="sm" onClick={() => setActiveModal(null)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={loading || !correctionRequestedValue.trim() || !correctionReason.trim()}
+                  onClick={handleSubmitCorrection}
+                  className="text-xs bg-amber-700 hover:bg-amber-800 text-white"
+                >
+                  {loading ? "Submitting..." : "Submit Correction Request"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 1. Personal Information Modal (for general updates) */}
         {activeModal === "personal" && (
           <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-5 max-w-md w-full space-y-4 shadow-xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
