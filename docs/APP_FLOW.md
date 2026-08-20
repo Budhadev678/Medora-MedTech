@@ -70,3 +70,34 @@
 6. Longitudinal Timeline & Audit
    All trauma events aggregate in Emergency Timeline and Patient Medical Record
 ```
+
+---
+
+## 3. Global Application Shell & Role Routing Flow (Phase 2 — Prompt 1)
+
+```
+APPLICATION START
+        ↓
+Check authentication session (Supabase Auth / Session Provider)
+        ↓
+No authenticated session?
+        ↓
+PUBLIC ROUTES (Landing, Login, Register, QR Verification Slips)
+
+OR
+
+Authenticated session
+        ↓
+Resolve authenticated MEDORA identity (PAT-1001, DOC-1001, HSP-1001, LAB-1001, etc.)
+        ↓
+Determine Role-Aware Layout Shell:
+        ├── PATIENT ROLE (PAT-1001 / PAT-1002 / PAT-1003):
+        │   └── PatientShell (Mobile-first app layout, Header with SOS + Notifications, Bottom Nav: Home, Appointments, Records, More Drawer)
+        │
+        └── PROFESSIONAL ROLES (Doctor, Hospital, Lab, Pharmacy, Insurance, Staff, Admin):
+            └── ProfessionalShell (TopBar with OrganizationSwitcher + UserMenu, Collapsible Sidebar, Responsive Drawer, max-w-7xl content area)
+        ↓
+Role Guard Route Enforcement:
+        ├── Direct URL access to unauthorized role route → Access Restricted barrier + Safe Return
+        └── Session logout → Complete memory and state flush → Redirect to /login
+```

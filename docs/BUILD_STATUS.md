@@ -1,9 +1,8 @@
 # 🏗️ MEDORA — Build Status & System Health
 
-> **Current Position:** Phase 1 Completed & Verified ✅  
-> **Next Up:** Phase 2 (App Shell & Role Dashboards) ⏳  
+> **Current Position:** Phase 2 — Prompt 1 Completed & Verified ✅  
 > **TypeScript Check:** `0 errors` (`tsc --noEmit` exit code 0)  
-> **Production Build:** `20/20 routes compiled successfully`  
+> **Production Build:** `79/79 routes compiled successfully`  
 > **Development Server:** Active on `http://localhost:3000`  
 
 ---
@@ -14,7 +13,7 @@
 | :---: | :--- | :---: |
 | **0** | Project Setup & Docs Architecture | `VERIFIED` ✅ |
 | **1** | Auth & Role Base | `VERIFIED` ✅ |
-| **2** | App Shell & Role Dashboards | `NOT_STARTED` ⏳ |
+| **2** | App Shell & Role Dashboards (Prompt 1) | `VERIFIED` ✅ |
 | **3** | Patient Profile & ABHA/Aadhaar | `NOT_STARTED` ⏳ |
 | **4** | Doctor Schedule & Availability | `NOT_STARTED` ⏳ |
 | **5** | Hospital, Department & Facility | `NOT_STARTED` ⏳ |
@@ -35,24 +34,102 @@
 
 ---
 
-## 🧭 Active Route Inventory (All 20 Compiled)
+## 🧭 Active Route Inventory (All 79 Compiled)
+### Public & System Routes
 * `/` — Public Homepage & Ecosystem Overview
 * `/login` — Unified Authentication (14 Fast-Launcher Personas)
 * `/register` — Multi-Role Registration (Patient, Doctor, Staff)
-* `/patient` — Patient Dashboard & Active Health Records
-* `/patient/health` — Vitals & Chronic Care Hub
-* `/patient/profile` — Digital Passport & ABHA
-* `/patient/emergency` — Emergency Card & Critical SOS
-* `/patient/care` — Active Care Plans & Prescriptions
-* `/doctor` — Clinical Workspace & Multi-Hospital Affiliations
-* `/hospital` — Command Center & Affiliated Doctor Roster
-* `/lab` — Diagnostic Pathology & Report Release
-* `/pharmacy` — Prescription Fulfillment Desk
-* `/emergency` — Trauma Care & Triage Unit
-* `/blood-bank` — Donor Network & Cross-Matching
-* `/finance` — Lineage Billing & Multi-Source Claims
-* `/admin` — Platform Governance & Immutable Audit Stream
-* `/verify/rx/[id]` — Digitally Signed Prescription Verification Slip (Public)
-* `/verify/lab/[id]` — Certified NABL Pathology Report Slip (Public)
 * `/access-denied` — 403 Role Guard Barrier
 * `/_not-found` — 404 Error Boundary
+* `/verify/rx/[id]` — Digitally Signed Prescription Verification Slip (Public)
+* `/verify/lab/[id]` — Certified NABL Pathology Report Slip (Public)
+
+### Patient Routes (`PatientShell` — Mobile First)
+* `/patient` — Home Dashboard
+* `/patient/appointments` — OPD Appointment Calendar
+* `/patient/records` — Longitudinal Medical Timeline
+* `/patient/prescriptions` — Digital Prescriptions & Slips
+* `/patient/reports` — Diagnostic Lab Reports & Slips
+* `/patient/pharmacy` — Connected Pharmacy & Pickup
+* `/patient/bills` — Itemized Transparent Invoices & Lineage
+* `/patient/emergency` — Emergency Card & Critical SOS
+* `/patient/profile` — Digital Passport & ABHA
+* `/patient/care` — Active Care Plans & Advice
+* `/patient/health` — Vitals & Chronic Care Hub
+
+### Doctor Routes (`ProfessionalShell` — Clinical Workspace)
+* `/doctor` — Clinical Dashboard & Practice Overview
+* `/doctor/patients` — Patient Registry
+* `/doctor/appointments` — Outpatient Appointments
+* `/doctor/schedule` — Multi-Hospital Practice Hours
+* `/doctor/consultations` — Consultation Suite
+* `/doctor/prescriptions` — Digital Prescription Authoring
+* `/doctor/lab-orders` — Diagnostic Lab Test Orders
+* `/doctor/referrals` — Specialist Referrals
+* `/doctor/profile` — Doctor Credentials & Affiliations
+* `/doctor/settings` — Workspace Preferences
+
+### Hospital Routes (`ProfessionalShell` — Operations Desk)
+* `/hospital` — Hospital Command Center
+* `/hospital/patients` — Hospital Inpatients & Outpatients
+* `/hospital/doctors` — Medical Staff Roster & Affiliation Review Desk
+* `/hospital/departments` — Clinical & Operational Departments
+* `/hospital/appointments` — Central OPD Queue & Token Dispenser
+* `/hospital/admissions` — Inpatient Ward & Bed Occupancy
+* `/hospital/emergency` — Emergency Trauma Unit
+* `/hospital/laboratory` — Hospital Diagnostic Lab Operations
+* `/hospital/pharmacy` — Hospital Pharmacy Dispensing
+* `/hospital/billing` — Hospital Invoices & Lineage Billing
+* `/hospital/insurance` — Hospital Cashless Insurance Desk
+* `/hospital/staff` — Clinical Staff Roster & Shifts
+* `/hospital/settings` — Facility Registration & License
+
+### Laboratory Routes (`ProfessionalShell` — Diagnostic Workspace)
+* `/lab` — Diagnostic Laboratory Overview
+* `/lab/orders` — Incoming Test Orders Queue
+* `/lab/samples` — Specimen Intake & Barcoding
+* `/lab/testing` — Diagnostic Testing & Worklist
+* `/lab/verification` — Pathologist Clinical Sign-off
+* `/lab/reports` — Certified Pathology Reports Archive
+* `/lab/staff` — Pathologist & Technician Roster
+* `/lab/settings` — NABL Accreditation & Settings
+
+### Pharmacy Routes (`ProfessionalShell` — Dispensing Desk)
+* `/pharmacy` — Pharmacy Dispensing Overview
+* `/pharmacy/prescriptions` — Prescription Queue
+* `/pharmacy/orders` — Packaging & Pickup Orders
+* `/pharmacy/preparation` — Medication Packaging & Check
+* `/pharmacy/pickup` — Patient Counter Pickup Verification
+* `/pharmacy/dispensing` — Authoritative Dispensing Ledger
+* `/pharmacy/inventory` — Medication Stock & Batches
+* `/pharmacy/staff` — Registered Pharmacists
+* `/pharmacy/settings` — Retail Drug License
+
+### Insurance Routes (`ProfessionalShell` — Claims Desk)
+* `/insurance` — Insurance Payer Portal Overview
+* `/insurance/policies` — Active Policy Registry
+* `/insurance/claims` — Incoming Cashless Claims
+* `/insurance/review` — Pre-Authorization Review Station
+* `/insurance/approvals` — Decision Letters & Approvals
+* `/insurance/payments` — Direct Hospital Settlement Disbursements
+* `/insurance/settings` — Payer IRDAI Settings
+
+### Staff Routes (`ProfessionalShell` — Staff Workspace)
+* `/staff` — Staff Shift Workspace
+* `/staff/tasks` — Clinical Handover & Tasks
+* `/staff/patients` — Assigned Inpatients Roster
+* `/staff/profile` — Staff ID & Credentials
+
+### Platform Admin Routes (`ProfessionalShell` — Governance)
+* `/admin` — Platform Governance Overview
+* `/admin/users` — Ecosystem User Accounts Directory
+* `/admin/organizations` — Healthcare Organizations Registry
+* `/admin/facilities` — Multi-Branch Campuses
+* `/admin/verification` — Practitioner License Verification Desk
+* `/admin/audit` — Immutable Append-Only Audit Stream
+* `/admin/settings` — Global Platform Settings
+
+### Emergency, Blood & Finance Routes
+* `/emergency` — Trauma Care & Triage Unit
+* `/blood-bank` — Blood Donor Network & Coordinator
+* `/finance` — Healthcare Finance & Multi-Source Claims

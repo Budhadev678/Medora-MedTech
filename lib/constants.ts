@@ -202,10 +202,10 @@ export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
   emergency_staff: "/emergency",
   blood_staff: "/blood-bank",
   finance_staff: "/finance",
-  insurance_staff: "/finance",
+  insurance_staff: "/insurance",
   government_staff: "/finance",
   ambulance_staff: "/emergency",
-  staff: "/hospital",
+  staff: "/staff",
   admin: "/admin",
 };
 
