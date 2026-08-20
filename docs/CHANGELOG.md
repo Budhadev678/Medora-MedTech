@@ -1,5 +1,18 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 4.2 - Clinical Record Core] - 2026-08-20
+### Added
+- **Clinical Record Core Entity & Store (`lib/data/clinical-record-store.ts`):** Implemented authoritative `ClinicalRecord` model (`CR-*`) attached to parent `HealthcareEncounter` (`ENC-*`).
+- **Structured Clinical Sections:** Chief complaint, structured symptoms (with duration and severity), structured vitals (BP, pulse, temp, SpO2, respiratory rate, BMI), clinical observations, attributable notes, clinician assessment, clinician diagnoses with ICD-10 attribution (never AI-generated), treatment plan, and follow-up plan.
+- **Draft & Completion Lifecycle:** Allows saving in-progress drafts, reviewing completeness, and locking completed records against silent overwrites.
+- **Documented Amendment Pipeline:** Full versioning engine (`version_history` snapshots) requiring an explicit `amendment_reason` to bump version ($1 \rightarrow 2$).
+- **Doctor Clinical Workbench (`app/doctor/consultations/page.tsx`):** Tabbed clinical documentation suite with dynamic symptom/diagnosis rows, auto-calculated vitals, draft saving, sign-off, and version history ledger.
+- **Patient Medical Records Summary (`app/patient/records/page.tsx`):** Mobile-first clinical summary sheet showing verified clinician assessment, diagnoses, vitals, care instructions, and cryptographic provenance.
+- **Append-Only Audit & Tri-Lingual Localization:** Added `CLINICAL_RECORD_CREATED`, `CLINICAL_RECORD_COMPLETED`, `CLINICAL_RECORD_AMENDED` events, and localized clinical terms into English, Hindi, and Odia.
+- **Automated Verification:** 28/28 assertions passed in `scripts/test-phase4-clinical-record.ts` across 110 cleanly compiled routes.
+
+---
+
 ## [Phase 4.1 - Healthcare Encounter Core] - 2026-08-20
 ### Added
 - **Central Domain Entity & Store (`lib/data/encounter-store.ts`):** Implemented authoritative `HealthcareEncounter` model (`ENC-*`) connecting Patient (`PAT-*`), Practitioner (`DOC-*`), and Organization (`HSP-*`, `CLN-*`) at explicit timestamps.

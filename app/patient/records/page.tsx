@@ -15,7 +15,10 @@ import {
   X, 
   Sparkles,
   ChevronRight,
-  User
+  User,
+  HeartPulse,
+  Activity,
+  CheckCircle2
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getPatientEncounters, HealthcareEncounter } from "@/lib/data/encounter-store";
+import { getClinicalRecordByEncounterId, ClinicalRecord } from "@/lib/data/clinical-record-store";
 
 export default function PatientRecordsPage() {
   const { user } = useAuth();
@@ -41,13 +45,18 @@ export default function PatientRecordsPage() {
 
   useEffect(() => {
     refreshEncounters();
-    window.addEventListener("medora-encounters-updated", refreshEncounters);
-    return () => window.removeEventListener("medora-encounters-updated", refreshEncounters);
+    const handleUpdate = () => refreshEncounters();
+    window.addEventListener("medora-encounters-updated", handleUpdate);
+    window.addEventListener("medora-clinical-records-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-encounters-updated", handleUpdate);
+      window.removeEventListener("medora-clinical-records-updated", handleUpdate);
+    };
   }, [user]);
 
   const isRahul = user?.identifier === "PAT-1001";
 
-  // Static/Auxiliary Records for PAT-1001
+  // Static/Auxiliary Certified Records for PAT-1001
   const auxiliaryRecords: PatientRecordProps[] = isRahul ? [
     {
       id: "RPT-1024",
@@ -73,21 +82,28 @@ export default function PatientRecordsPage() {
   ] : [];
 
   // Map dynamic encounters to RecordCard format
-  const dynamicEncounterRecords: PatientRecordProps[] = encounters.map((enc) => ({
-    id: enc.id,
-    category: "consultation",
-    title: `${enc.encounter_type.replace(/_/g, " ")} — ${enc.department_name}`,
-    doctorName: enc.provider_name,
-    facilityName: `${enc.organization_name}${enc.location ? ` (${enc.location})` : ""}`,
-    date: new Date(enc.started_at).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
-    summary: `Reason for Visit: ${enc.reason_for_visit}. Status: ${enc.status}. Clinically recorded by ${enc.provider_name}.`,
-    actionHref: `/patient/records#${enc.id}`,
-    actionLabel: "View Details",
-  }));
+  const dynamicEncounterRecords: PatientRecordProps[] = encounters.map((enc) => {
+    const clinicalRec = getClinicalRecordByEncounterId(enc.id);
+    const diagnosisSummary = clinicalRec?.diagnoses?.length 
+      ? ` • Diagnosis: ${clinicalRec.diagnoses.map(d => d.name).join(", ")}` 
+      : "";
+
+    return {
+      id: enc.id,
+      category: "consultation",
+      title: `${enc.encounter_type.replace(/_/g, " ")} — ${enc.department_name}`,
+      doctorName: enc.provider_name,
+      facilityName: `${enc.organization_name}${enc.location ? ` (${enc.location})` : ""}`,
+      date: new Date(enc.started_at).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      summary: `Chief Complaint: ${clinicalRec?.chief_complaint || enc.reason_for_visit}${diagnosisSummary}. Clinically documented by ${enc.provider_name}.`,
+      actionHref: `/patient/records#${enc.id}`,
+      actionLabel: clinicalRec ? "View Clinical Summary" : "View Visit Details",
+    };
+  });
 
   const allPatientRecords = [...dynamicEncounterRecords, ...auxiliaryRecords];
 
@@ -100,15 +116,19 @@ export default function PatientRecordsPage() {
     { key: "consultation", label: `Visits & Consultations (${dynamicEncounterRecords.length})` },
     { key: "report", label: `Lab Reports (${auxiliaryRecords.filter(r => r.category === "report").length})` },
     { key: "prescription", label: `Prescriptions (${auxiliaryRecords.filter(r => r.category === "prescription").length})` },
-    { key: "emergency", label: "Emergency (0)" },
   ];
+
+  // Active encounter's clinical record
+  const currentClinicalRecord = selectedEncounterDetail 
+    ? getClinicalRecordByEncounterId(selectedEncounterDetail.id) 
+    : null;
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
       <div className="space-y-5 animate-in fade-in-50 duration-150">
         <PageHeader
           title="Longitudinal Medical Records"
-          description="Authoritative clinical records, healthcare visits, and consultation summaries across all MEDORA facilities."
+          description="Authoritative clinical consultations, symptoms, vitals, assessments, and diagnoses across all your MEDORA healthcare visits."
           breadcrumbs={[{ label: "Patient Portal", href: "/patient" }, { label: "Medical Records" }]}
         />
 
@@ -140,7 +160,7 @@ export default function PatientRecordsPage() {
                 <div key={record.id} className="relative group">
                   <RecordCard 
                     {...record} 
-                    actionLabel={matchedEncounter ? "View Visit Details" : record.actionLabel}
+                    actionLabel={matchedEncounter ? "View Clinical Summary" : record.actionLabel}
                   />
                   {matchedEncounter && (
                     <button
@@ -159,7 +179,7 @@ export default function PatientRecordsPage() {
             icon={<FileText className="h-6 w-6 text-teal-600" />}
             title="No Healthcare Records in this Category"
             description="Verified clinical records will aggregate here automatically after your doctor visits and lab investigations."
-            phase="Phase 4.1 — Healthcare Encounter Core"
+            phase="Phase 4.2 — Clinical Record Core"
             secondaryText="Zero duplicate records: Timeline aggregates authoritative clinical events across all MEDORA facilities."
             actionHref="/patient"
             actionLabel="Return to Patient Home"
@@ -167,11 +187,13 @@ export default function PatientRecordsPage() {
         )}
 
         {/* ============================================================ */}
-        {/* ENCOUNTER DETAIL SHEET (MOBILE-FIRST) */}
+        {/* CLINICAL ENCOUNTER DETAIL SHEET (MOBILE-FIRST) */}
         {/* ============================================================ */}
         {selectedEncounterDetail && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in-50">
-            <div className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto">
+              
+              {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
@@ -179,9 +201,14 @@ export default function PatientRecordsPage() {
                       {selectedEncounterDetail.encounter_reference || selectedEncounterDetail.id}
                     </span>
                     <StatusBadge status={selectedEncounterDetail.status.toLowerCase() as any} />
+                    {currentClinicalRecord && (
+                      <Badge variant="outline" className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border-emerald-200">
+                        {currentClinicalRecord.status} (v{currentClinicalRecord.version})
+                      </Badge>
+                    )}
                   </div>
                   <h3 className="font-bold text-base text-slate-900 mt-1">
-                    Healthcare Visit Details
+                    Clinical Visit Summary
                   </h3>
                 </div>
                 <button
@@ -193,7 +220,8 @@ export default function PatientRecordsPage() {
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs">
+              <div className="space-y-3.5 text-xs">
+                
                 {/* Doctor & Facility Info */}
                 <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-2">
                   <div className="flex items-center gap-2.5">
@@ -226,44 +254,146 @@ export default function PatientRecordsPage() {
                   </div>
                 </div>
 
-                {/* Clinical Reason */}
+                {/* Chief Complaint */}
                 <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Reason for Visit</span>
-                  <p className="text-slate-800 font-medium leading-relaxed">
-                    {selectedEncounterDetail.reason_for_visit}
-                  </p>
-                </div>
-
-                {/* Timing & Location */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Session Started</span>
-                    <span className="text-slate-800 font-medium">
-                      {new Date(selectedEncounterDetail.started_at).toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                    <span className="text-[10px] font-bold uppercase text-slate-400 block">Session Ended</span>
-                    <span className="text-slate-800 font-medium">
-                      {selectedEncounterDetail.ended_at 
-                        ? new Date(selectedEncounterDetail.ended_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) 
-                        : "In Progress"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Clinical Provenance & Future Clinical Attachment Notice */}
-                <div className="p-3 rounded-xl border border-teal-200 bg-teal-50/70 text-xs text-teal-900 space-y-1">
-                  <span className="font-bold block flex items-center gap-1.5">
-                    <ShieldCheck className="h-3.5 w-3.5 text-teal-700" />
-                    Verified Healthcare Provenance
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                    Chief Complaint / Reason
                   </span>
-                  <p className="text-[11px] text-teal-800 leading-relaxed">
-                    This encounter is cryptographically logged in the MEDORA health registry. Future consultation notes, diagnoses, and e-prescriptions will link directly to this visit ID.
+                  <p className="text-slate-800 font-medium leading-relaxed">
+                    {currentClinicalRecord?.chief_complaint || selectedEncounterDetail.reason_for_visit}
                   </p>
+                </div>
+
+                {/* Symptoms */}
+                {currentClinicalRecord?.symptoms && currentClinicalRecord.symptoms.length > 0 && (
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Documented Symptoms ({currentClinicalRecord.symptoms.length})
+                    </span>
+                    <div className="space-y-1.5">
+                      {currentClinicalRecord.symptoms.map((sym, i) => (
+                        <div key={i} className="flex items-center justify-between text-slate-800 bg-white p-2 rounded-lg border border-slate-200/60">
+                          <span className="font-semibold">{sym.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            {sym.duration && (
+                              <span className="text-[10px] text-slate-500">{sym.duration}</span>
+                            )}
+                            <Badge variant="outline" className="text-[9px] font-bold py-0">
+                              {sym.severity}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Vitals */}
+                {currentClinicalRecord?.vitals && (
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Recorded Physical Vitals
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                      {currentClinicalRecord.vitals.systolic_bp_mmhg && currentClinicalRecord.vitals.diastolic_bp_mmhg && (
+                        <div className="p-2 rounded-lg bg-white border border-slate-200">
+                          <span className="text-[9px] font-bold text-slate-400 block">BP</span>
+                          <span className="font-bold text-slate-800">
+                            {currentClinicalRecord.vitals.systolic_bp_mmhg}/{currentClinicalRecord.vitals.diastolic_bp_mmhg} <span className="text-[9px] text-slate-400 font-normal">mmHg</span>
+                          </span>
+                        </div>
+                      )}
+                      {currentClinicalRecord.vitals.heart_rate_bpm && (
+                        <div className="p-2 rounded-lg bg-white border border-slate-200">
+                          <span className="text-[9px] font-bold text-slate-400 block">Pulse</span>
+                          <span className="font-bold text-slate-800">
+                            {currentClinicalRecord.vitals.heart_rate_bpm} <span className="text-[9px] text-slate-400 font-normal">bpm</span>
+                          </span>
+                        </div>
+                      )}
+                      {currentClinicalRecord.vitals.spo2_percent && (
+                        <div className="p-2 rounded-lg bg-white border border-slate-200">
+                          <span className="text-[9px] font-bold text-slate-400 block">SpO2</span>
+                          <span className="font-bold text-slate-800">
+                            {currentClinicalRecord.vitals.spo2_percent}%
+                          </span>
+                        </div>
+                      )}
+                      {currentClinicalRecord.vitals.temperature_celsius && (
+                        <div className="p-2 rounded-lg bg-white border border-slate-200">
+                          <span className="text-[9px] font-bold text-slate-400 block">Temp</span>
+                          <span className="font-bold text-slate-800">
+                            {currentClinicalRecord.vitals.temperature_celsius}°C
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Clinician Diagnoses */}
+                {currentClinicalRecord?.diagnoses && currentClinicalRecord.diagnoses.length > 0 && (
+                  <div className="p-3 rounded-xl border border-teal-200 bg-teal-50/50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 block">
+                        Clinician Diagnoses
+                      </span>
+                      <span className="text-[9px] font-semibold text-teal-700">
+                        Attributed to {currentClinicalRecord.author_name}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {currentClinicalRecord.diagnoses.map((dx, i) => (
+                        <div key={i} className="p-2 rounded-lg bg-white border border-teal-200 flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-slate-900 block">{dx.name}</span>
+                            {dx.icd10_code && (
+                              <span className="text-[10px] font-mono text-slate-500">ICD-10: {dx.icd10_code}</span>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-[10px] font-bold bg-teal-50 text-teal-800 border-teal-300">
+                            {dx.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Treatment Plan & Advice */}
+                {currentClinicalRecord?.treatment_plan && (
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Care & Lifestyle Plan
+                    </span>
+                    <p className="text-slate-800 font-medium leading-relaxed">
+                      {currentClinicalRecord.treatment_plan}
+                    </p>
+                  </div>
+                )}
+
+                {/* Follow-up Plan */}
+                {currentClinicalRecord?.follow_up_plan && currentClinicalRecord.follow_up_plan.required && (
+                  <div className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">
+                      Follow-up Plan
+                    </span>
+                    <p className="text-slate-800 font-medium">
+                      {currentClinicalRecord.follow_up_plan.instructions || "Follow-up recommended with attending specialist."}
+                      {currentClinicalRecord.follow_up_plan.follow_up_date && ` (Target Date: ${currentClinicalRecord.follow_up_plan.follow_up_date})`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Cryptographic Provenance */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-[11px] text-slate-600 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    Clinician Certified Record
+                  </span>
+                  <span className="font-mono text-[10px] text-slate-400">
+                    {currentClinicalRecord ? `${currentClinicalRecord.id} (v${currentClinicalRecord.version})` : selectedEncounterDetail.id}
+                  </span>
                 </div>
               </div>
 
@@ -273,7 +403,7 @@ export default function PatientRecordsPage() {
                   onClick={() => setSelectedEncounterDetail(null)}
                   className="w-full sm:w-auto bg-slate-900 text-white font-bold text-xs"
                 >
-                  Close Visit Details
+                  Close Summary
                 </Button>
               </div>
             </div>

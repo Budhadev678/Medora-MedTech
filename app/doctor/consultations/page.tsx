@@ -22,7 +22,13 @@ import {
   Sparkles,
   ChevronRight,
   RefreshCw,
-  Ban
+  Ban,
+  Edit3,
+  History,
+  FileEdit,
+  Save,
+  Trash2,
+  Check
 } from "lucide-react";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { PageHeader } from "@/components/shared/page-header";
@@ -43,11 +49,24 @@ import {
   completeEncounter, 
   cancelEncounter 
 } from "@/lib/data/encounter-store";
+import { 
+  ClinicalRecord, 
+  ClinicalSymptom, 
+  ClinicalVitals, 
+  ClinicalDiagnosis, 
+  ClinicalFollowUpPlan,
+  getClinicalRecordByEncounterId,
+  saveClinicalRecordDraft,
+  completeClinicalRecord,
+  amendClinicalRecord
+} from "@/lib/data/clinical-record-store";
 import { getAllIdentities, findIdentityById, StoredIdentity } from "@/lib/data/identity-store";
 import { AccessEngine } from "@/lib/services/access-engine";
+import { useLocalization } from "@/lib/localization";
 
 export default function DoctorConsultationsPage() {
   const { user } = useAuth();
+  const { t } = useLocalization();
 
   // Selected organization context from doctor's affiliations
   const doctorAffiliations = user?.doctorData?.affiliations?.filter(a => a.status === "active") || [];
@@ -58,11 +77,10 @@ export default function DoctorConsultationsPage() {
   const [encounters, setEncounters] = useState<HealthcareEncounter[]>([]);
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Modal States
+  // Modals for Encounter Lifecycle
   const [showStartModal, setShowStartModal] = useState(false);
-  const [showCompleteModal, setShowCompleteModal] = useState<HealthcareEncounter | null>(null);
+  const [showCompleteEncounterModal, setShowCompleteEncounterModal] = useState<HealthcareEncounter | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<HealthcareEncounter | null>(null);
   const [cancelReasonInput, setCancelReasonInput] = useState("");
 
@@ -76,8 +94,26 @@ export default function DoctorConsultationsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Active Encounter Detail Sheet
-  const [selectedEncounterDetail, setSelectedEncounterDetail] = useState<HealthcareEncounter | null>(null);
+  // Clinical Record Editor Drawer / Modal
+  const [activeEncounterForRecord, setActiveEncounterForRecord] = useState<HealthcareEncounter | null>(null);
+  const [activeRecord, setActiveRecord] = useState<ClinicalRecord | null>(null);
+  const [editorTab, setEditorTab] = useState<"symptoms" | "vitals" | "assessment" | "plan" | "history">("symptoms");
+  
+  // Editor Form Fields
+  const [recordComplaint, setRecordComplaint] = useState("");
+  const [symptoms, setSymptoms] = useState<ClinicalSymptom[]>([]);
+  const [vitals, setVitals] = useState<ClinicalVitals>({ recorded_at: "", recorded_by: "" });
+  const [observations, setObservations] = useState("");
+  const [clinicalNotes, setClinicalNotes] = useState("");
+  const [assessment, setAssessment] = useState("");
+  const [diagnoses, setDiagnoses] = useState<ClinicalDiagnosis[]>([]);
+  const [treatmentPlan, setTreatmentPlan] = useState("");
+  const [followUpPlan, setFollowUpPlan] = useState<ClinicalFollowUpPlan>({ required: false });
+  const [recordSaveStatus, setRecordSaveStatus] = useState<string | null>(null);
+
+  // Amendment Modal
+  const [showAmendModal, setShowAmendModal] = useState(false);
+  const [amendmentReasonInput, setAmendmentReasonInput] = useState("");
 
   // Refresh Encounters
   const refreshEncounters = () => {
@@ -95,9 +131,64 @@ export default function DoctorConsultationsPage() {
       setSelectedPatientId(patients[0].identifier || patients[0].id);
     }
 
-    window.addEventListener("medora-encounters-updated", refreshEncounters);
-    return () => window.removeEventListener("medora-encounters-updated", refreshEncounters);
-  }, [user, selectedOrgId]);
+    const handleUpdate = () => {
+      refreshEncounters();
+      if (activeEncounterForRecord) {
+        const rec = getClinicalRecordByEncounterId(activeEncounterForRecord.id);
+        setActiveRecord(rec);
+      }
+    };
+
+    window.addEventListener("medora-encounters-updated", handleUpdate);
+    window.addEventListener("medora-clinical-records-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-encounters-updated", handleUpdate);
+      window.removeEventListener("medora-clinical-records-updated", handleUpdate);
+    };
+  }, [user, selectedOrgId, activeEncounterForRecord]);
+
+  // Open Clinical Record Editor
+  const handleOpenRecordEditor = (encounter: HealthcareEncounter) => {
+    setActiveEncounterForRecord(encounter);
+    const existing = getClinicalRecordByEncounterId(encounter.id);
+    setActiveRecord(existing);
+
+    if (existing) {
+      setRecordComplaint(existing.chief_complaint || encounter.reason_for_visit);
+      setSymptoms(existing.symptoms ? [...existing.symptoms] : []);
+      setVitals(existing.vitals ? { ...existing.vitals } : { recorded_at: new Date().toISOString(), recorded_by: user?.identifier || "DOC-1001" });
+      setObservations(existing.observations || "");
+      setClinicalNotes(existing.clinical_notes || "");
+      setAssessment(existing.assessment || "");
+      setDiagnoses(existing.diagnoses ? [...existing.diagnoses] : []);
+      setTreatmentPlan(existing.treatment_plan || "");
+      setFollowUpPlan(existing.follow_up_plan ? { ...existing.follow_up_plan } : { required: false });
+    } else {
+      // Initialize with encounter details
+      setRecordComplaint(encounter.reason_for_visit);
+      setSymptoms([]);
+      setVitals({
+        temperature_celsius: 36.8,
+        heart_rate_bpm: 74,
+        systolic_bp_mmhg: 120,
+        diastolic_bp_mmhg: 80,
+        respiratory_rate_bpm: 16,
+        spo2_percent: 99,
+        recorded_at: new Date().toISOString(),
+        recorded_by: user?.identifier || "DOC-1001",
+        recorded_by_name: user?.fullName || "Dr. Ananya Sharma",
+      });
+      setObservations("");
+      setClinicalNotes("");
+      setAssessment("");
+      setDiagnoses([]);
+      setTreatmentPlan("");
+      setFollowUpPlan({ required: false });
+    }
+
+    setEditorTab("symptoms");
+    setRecordSaveStatus(null);
+  };
 
   // Filtered Encounters
   const filteredEncounters = encounters.filter(e => {
@@ -113,10 +204,9 @@ export default function DoctorConsultationsPage() {
     return true;
   });
 
-  // Selected Patient Details in Modal
   const activeModalPatient = allPatients.find(p => p.identifier === selectedPatientId || p.id === selectedPatientId);
 
-  // Access pre-check in modal
+  // Pre-access check for encounter creation
   const modalAccessCheck = user && activeModalPatient ? AccessEngine.evaluateAccess({
     actor: user,
     targetPatientId: activeModalPatient.identifier || activeModalPatient.id,
@@ -156,7 +246,6 @@ export default function DoctorConsultationsPage() {
       return;
     }
 
-    // Success
     setShowStartModal(false);
     setReasonInput("");
     refreshEncounters();
@@ -164,51 +253,171 @@ export default function DoctorConsultationsPage() {
 
   // Handle Complete Encounter
   const handleCompleteEncounter = () => {
-    if (!user || !showCompleteModal) return;
+    if (!user || !showCompleteEncounterModal) return;
     setIsSubmitting(true);
-    const res = completeEncounter(
-      showCompleteModal.id,
+    completeEncounter(
+      showCompleteEncounterModal.id,
       user.identifier || user.id,
       user.fullName,
       user.role
     );
     setIsSubmitting(false);
-    setShowCompleteModal(null);
+    setShowCompleteEncounterModal(null);
     refreshEncounters();
   };
 
-  // Handle Cancel Encounter
-  const handleCancelEncounter = () => {
-    if (!user || !showCancelModal) return;
-    if (!cancelReasonInput.trim()) {
-      alert("Please provide a reason for cancellation.");
+  // Handle Save Clinical Record Draft
+  const handleSaveDraft = () => {
+    if (!user || !activeEncounterForRecord) return;
+    setIsSubmitting(true);
+    setRecordSaveStatus(null);
+
+    const res = saveClinicalRecordDraft({
+      encounterId: activeEncounterForRecord.id,
+      chiefComplaint: recordComplaint,
+      symptoms,
+      vitals,
+      observations,
+      clinicalNotes,
+      assessment,
+      diagnoses,
+      treatmentPlan,
+      followUpPlan,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
+    setIsSubmitting(false);
+    if (res.success && res.record) {
+      setActiveRecord(res.record);
+      setRecordSaveStatus("Draft saved successfully.");
+      setTimeout(() => setRecordSaveStatus(null), 3000);
+    } else {
+      setRecordSaveStatus(res.error || "Failed to save draft.");
+    }
+  };
+
+  // Handle Complete Clinical Record
+  const handleCompleteRecord = () => {
+    if (!user || !activeEncounterForRecord) return;
+
+    // First save draft state
+    saveClinicalRecordDraft({
+      encounterId: activeEncounterForRecord.id,
+      chiefComplaint: recordComplaint,
+      symptoms,
+      vitals,
+      observations,
+      clinicalNotes,
+      assessment,
+      diagnoses,
+      treatmentPlan,
+      followUpPlan,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
+    const currentRecord = getClinicalRecordByEncounterId(activeEncounterForRecord.id);
+    if (!currentRecord) {
+      setRecordSaveStatus("Please save the record before completing.");
       return;
     }
+
     setIsSubmitting(true);
-    const res = cancelEncounter(
-      showCancelModal.id,
-      cancelReasonInput.trim(),
-      user.identifier || user.id,
-      user.fullName,
-      user.role
-    );
+    const res = completeClinicalRecord({
+      recordId: currentRecord.id,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
     setIsSubmitting(false);
-    setShowCancelModal(null);
-    setCancelReasonInput("");
-    refreshEncounters();
+    if (res.success && res.record) {
+      setActiveRecord(res.record);
+      setRecordSaveStatus("Clinical Record completed and signed off.");
+      setTimeout(() => setRecordSaveStatus(null), 4000);
+    } else {
+      setRecordSaveStatus(res.error || "Failed to complete clinical record.");
+    }
   };
 
-  const activeEncountersCount = encounters.filter(e => e.status === "ACTIVE").length;
-  const completedEncountersCount = encounters.filter(e => e.status === "COMPLETED").length;
+  // Handle Amend Clinical Record
+  const handleAmendRecord = () => {
+    if (!user || !activeRecord) return;
+    if (!amendmentReasonInput.trim()) {
+      alert("Please provide an amendment reason.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = amendClinicalRecord({
+      recordId: activeRecord.id,
+      amendmentReason: amendmentReasonInput.trim(),
+      chiefComplaint: recordComplaint,
+      symptoms,
+      vitals,
+      observations,
+      clinicalNotes,
+      assessment,
+      diagnoses,
+      treatmentPlan,
+      followUpPlan,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
+    setIsSubmitting(false);
+    setShowAmendModal(false);
+    setAmendmentReasonInput("");
+
+    if (res.success && res.record) {
+      setActiveRecord(res.record);
+      setRecordSaveStatus(`Clinical Record amended to Version ${res.record.version}.`);
+      setTimeout(() => setRecordSaveStatus(null), 4000);
+    } else {
+      setRecordSaveStatus(res.error || "Failed to amend record.");
+    }
+  };
+
+  // Add Dynamic Symptom
+  const handleAddSymptom = () => {
+    const newSym: ClinicalSymptom = {
+      id: `SYM-${symptoms.length + 1}`,
+      name: "",
+      severity: "MODERATE",
+      duration: "1 day",
+    };
+    setSymptoms([...symptoms, newSym]);
+  };
+
+  // Add Dynamic Diagnosis
+  const handleAddDiagnosis = () => {
+    const newDx: ClinicalDiagnosis = {
+      id: `DX-${diagnoses.length + 1}`,
+      name: "",
+      icd10_code: "",
+      status: "CONFIRMED",
+      category: diagnoses.length === 0 ? "PRIMARY" : "SECONDARY",
+      recorded_by: user?.identifier || "DOC-1001",
+      recorded_by_name: user?.fullName || "Dr. Ananya Sharma",
+      recorded_at: new Date().toISOString(),
+    };
+    setDiagnoses([...diagnoses, newDx]);
+  };
+
+  const isRecordLocked = activeRecord?.status === "COMPLETED" || activeRecord?.status === "AMENDED";
 
   return (
     <RoleGuard allowedRoles={["doctor", "admin"]}>
       <div className="space-y-5 animate-in fade-in-50 duration-150">
-        {/* Page Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <PageHeader
-            title="Clinical Encounter Workbench"
-            description="Initiate, manage, and complete authoritative healthcare encounters across your affiliated hospital facilities."
+            title="Clinical Encounter Workbench & Records"
+            description="Document structured symptoms, vitals, assessments, diagnoses, and follow-up plans attached to authoritative hospital encounters."
             breadcrumbs={[{ label: "Doctor Workspace", href: "/doctor" }, { label: "Encounter Workbench" }]}
           />
           <Button 
@@ -220,7 +429,7 @@ export default function DoctorConsultationsPage() {
           </Button>
         </div>
 
-        {/* 1. Multi-Hospital Organization Scoping Context Banner */}
+        {/* 1. Multi-Hospital Organization Context Banner */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 flex-shrink-0">
@@ -239,7 +448,7 @@ export default function DoctorConsultationsPage() {
             </div>
           </div>
 
-          {/* Quick Context Switcher if affiliated with multiple hospitals */}
+          {/* Quick Context Switcher */}
           {doctorAffiliations.length > 1 && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-500">Switch Facility:</span>
@@ -259,202 +468,797 @@ export default function DoctorConsultationsPage() {
           )}
         </div>
 
-        {/* 2. Metrics & Status Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block">Active Encounters</span>
-            <span className="text-2xl font-extrabold text-teal-700 mt-1 block">
-              {activeEncountersCount}
-            </span>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 block">Completed Today</span>
-            <span className="text-2xl font-extrabold text-slate-900 mt-1 block">
-              {completedEncountersCount}
-            </span>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs col-span-2 sm:col-span-1">
-            <span className="text-[11px] font-semibold text-slate-500 block">Access Engine</span>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span className="text-xs font-bold text-emerald-700">Consent Protected</span>
+        {/* 2. Encounters List with Clinical Record Attachment Indicators */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1">
+              <button
+                onClick={() => setStatusFilter("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  statusFilter === "ALL" ? "bg-slate-900 text-white font-bold" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                All Encounters ({encounters.length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("ACTIVE")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  statusFilter === "ACTIVE" ? "bg-teal-700 text-white font-bold" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Active ({encounters.filter(e => e.status === "ACTIVE").length})
+              </button>
+              <button
+                onClick={() => setStatusFilter("COMPLETED")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  statusFilter === "COMPLETED" ? "bg-slate-900 text-white font-bold" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Completed ({encounters.filter(e => e.status === "COMPLETED").length})
+              </button>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search patient, ID, ref..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 text-xs h-9"
+              />
             </div>
           </div>
-        </div>
 
-        {/* 3. Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1">
-            <button
-              onClick={() => setStatusFilter("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                statusFilter === "ALL" 
-                  ? "bg-slate-900 text-white font-bold" 
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              All Encounters ({encounters.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter("ACTIVE")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                statusFilter === "ACTIVE" 
-                  ? "bg-teal-700 text-white font-bold" 
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Active ({activeEncountersCount})
-            </button>
-            <button
-              onClick={() => setStatusFilter("COMPLETED")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                statusFilter === "COMPLETED" 
-                  ? "bg-slate-900 text-white font-bold" 
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              Completed ({completedEncountersCount})
-            </button>
-          </div>
+          {filteredEncounters.length > 0 ? (
+            <div className="space-y-3">
+              {filteredEncounters.map((encounter) => {
+                const clinicalRec = getClinicalRecordByEncounterId(encounter.id);
+                const isActive = encounter.status === "ACTIVE";
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="Search patient, ID, ref..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 text-xs h-9"
-            />
-          </div>
-        </div>
-
-        {/* 4. Encounters List */}
-        {filteredEncounters.length > 0 ? (
-          <div className="space-y-3">
-            {filteredEncounters.map((encounter) => {
-              const isActive = encounter.status === "ACTIVE";
-              const isCompleted = encounter.status === "COMPLETED";
-
-              return (
-                <div
-                  key={encounter.id}
-                  className={`rounded-2xl border transition-all p-4 ${
-                    isActive 
-                      ? "border-teal-300 bg-teal-50/40 shadow-xs" 
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded">
-                          {encounter.encounter_reference || encounter.id}
-                        </span>
-                        <StatusBadge status={encounter.status.toLowerCase() as any} />
-                        <span className="text-[11px] font-semibold text-slate-500">
-                          {encounter.department_name}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-base text-slate-900">
-                          {encounter.patient_name}
-                        </h3>
-                        <Badge variant="outline" className="text-[10px] font-mono text-slate-600">
-                          {encounter.patient_id}
-                        </Badge>
-                        {encounter.patient_blood_group && (
-                          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                            {encounter.patient_blood_group}
+                return (
+                  <div
+                    key={encounter.id}
+                    className={`rounded-2xl border transition-all p-4 ${
+                      isActive 
+                        ? "border-teal-300 bg-teal-50/30 shadow-xs" 
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-bold text-teal-800 bg-teal-100/70 px-2 py-0.5 rounded">
+                            {encounter.encounter_reference || encounter.id}
                           </span>
+                          <StatusBadge status={encounter.status.toLowerCase() as any} />
+                          <span className="text-[11px] font-semibold text-slate-500">
+                            {encounter.department_name}
+                          </span>
+
+                          {/* Clinical Record Status Badge */}
+                          {clinicalRec ? (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-[10px] font-bold ${
+                                clinicalRec.status === "COMPLETED" 
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                  : clinicalRec.status === "AMENDED"
+                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  : "bg-blue-50 text-blue-800 border-blue-300"
+                              }`}
+                            >
+                              <FileText className="h-3 w-3 mr-1 inline" />
+                              {clinicalRec.record_reference} ({clinicalRec.status} v{clinicalRec.version})
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-slate-500 border-dashed">
+                              No Clinical Record Attached
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-base text-slate-900">
+                            {encounter.patient_name}
+                          </h3>
+                          <Badge variant="outline" className="text-[10px] font-mono text-slate-600">
+                            {encounter.patient_id}
+                          </Badge>
+                          {encounter.patient_blood_group && (
+                            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                              {encounter.patient_blood_group}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-700 font-medium">
+                          <strong>Chief Reason:</strong> {encounter.reason_for_visit}
+                        </p>
+
+                        {clinicalRec?.diagnoses && clinicalRec.diagnoses.length > 0 && (
+                          <div className="flex items-center gap-1.5 pt-0.5">
+                            <span className="text-[11px] font-bold text-slate-500">Diagnoses:</span>
+                            {clinicalRec.diagnoses.map((dx, idx) => (
+                              <span key={idx} className="text-[11px] font-bold text-teal-800 bg-teal-100/60 px-1.5 py-0.2 rounded">
+                                {dx.name} ({dx.icd10_code || "Clinician Recorded"})
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-700 font-medium">
-                        <strong>Reason:</strong> {encounter.reason_for_visit}
-                      </p>
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
+                        {/* Clinical Record Document Action */}
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenRecordEditor(encounter)}
+                          className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8 shadow-2xs"
+                        >
+                          <FileEdit className="h-3.5 w-3.5" />
+                          <span>{clinicalRec ? "Edit Clinical Record" : "Document Record"}</span>
+                        </Button>
 
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-1">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-slate-400" />
-                          {encounter.organization_name}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-slate-400" />
-                          {new Date(encounter.started_at).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-slate-400" />
-                          {new Date(encounter.started_at).toLocaleTimeString("en-IN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          {encounter.ended_at && ` - ${new Date(encounter.ended_at).toLocaleTimeString("en-IN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}`}
-                        </span>
+                        {isActive && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowCompleteEncounterModal(encounter)}
+                              className="text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 h-8"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              End Visit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowCancelModal(encounter);
+                                setCancelReasonInput("");
+                              }}
+                              className="text-xs text-red-600 border-red-200 hover:bg-red-50 h-8"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Stethoscope className="h-8 w-8 text-teal-600" />}
+              title="No Encounters Found"
+              description={`No encounters matching filters in ${selectedOrgId}.`}
+              actionLabel="Start New Encounter"
+              onAction={() => setShowStartModal(true)}
+            />
+          )}
+        </div>
+
+        {/* ============================================================ */}
+        {/* CLINICAL RECORD WORKBENCH DRAWER / MODAL */}
+        {/* ============================================================ */}
+        {activeEncounterForRecord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-4xl max-h-[92vh] rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl flex flex-col overflow-hidden">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-base text-slate-900">
+                        Clinical Record — {activeEncounterForRecord.patient_name}
+                      </h3>
+                      <Badge variant="outline" className="text-[10px] font-mono">
+                        {activeEncounterForRecord.encounter_reference || activeEncounterForRecord.id}
+                      </Badge>
+                      {activeRecord && (
+                        <Badge variant="secondary" className="text-[10px] font-bold uppercase">
+                          {activeRecord.status} (v{activeRecord.version})
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      {activeEncounterForRecord.organization_name} • {activeEncounterForRecord.department_name} • Attending: {user?.fullName}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveEncounterForRecord(null)}
+                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Status Banner / Feedback */}
+              {recordSaveStatus && (
+                <div className="my-2 p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-xs font-bold text-teal-900 flex items-center justify-between animate-in fade-in-50">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-teal-600" />
+                    {recordSaveStatus}
+                  </span>
+                </div>
+              )}
+
+              {/* Navigation Tabs */}
+              <div className="flex items-center gap-1 border-b border-slate-200 pt-2 pb-1 overflow-x-auto scrollbar-none flex-shrink-0 text-xs font-bold">
+                <button
+                  onClick={() => setEditorTab("symptoms")}
+                  className={`px-3 py-2 border-b-2 transition-all whitespace-nowrap ${
+                    editorTab === "symptoms" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  1. Chief Complaint & Symptoms ({symptoms.length})
+                </button>
+                <button
+                  onClick={() => setEditorTab("vitals")}
+                  className={`px-3 py-2 border-b-2 transition-all whitespace-nowrap ${
+                    editorTab === "vitals" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  2. Vitals & Observations
+                </button>
+                <button
+                  onClick={() => setEditorTab("assessment")}
+                  className={`px-3 py-2 border-b-2 transition-all whitespace-nowrap ${
+                    editorTab === "assessment" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  3. Clinical Assessment & Notes
+                </button>
+                <button
+                  onClick={() => setEditorTab("plan")}
+                  className={`px-3 py-2 border-b-2 transition-all whitespace-nowrap ${
+                    editorTab === "plan" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  4. Diagnoses & Treatment Plan ({diagnoses.length})
+                </button>
+                {activeRecord?.version_history && activeRecord.version_history.length > 0 && (
+                  <button
+                    onClick={() => setEditorTab("history")}
+                    className={`px-3 py-2 border-b-2 transition-all whitespace-nowrap flex items-center gap-1 ${
+                      editorTab === "history" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    Version History ({activeRecord.version_history.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Tab Content Body (Scrollable) */}
+              <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-xs">
+                
+                {/* ---------------------------------------------------- */}
+                {/* TAB 1: Chief Complaint & Symptoms */}
+                {/* ---------------------------------------------------- */}
+                {editorTab === "symptoms" && (
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="font-bold text-slate-900">
+                        Chief Complaint / Primary Reason for Visit <span className="text-red-500">*</span>
+                      </Label>
+                      <textarea
+                        value={recordComplaint}
+                        onChange={(e) => setRecordComplaint(e.target.value)}
+                        disabled={isRecordLocked}
+                        rows={2}
+                        placeholder="e.g. Exertional chest tightness and morning headaches for 2 weeks"
+                        className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-600 disabled:bg-slate-100 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-bold text-slate-900">
+                          Structured Symptoms ({symptoms.length})
+                        </Label>
+                        {!isRecordLocked && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddSymptom}
+                            className="text-xs font-bold text-teal-700 border-teal-300 hover:bg-teal-50 h-7"
+                          >
+                            <Plus className="h-3 w-3 mr-1" /> Add Symptom
+                          </Button>
+                        )}
+                      </div>
+
+                      {symptoms.length > 0 ? (
+                        <div className="space-y-2">
+                          {symptoms.map((sym, idx) => (
+                            <div key={idx} className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row items-start md:items-center gap-2">
+                              <Input
+                                placeholder="Symptom Name (e.g. Substernal heaviness)"
+                                value={sym.name}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...symptoms];
+                                  updated[idx].name = e.target.value;
+                                  setSymptoms(updated);
+                                }}
+                                className="text-xs flex-1 bg-white"
+                              />
+                              <Input
+                                placeholder="Duration (e.g. 3 days)"
+                                value={sym.duration || ""}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...symptoms];
+                                  updated[idx].duration = e.target.value;
+                                  setSymptoms(updated);
+                                }}
+                                className="text-xs w-28 bg-white"
+                              />
+                              <select
+                                value={sym.severity}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...symptoms];
+                                  updated[idx].severity = e.target.value as any;
+                                  setSymptoms(updated);
+                                }}
+                                className="text-xs rounded-lg border border-slate-300 bg-white p-2 font-medium"
+                              >
+                                <option value="MILD">Mild</option>
+                                <option value="MODERATE">Moderate</option>
+                                <option value="SEVERE">Severe</option>
+                              </select>
+                              {!isRecordLocked && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSymptoms(symptoms.filter((_, i) => i !== idx))}
+                                  className="text-slate-400 hover:text-red-600 p-1"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 italic text-[11px] p-2 bg-slate-50 rounded-xl border border-slate-100">
+                          No symptoms recorded yet. Click "+ Add Symptom" to document specific symptoms.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------- */}
+                {/* TAB 2: Vitals & Observations */}
+                {/* ---------------------------------------------------- */}
+                {editorTab === "vitals" && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="font-semibold text-slate-700">BP Systolic (mmHg)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.systolic_bp_mmhg || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, systolic_bp_mmhg: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 120"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">BP Diastolic (mmHg)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.diastolic_bp_mmhg || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, diastolic_bp_mmhg: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 80"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">Heart Rate (bpm)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.heart_rate_bpm || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, heart_rate_bpm: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 72"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">Temperature (°C)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={vitals.temperature_celsius || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, temperature_celsius: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 36.8"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">SpO2 (%)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.spo2_percent || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, spo2_percent: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 98"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">Resp Rate (bpm)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.respiratory_rate_bpm || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, respiratory_rate_bpm: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 16"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">Weight (kg)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={vitals.weight_kg || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, weight_kg: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 74"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700">Height (cm)</Label>
+                        <Input
+                          type="number"
+                          value={vitals.height_cm || ""}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setVitals({ ...vitals, height_cm: Number(e.target.value) || undefined })}
+                          placeholder="e.g. 175"
+                          className="mt-1"
+                        />
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 self-end md:self-center">
-                      {isActive && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() => setShowCompleteModal(encounter)}
-                            className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Complete Visit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setShowCancelModal(encounter);
-                              setCancelReasonInput("");
-                            }}
-                            className="text-xs text-red-600 border-red-200 hover:bg-red-50 h-8"
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                      <Label className="font-bold text-slate-900">
+                        Physical Examination & Clinical Observations
+                      </Label>
+                      <textarea
+                        value={observations}
+                        disabled={isRecordLocked}
+                        onChange={(e) => setObservations(e.target.value)}
+                        rows={3}
+                        placeholder="General appearance, systemic examination findings (CVS, RS, CNS, Abdomen)..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-600 disabled:bg-slate-100"
+                      />
+                    </div>
+                  </div>
+                )}
 
+                {/* ---------------------------------------------------- */}
+                {/* TAB 3: Clinical Assessment & Notes */}
+                {/* ---------------------------------------------------- */}
+                {editorTab === "assessment" && (
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="font-bold text-slate-900">
+                        Clinical Assessment / Impression <span className="text-red-500">*</span>
+                      </Label>
+                      <textarea
+                        value={assessment}
+                        disabled={isRecordLocked}
+                        onChange={(e) => setAssessment(e.target.value)}
+                        rows={3}
+                        placeholder="Clinician's diagnostic assessment and synthesis of findings..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-600 disabled:bg-slate-100"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                      <Label className="font-bold text-slate-900">
+                        Attributable Clinical Notes (History & Context)
+                      </Label>
+                      <textarea
+                        value={clinicalNotes}
+                        disabled={isRecordLocked}
+                        onChange={(e) => setClinicalNotes(e.target.value)}
+                        rows={3}
+                        placeholder="Family history, risk factors, progression timeline, medication adherence..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-600 disabled:bg-slate-100"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------- */}
+                {/* TAB 4: Diagnoses & Treatment Plan */}
+                {/* ---------------------------------------------------- */}
+                {editorTab === "plan" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-bold text-slate-900">
+                          Formal Diagnoses ({diagnoses.length})
+                        </Label>
+                        {!isRecordLocked && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddDiagnosis}
+                            className="text-xs font-bold text-teal-700 border-teal-300 hover:bg-teal-50 h-7"
+                          >
+                            <Plus className="h-3 w-3 mr-1" /> Add Diagnosis
+                          </Button>
+                        )}
+                      </div>
+
+                      {diagnoses.length > 0 ? (
+                        <div className="space-y-2">
+                          {diagnoses.map((dx, idx) => (
+                            <div key={idx} className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row items-start md:items-center gap-2">
+                              <Input
+                                placeholder="Diagnosis Name (e.g. Essential Hypertension)"
+                                value={dx.name}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...diagnoses];
+                                  updated[idx].name = e.target.value;
+                                  setDiagnoses(updated);
+                                }}
+                                className="text-xs flex-1 bg-white"
+                              />
+                              <Input
+                                placeholder="ICD-10 (e.g. I10)"
+                                value={dx.icd10_code || ""}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...diagnoses];
+                                  updated[idx].icd10_code = e.target.value;
+                                  setDiagnoses(updated);
+                                }}
+                                className="text-xs w-28 bg-white"
+                              />
+                              <select
+                                value={dx.status}
+                                disabled={isRecordLocked}
+                                onChange={(e) => {
+                                  const updated = [...diagnoses];
+                                  updated[idx].status = e.target.value as any;
+                                  setDiagnoses(updated);
+                                }}
+                                className="text-xs rounded-lg border border-slate-300 bg-white p-2 font-medium"
+                              >
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="SUSPECTED">Suspected</option>
+                                <option value="RESOLVED">Resolved</option>
+                                <option value="HISTORICAL">Historical</option>
+                              </select>
+                              {!isRecordLocked && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDiagnoses(diagnoses.filter((_, i) => i !== idx))}
+                                  className="text-slate-400 hover:text-red-600 p-1"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 italic text-[11px] p-2 bg-slate-50 rounded-xl border border-slate-100">
+                          No diagnoses added. Click "+ Add Diagnosis" to record clinician diagnosis.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                      <Label className="font-bold text-slate-900">
+                        Clinical Treatment Plan & Patient Advice
+                      </Label>
+                      <textarea
+                        value={treatmentPlan}
+                        disabled={isRecordLocked}
+                        onChange={(e) => setTreatmentPlan(e.target.value)}
+                        rows={3}
+                        placeholder="Lifestyle advice, sodium reduction, hydration, non-pharmacological care..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-600 disabled:bg-slate-100"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">Follow-up Required</span>
+                        <input
+                          type="checkbox"
+                          checked={followUpPlan.required}
+                          disabled={isRecordLocked}
+                          onChange={(e) => setFollowUpPlan({ ...followUpPlan, required: e.target.checked })}
+                          className="h-4 w-4 text-teal-600 rounded"
+                        />
+                      </div>
+                      {followUpPlan.required && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                          <div>
+                            <Label className="font-semibold text-slate-600">Follow-up Date / Timeframe</Label>
+                            <Input
+                              placeholder="e.g. 7 days or 2026-08-27"
+                              value={followUpPlan.follow_up_date || followUpPlan.follow_up_timeframe || ""}
+                              disabled={isRecordLocked}
+                              onChange={(e) => setFollowUpPlan({ ...followUpPlan, follow_up_date: e.target.value, follow_up_timeframe: e.target.value })}
+                              className="text-xs mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-semibold text-slate-600">Instructions for Follow-up</Label>
+                            <Input
+                              placeholder="e.g. Bring 7-day BP log"
+                              value={followUpPlan.instructions || ""}
+                              disabled={isRecordLocked}
+                              onChange={(e) => setFollowUpPlan({ ...followUpPlan, instructions: e.target.value })}
+                              className="text-xs mt-1"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------- */}
+                {/* TAB 5: Version History & Amendments */}
+                {/* ---------------------------------------------------- */}
+                {editorTab === "history" && activeRecord?.version_history && (
+                  <div className="space-y-3">
+                    <span className="text-xs font-bold text-slate-900 block">
+                      Documented Clinical Amendments & Version Ledger
+                    </span>
+                    {activeRecord.version_history.map((snap, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-800">
+                            Version {snap.version} ({snap.status})
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {new Date(snap.saved_at).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        {snap.amendment_reason && (
+                          <p className="text-xs font-semibold text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                            <strong>Amendment Reason:</strong> {snap.amendment_reason}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-700">
+                          <strong>Assessment:</strong> {snap.assessment || "N/A"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] text-slate-500">
+                    Provenance: Attributed to {user?.fullName} ({user?.identifier})
+                  </Badge>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  {!isRecordLocked ? (
+                    <>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedEncounterDetail(encounter)}
-                        className="text-xs text-slate-700 h-8"
+                        onClick={handleSaveDraft}
+                        disabled={isSubmitting}
+                        className="text-xs font-bold gap-1.5"
                       >
-                        View Details
+                        <Save className="h-3.5 w-3.5" />
+                        Save Draft
                       </Button>
-                    </div>
-                  </div>
+                      <Button
+                        size="sm"
+                        onClick={handleCompleteRecord}
+                        disabled={isSubmitting}
+                        className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs gap-1.5"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        Sign & Complete Record
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAmendModal(true)}
+                      className="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs gap-1.5"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                      Amend Clinical Record
+                    </Button>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            </div>
           </div>
-        ) : (
-          <EmptyState
-            icon={<Stethoscope className="h-8 w-8 text-teal-600" />}
-            title={statusFilter === "ACTIVE" ? "No Active Encounters" : "No Encounters Found"}
-            description={
-              searchQuery
-                ? `No encounters matching "${searchQuery}" in ${selectedOrgId}.`
-                : `You currently have no ${statusFilter.toLowerCase()} healthcare encounters recorded for ${selectedOrgId}.`
-            }
-            actionLabel="Start New Encounter"
-            onAction={() => setShowStartModal(true)}
-          />
+        )}
+
+        {/* ============================================================ */}
+        {/* AMEND CLINICAL RECORD MODAL */}
+        {/* ============================================================ */}
+        {showAmendModal && activeRecord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <Edit3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Amend Clinical Record</h3>
+                  <span className="text-xs text-slate-500">
+                    Version {activeRecord.version} $\rightarrow$ Version {activeRecord.version + 1}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Documenting an amendment will preserve the previous clinical record version in the audit history and publish your corrections under Version {activeRecord.version + 1}.
+              </p>
+
+              <div className="space-y-1.5">
+                <Label className="font-bold text-slate-900">
+                  Documented Amendment Reason <span className="text-red-500">*</span>
+                </Label>
+                <textarea
+                  value={amendmentReasonInput}
+                  onChange={(e) => setAmendmentReasonInput(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Corrected systolic blood pressure reading and added diagnosis notes."
+                  className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-amber-600"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAmendModal(false)}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAmendRecord}
+                  disabled={isSubmitting}
+                  className="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs"
+                >
+                  {isSubmitting ? "Amending..." : "Save Amendment"}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ============================================================ */}
@@ -482,7 +1286,6 @@ export default function DoctorConsultationsPage() {
                 </button>
               </div>
 
-              {/* Error Box */}
               {formError && (
                 <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
@@ -491,7 +1294,6 @@ export default function DoctorConsultationsPage() {
               )}
 
               <div className="space-y-3.5">
-                {/* 1. Patient Selector */}
                 <div>
                   <Label htmlFor="patientSelect" className="text-xs font-semibold text-slate-700">
                     Select Patient
@@ -510,7 +1312,6 @@ export default function DoctorConsultationsPage() {
                   </select>
                 </div>
 
-                {/* Patient Summary Snapshot & Phase 3 Access Check */}
                 {activeModalPatient && (
                   <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/80 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -540,7 +1341,6 @@ export default function DoctorConsultationsPage() {
                   </div>
                 )}
 
-                {/* 2. Organization Context (Readonly to prevent accidental mismatch) */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="encounterOrg" className="text-xs font-semibold text-slate-700">
@@ -570,7 +1370,6 @@ export default function DoctorConsultationsPage() {
                   </div>
                 </div>
 
-                {/* 3. Department & Location */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="encounterDept" className="text-xs font-semibold text-slate-700">
@@ -598,7 +1397,6 @@ export default function DoctorConsultationsPage() {
                   </div>
                 </div>
 
-                {/* 4. Reason for Visit */}
                 <div>
                   <Label htmlFor="encounterReason" className="text-xs font-semibold text-slate-700">
                     Reason for Visit <span className="text-red-500">*</span>
@@ -608,13 +1406,12 @@ export default function DoctorConsultationsPage() {
                     value={reasonInput}
                     onChange={(e) => setReasonInput(e.target.value)}
                     rows={2}
-                    placeholder="Chief complaint / visit reason (e.g. Exertional chest tightness and dizziness)"
+                    placeholder="Chief complaint / visit reason"
                     className="w-full mt-1 rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 resize-none"
                   />
                 </div>
               </div>
 
-              {/* Modal Footer with Double-Click Protection */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <Button
                   variant="outline"
@@ -631,27 +1428,15 @@ export default function DoctorConsultationsPage() {
                   disabled={isSubmitting}
                   className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs gap-1.5"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      Starting...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Start Encounter
-                    </>
-                  )}
+                  {isSubmitting ? "Starting..." : "Start Encounter"}
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* COMPLETE ENCOUNTER CONFIRMATION MODAL */}
-        {/* ============================================================ */}
-        {showCompleteModal && (
+        {/* Complete Encounter Confirmation */}
+        {showCompleteEncounterModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in-50">
             <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4">
               <div className="flex items-center gap-3">
@@ -661,26 +1446,20 @@ export default function DoctorConsultationsPage() {
                 <div>
                   <h3 className="font-bold text-sm text-slate-900">Complete Healthcare Encounter</h3>
                   <span className="text-xs text-slate-500">
-                    {showCompleteModal.patient_name} • {showCompleteModal.encounter_reference || showCompleteModal.id}
+                    {showCompleteEncounterModal.patient_name} • {showCompleteEncounterModal.encounter_reference || showCompleteEncounterModal.id}
                   </span>
                 </div>
               </div>
 
               <p className="text-xs text-slate-600 leading-relaxed">
-                Completing this encounter will mark the clinical session as finished, lock timestamps, and update the patient's longitudinal health record.
+                Completing this encounter will mark the clinical session as finished and lock the timestamps.
               </p>
-
-              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-1">
-                <div><strong>Reason:</strong> {showCompleteModal.reason_for_visit}</div>
-                <div><strong>Started:</strong> {new Date(showCompleteModal.started_at).toLocaleTimeString("en-IN")}</div>
-                <div><strong>Facility:</strong> {showCompleteModal.organization_name}</div>
-              </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowCompleteModal(null)}
+                  onClick={() => setShowCompleteEncounterModal(null)}
                   disabled={isSubmitting}
                   className="text-xs"
                 >
@@ -692,16 +1471,14 @@ export default function DoctorConsultationsPage() {
                   disabled={isSubmitting}
                   className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs"
                 >
-                  {isSubmitting ? "Completing..." : "Confirm & Complete"}
+                  {isSubmitting ? "Completing..." : "Confirm & End Visit"}
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* CANCEL ENCOUNTER MODAL */}
-        {/* ============================================================ */}
+        {/* Cancel Encounter Modal */}
         {showCancelModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in-50">
             <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4">
@@ -712,7 +1489,7 @@ export default function DoctorConsultationsPage() {
                 <div>
                   <h3 className="font-bold text-sm text-slate-900">Cancel Healthcare Encounter</h3>
                   <span className="text-xs text-slate-500">
-                    {showCancelModal.patient_name} • {showCancelModal.encounter_reference || showCancelModal.id}
+                    {showCancelModal.patient_name}
                   </span>
                 </div>
               </div>
@@ -725,7 +1502,7 @@ export default function DoctorConsultationsPage() {
                   id="cancelReason"
                   value={cancelReasonInput}
                   onChange={(e) => setCancelReasonInput(e.target.value)}
-                  placeholder="e.g. Patient did not show up / cancelled by patient"
+                  placeholder="e.g. Patient did not show up"
                   className="text-xs"
                 />
               </div>
@@ -735,100 +1512,21 @@ export default function DoctorConsultationsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowCancelModal(null)}
-                  disabled={isSubmitting}
                   className="text-xs"
                 >
                   Back
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleCancelEncounter}
-                  disabled={isSubmitting}
+                  onClick={() => {
+                    if (!user || !showCancelModal || !cancelReasonInput.trim()) return;
+                    cancelEncounter(showCancelModal.id, cancelReasonInput.trim(), user.identifier || user.id, user.fullName, user.role);
+                    setShowCancelModal(null);
+                    refreshEncounters();
+                  }}
                   className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
                 >
-                  {isSubmitting ? "Cancelling..." : "Cancel Encounter"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* ENCOUNTER DETAIL SHEET */}
-        {/* ============================================================ */}
-        {selectedEncounterDetail && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in-50">
-            <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded">
-                      {selectedEncounterDetail.encounter_reference || selectedEncounterDetail.id}
-                    </span>
-                    <StatusBadge status={selectedEncounterDetail.status.toLowerCase() as any} />
-                  </div>
-                  <h3 className="font-bold text-base text-slate-900 mt-1">
-                    {selectedEncounterDetail.patient_name}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedEncounterDetail(null)}
-                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Patient ID</span>
-                  <span className="font-mono font-bold text-slate-800">{selectedEncounterDetail.patient_id}</span>
-                </div>
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Blood Group</span>
-                  <span className="font-bold text-red-600">{selectedEncounterDetail.patient_blood_group || "N/A"}</span>
-                </div>
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Facility</span>
-                  <span className="font-bold text-slate-800">{selectedEncounterDetail.organization_name}</span>
-                </div>
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Department</span>
-                  <span className="font-bold text-slate-800">{selectedEncounterDetail.department_name}</span>
-                </div>
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Encounter Type</span>
-                  <span className="font-bold text-slate-800">{selectedEncounterDetail.encounter_type}</span>
-                </div>
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Location</span>
-                  <span className="font-bold text-slate-800">{selectedEncounterDetail.location || "OPD"}</span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Reason for Visit</span>
-                <p className="text-slate-800 font-medium">{selectedEncounterDetail.reason_for_visit}</p>
-              </div>
-
-              <div className="p-3 rounded-xl border border-teal-200 bg-teal-50/70 text-xs text-teal-900 space-y-1">
-                <span className="font-bold block flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-teal-700" />
-                  Clinical Records Attachment
-                </span>
-                <p className="text-[11px] text-teal-800 leading-relaxed">
-                  Structured SOAP consultation notes, formal ICD-10 diagnoses, e-prescriptions, and lab investigation orders will attach to this encounter in upcoming phases (4.2 & 4.3).
-                </p>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <Button
-                  size="sm"
-                  onClick={() => setSelectedEncounterDetail(null)}
-                  className="bg-slate-900 text-white font-bold text-xs"
-                >
-                  Close
+                  Confirm Cancel
                 </Button>
               </div>
             </div>

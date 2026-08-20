@@ -389,7 +389,13 @@ export type AuditEventType =
   | "ENCOUNTER_UPDATED"
   | "ENCOUNTER_COMPLETED"
   | "ENCOUNTER_CANCELLED"
-  | "ENCOUNTER_CLOSED";
+  | "ENCOUNTER_CLOSED"
+  | "CLINICAL_RECORD_CREATED"
+  | "CLINICAL_RECORD_UPDATED"
+  | "CLINICAL_RECORD_COMPLETED"
+  | "CLINICAL_RECORD_AMENDED"
+  | "CLINICAL_RECORD_VIEWED"
+  | "CLINICAL_RECORD_CANCELLED";
 
 export interface StoredAuditEvent {
   id: string;
@@ -460,6 +466,122 @@ export interface HealthcareEncounter {
   updated_at?: string;
   consent_id?: string;
   notes_placeholder?: string;
+}
+
+// ============================================================
+// CLINICAL RECORD DOMAIN MODEL (PHASE 4.2)
+// Structured, traceable clinical documentation attached to an Encounter.
+// ============================================================
+
+export type ClinicalRecordStatus =
+  | "DRAFT"
+  | "ACTIVE"
+  | "COMPLETED"
+  | "AMENDED"
+  | "CANCELLED";
+
+export type SymptomSeverity = "MILD" | "MODERATE" | "SEVERE";
+
+export interface ClinicalSymptom {
+  id: string; // e.g. "SYM-1"
+  name: string; // e.g. "Exertional chest tightness"
+  onset?: string; // e.g. "3 days ago" or "2026-08-17"
+  duration?: string; // e.g. "3 days"
+  severity: SymptomSeverity;
+  notes?: string;
+}
+
+export interface ClinicalVitals {
+  temperature_celsius?: number;
+  heart_rate_bpm?: number;
+  systolic_bp_mmhg?: number;
+  diastolic_bp_mmhg?: number;
+  respiratory_rate_bpm?: number;
+  spo2_percent?: number;
+  weight_kg?: number;
+  height_cm?: number;
+  bmi?: number;
+  recorded_at: string;
+  recorded_by: string; // DOC-1001 or Staff
+  recorded_by_name?: string;
+}
+
+export type DiagnosisStatus = "SUSPECTED" | "CONFIRMED" | "RESOLVED" | "HISTORICAL";
+
+export interface ClinicalDiagnosis {
+  id: string; // e.g. "DX-1"
+  name: string; // e.g. "Stage 1 Essential Hypertension"
+  icd10_code?: string; // e.g. "I10"
+  status: DiagnosisStatus;
+  category?: "PRIMARY" | "SECONDARY" | "PROVISIONAL";
+  recorded_by: string; // DOC-1001 (Clinician entered, NEVER AI)
+  recorded_by_name: string;
+  recorded_at: string;
+  notes?: string;
+}
+
+export interface ClinicalFollowUpPlan {
+  required: boolean;
+  follow_up_date?: string; // e.g. "2026-08-27"
+  follow_up_timeframe?: string; // e.g. "7 days"
+  instructions?: string;
+}
+
+export interface ClinicalRecordVersionSnapshot {
+  version: number;
+  saved_at: string;
+  saved_by: string;
+  saved_by_name: string;
+  saved_by_role: string;
+  amendment_reason?: string;
+  status: ClinicalRecordStatus;
+  chief_complaint: string;
+  symptoms: ClinicalSymptom[];
+  vitals?: ClinicalVitals;
+  observations?: string;
+  clinical_notes?: string;
+  assessment?: string;
+  diagnoses: ClinicalDiagnosis[];
+  treatment_plan?: string;
+  follow_up_plan?: ClinicalFollowUpPlan;
+}
+
+export interface ClinicalRecord {
+  id: string; // e.g. "CR-1001"
+  record_reference: string; // e.g. "CR-1001"
+  encounter_id: string; // FK -> HealthcareEncounter (ENC-1001)
+  patient_id: string; // FK -> patients.medora_id (PAT-1001)
+  patient_name: string;
+  author_id: string; // FK -> doctors.identifier (DOC-1001)
+  author_name: string;
+  author_role: string; // e.g. "Consultant Cardiologist"
+  created_by: string;
+  created_by_role: string;
+  organization_id: string; // FK -> organizations.identifier (HSP-1001)
+  organization_name: string;
+  department_id?: string;
+  department_name?: string;
+  status: ClinicalRecordStatus;
+  
+  // Structured Clinical Sections
+  chief_complaint: string;
+  symptoms: ClinicalSymptom[];
+  vitals?: ClinicalVitals;
+  observations?: string;
+  clinical_notes?: string;
+  assessment?: string;
+  diagnoses: ClinicalDiagnosis[];
+  treatment_plan?: string;
+  follow_up_plan?: ClinicalFollowUpPlan;
+
+  // Versioning & Lifecycle
+  version: number;
+  version_history: ClinicalRecordVersionSnapshot[];
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  amended_at?: string;
+  amendment_reason?: string;
 }
 
 export type AppointmentStatus =
