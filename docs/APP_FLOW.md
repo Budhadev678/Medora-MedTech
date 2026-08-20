@@ -1,108 +1,72 @@
-# 🔄 MEDORA — Application Journeys & Flow State Machines
+# 🔄 MEDORA — Complete Ecosystem Interaction & Operational Workflows
 
-This document specifies the step-by-step state machines for all core healthcare workflows in MEDORA.
+## 1. Master Patient Outpatient Journey Scenario (Section 72)
 
----
+```
+1. Discovery & Booking
+   Rahul Verma (PAT-1001) books Dr. Ananya Sharma (DOC-1001) at City Hospital (HSP-1001)
+   ↓ Creates Appointment (APT-1001) with Token #02 in Cardiology OPD
 
-## 1. Outpatient Journey (Standard Consultation)
+2. Encounter & Consultation
+   Rahul checks in → Encounter (ENC-1001) starts in OPD Room 102
+   Dr. Ananya conducts Consultation → records Vitals, Chief Complaint, Primary Diagnosis
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor P as Patient
-    actor D as Doctor
-    actor L as Lab
-    actor Ph as Pharmacy
-    actor B as Billing
-    
-    P->>D: 1. Book Appointment & Receive Token
-    D->>P: 2. Consultation & Record Diagnosis
-    D->>Ph: 3. Issue Structured Digital Prescription (RX-1001)
-    D->>L: 4. Order Diagnostic Test (LAB-1001)
-    L->>L: 5. Collect Sample -> Test -> Pathologist Approves Report
-    L->>P: 6. Real-time Notification + Timeline Updated
-    Ph->>P: 7. Verify Medora ID & Physically Dispense Medicine
-    B->>P: 8. Itemized Bill Generated (Consult + Lab + Meds)
-    P->>B: 9. "Why was I charged?" -> Lineage Trace Viewed
-    P->>B: 10. Pay & Settle Invoice
-    D->>P: 11. Follow-up reminder scheduled on timeline
+3. Orders Generation
+   ├── Digital Prescription (RX-1001) generated & digitally signed
+   └── Lab Order (LAB-ORD-1024) generated for Complete Blood Count (CBC)
+
+4. Diagnostic Investigation
+   ABC Diagnostics (LAB-1001) receives LAB-ORD-1024
+   → Sample (SMP-1024) collected → Analyzer runs tests → Pathologist certifies Report (RPT-1024)
+   → Released immediately to Rahul's Timeline and Dr. Ananya's workspace
+
+5. Prescription Fulfillment
+   Rahul chooses ABC Pharmacy (PHA-1001)
+   → Pharmacist verifies RX-1001 → Dispenses medication (Dispensing transaction recorded)
+
+6. Transparent Billing ("Why Was I Charged?")
+   Hospital generates Bill (BIL-1001):
+   - Consultation Fee: ₹500 (Linked to ENC-1001)
+   - Diagnostic Pathology: ₹850 (Linked to LAB-ORD-1024)
+   - Medications: ₹420 (Linked to RX-1001)
+   - Total Gross: ₹1,770
+
+7. Multi-Source Financial Breakdown & Settlement
+   - Insurance Pre-Auth Approved: ₹1,200
+   - Government Subsidy (BSKY): ₹300
+   - Patient Net Payable: ₹270
+   - Rahul settles ₹270 via UPI → Receipt (RCP-1001) issued
+
+8. Immutable Audit Trail
+   Every step produces an AUDIT record: Actor, Action, Resource, Timestamp, Result: SUCCESS
 ```
 
 ---
 
-## 2. Laboratory State Machine
+## 2. Emergency Trauma & Critical Care Journey Scenario (Section 73)
 
 ```
-[LAB_ORDERED]
-      │
-      ▼
-[SAMPLE_COLLECTED] (Generates Sample Code: SMP-1001)
-      │
-      ▼
-[IN_PROCESSING] (Diagnostic testing & result entry)
-      │
-      ▼
-[PATHOLOGIST_VERIFIED] (Clinical threshold & abnormality check)
-      │
-      ▼
-[REPORT_APPROVED] ──▶ (Auto-emits Notification & Timeline Event)
-```
+1. Emergency Registration
+   Road accident trauma patient arrives at City Hospital Emergency Care
+   ↓ Creates Emergency Case (ER-1024) with Triage Level: RED (Critical)
 
----
+2. Operational Doctor Assignment
+   Hospital triage checks available specialists → Assigns Dr. Ananya Sharma & Emergency Trauma Lead
 
-## 3. Hospital Pharmacy Dispensing State Machine
+3. Emergency Medical Snapshot Access
+   Clinical team requests emergency snapshot (Blood group O+, Penicillin allergy, Emergency Contact)
+   → Instant emergency access granted & permanently audited
 
-```
-[PRESCRIPTION_ISSUED] (Doctor commits Rx)
-      │
-      ▼
-[PHARMACY_RECEIVED] (Appears on Pharmacist queue)
-      │
-      ▼
-[MEDICATION_PACKAGED] (Pharmacist flags ready for pickup)
-      │
-      ▼
-[IDENTITY_VERIFIED] (Patient presents Medora ID / Rx ID)
-      │
-      ▼
-[PHYSICALLY_DISPENSED] ──▶ (Dispensation Logged & Added to Patient Timeline)
-```
+4. Critical Blood Requirement
+   Clinical team identifies need for 2 units O+ PRBC
+   → Creates Blood Request (BLD-REQ-1001) → Sent to City Blood Centre (BLC-1001)
+   → Blood Centre accepts and dispatches units
 
----
+5. Inter-Hospital Transfer
+   Patient stabilized, requires tertiary catheterization
+   → Hospital Transfer requested to Green Care Hospital
+   → Ambulance (AMB-1001) dispatched with live pre-alert to destination ICU
 
-## 4. Transparent Billing & "Why Was I Charged?" Lineage
-
-When a patient inspects an invoice item:
-```
-Example Item: "Complete Blood Count (CBC) — ₹600"
-              │
-              ├── Doctor Order: Dr. Rajesh Sharma (10:15 AM)
-              ├── Department: Central Diagnostic Pathology
-              ├── Sample Collected: SMP-1001 (10:30 AM by Lab Staff)
-              ├── Approved Report: LAB-1001 (11:45 AM by Dr. Verma)
-              ├── Standard Base Rate: ₹600.00
-              ├── Insurance Applied: -₹400.00
-              └── Net Payable: ₹200.00
-```
-
----
-
-## 5. Emergency & Doctor Unavailable Escalation
-
-```
-[EMERGENCY_ARRIVAL] ──▶ Rapid Triage Tag (Red / Yellow / Green)
-                             │
-                             ▼
-                  [CHECK ASSIGNED DOCTOR]
-                  ┌──────────┴──────────┐
-          [AVAILABLE]             [BUSY / ON CALL / OFF DUTY]
-               │                                │
-               ▼                                ▼
-       [ASSIGN DOCTOR]             [AUTO-SUGGEST AVAILABLE ER DOC]
-               │                                │
-               └─────────────┬──────────────────┘
-                             ▼
-               [EMERGENCY SNAPSHOT ACCESSED]
-                             │
-               [BLOOD / ICU REQUEST DISPATCHED]
+6. Longitudinal Timeline & Audit
+   All trauma events aggregate in Emergency Timeline and Patient Medical Record
 ```

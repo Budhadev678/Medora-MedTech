@@ -35,6 +35,9 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
   }
 
   if (!isAllowed) {
+    const name = activePersona?.name || "User";
+    const userRole = role || "patient";
+
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
         <div className="h-14 w-14 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 mb-4 shadow-sm">
@@ -42,12 +45,12 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
         </div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied (403)</h2>
         <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-          Your current persona (<strong className="text-slate-900">{activePersona.name} — {role.toUpperCase()}</strong>) does not have authorization to access this module.
+          Your current persona (<strong className="text-slate-900">{name} — {userRole.toUpperCase()}</strong>) does not have authorization to access this module.
         </p>
         <div className="flex gap-2">
-          <Link href={ROLE_DASHBOARD_ROUTES[role]}>
+          <Link href={ROLE_DASHBOARD_ROUTES[userRole]}>
             <Button size="sm" className="text-xs gap-1.5">
-              <ArrowLeft className="h-3.5 w-3.5" /> Return to My {role.toUpperCase()} Portal
+              <ArrowLeft className="h-3.5 w-3.5" /> Return to My {userRole.toUpperCase()} Portal
             </Button>
           </Link>
           <Link href="/login">

@@ -18,13 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RoleGuard } from "@/components/shared/role-guard";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function LabWorkspacePage() {
+  const { user } = useAuth();
   const labOrders = [
-    { orderId: "LAB-1001", patientName: "Rahul Verma", patientId: "MED-PAT-1001", test: "Complete Blood Count (CBC)", doctor: "Dr. Rajesh Sharma", priority: "routine", status: "sample_collected", sampleId: "SMP-1001" },
-    { orderId: "LAB-1002", patientName: "Pooja Das", patientId: "MED-PAT-1004", test: "Lipid Profile & HbA1c", doctor: "Dr. Rajesh Sharma", priority: "routine", status: "ordered", sampleId: "Pending" },
-    { orderId: "LAB-1003", patientName: "Trauma Victim #4", patientId: "MED-EMERG-1001", test: "Cross-Match & Blood Grouping", doctor: "Dr. Ananya Iyer", priority: "critical", status: "testing", sampleId: "SMP-1003" },
-    { orderId: "LAB-1004", patientName: "Ananya Mishra", patientId: "MED-PAT-1002", test: "Serum Creatinine & Electrolytes", doctor: "Dr. Rajesh Sharma", priority: "routine", status: "report_ready", sampleId: "SMP-1002" },
+    { orderId: "LAB-1001", patientName: "Rahul Verma", patientId: "PAT-1001", test: "Complete Blood Count (CBC)", doctor: "Dr. Ananya Sharma", priority: "routine", status: "sample_collected", sampleId: "SMP-1001" },
+    { orderId: "LAB-1002", patientName: "Priya Sharma", patientId: "PAT-1002", test: "Lipid Profile & HbA1c", doctor: "Dr. Ananya Sharma", priority: "routine", status: "ordered", sampleId: "Pending" },
+    { orderId: "LAB-1003", patientName: "Amit Das", patientId: "PAT-1003", test: "Fasting Blood Sugar", doctor: "Dr. Ananya Sharma", priority: "routine", status: "testing", sampleId: "SMP-1003" },
   ];
 
   return (
@@ -35,14 +36,14 @@ export default function LabWorkspacePage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">
-                Central Diagnostic Pathology Laboratory
+                {user?.organizationName || user?.fullName || "Central Pathology Lab"}
               </h1>
-              <Badge variant="teal" className="text-xs">
-                MED-LAB-1001
+              <Badge variant="teal" className="text-xs font-mono">
+                {user?.identifier || "LAB-1001"}
               </Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Connected Diagnostic Queue • Apex Multispeciality Hospital
+              Connected Diagnostic Queue & Sample Verification Desk
             </p>
           </div>
 

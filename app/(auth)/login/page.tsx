@@ -19,7 +19,12 @@ import {
   Droplet,
   Receipt,
   Eye,
-  EyeOff
+  EyeOff,
+  KeyRound,
+  Ambulance,
+  Landmark,
+  Shield,
+  UserCheck
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { DEMO_PERSONAS, ROLE_LABELS, type UserRole } from "@/lib/constants";
@@ -31,13 +36,12 @@ import { Badge } from "@/components/ui/badge";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, signIn, switchPersona, isLoading } = useAuth();
+  const { signIn, switchPersona, isLoading } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"standard" | "demo">("demo");
-
+  const [activeTab, setActiveTab] = useState<"standard" | "demo">("standard");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +58,13 @@ export default function LoginPage() {
     }
   };
 
+  const quickFillPreset = (presetEmail: string) => {
+    setEmail(presetEmail);
+    setPassword("Password@123");
+    setActiveTab("standard");
+    setError(null);
+  };
+
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case "patient": return <Users className="h-4 w-4 text-teal-600" />;
@@ -64,6 +75,10 @@ export default function LoginPage() {
       case "emergency_staff": return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case "blood_staff": return <Droplet className="h-4 w-4 text-rose-600" />;
       case "finance_staff": return <Receipt className="h-4 w-4 text-purple-600" />;
+      case "insurance_staff": return <Shield className="h-4 w-4 text-sky-600" />;
+      case "government_staff": return <Landmark className="h-4 w-4 text-orange-600" />;
+      case "ambulance_staff": return <Ambulance className="h-4 w-4 text-red-600" />;
+      case "staff": return <UserCheck className="h-4 w-4 text-teal-700" />;
       case "admin": return <ShieldCheck className="h-4 w-4 text-slate-700" />;
       default: return <Activity className="h-4 w-4 text-teal-600" />;
     }
@@ -80,13 +95,23 @@ export default function LoginPage() {
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Sign In to MEDORA
           </h1>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Unified authentication across Patients, Doctors, Hospitals, Labs, Pharmacies, Emergency and Financial Desks.
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Transparent, Connected & Auditable Healthcare Platform. Identity is strictly verified with zero cross-account data leakage.
           </p>
         </div>
 
         {/* Tab Selector */}
         <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab("standard")}
+            className={`flex-1 py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "standard" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <KeyRound className="h-3.5 w-3.5 text-teal-600" />
+            Standard Email & Password
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("demo")}
@@ -95,85 +120,32 @@ export default function LoginPage() {
             }`}
           >
             <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-            SIH One-Click Role Launcher (Recommended)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("standard")}
-            className={`flex-1 py-2 rounded-md transition-all ${
-              activeTab === "standard" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Standard Credentials
+            Verified Demo Accounts (14)
           </button>
         </div>
 
-        {/* Demo Fast Launcher Tab */}
-        {activeTab === "demo" && (
-          <Card className="bg-white border-teal-200">
-            <CardHeader className="p-5 pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-slate-900">
-                  Select Role Persona to Login Instantly
-                </CardTitle>
-                <Badge variant="teal" className="text-[10px]">
-                  9 Demo Roles Seeded
-                </Badge>
-              </div>
-              <CardDescription className="text-xs text-slate-500">
-                Click any persona below to launch their role-based portal with full context.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-5 pt-0 space-y-2 max-h-[380px] overflow-y-auto">
-              {DEMO_PERSONAS.map((persona) => (
-                <button
-                  key={persona.id}
-                  onClick={() => switchPersona(persona.id)}
-                  className="w-full text-left flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      {getRoleIcon(persona.role)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-slate-900">{persona.name}</span>
-                        <span className="text-[10px] font-mono text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded font-semibold">
-                          {ROLE_LABELS[persona.role].split(" ")[0]}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-500 block truncate max-w-xs">
-                        {persona.organization}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
         {/* Standard Email/Password Form Tab */}
         {activeTab === "standard" && (
-          <Card className="bg-white">
+          <Card className="bg-white shadow-xs">
             <form onSubmit={handleSubmit}>
               <CardHeader className="p-5 pb-3">
                 <CardTitle className="text-sm font-bold text-slate-900">
-                  Enter Your Account Details
+                  Enter Your Account Credentials
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-500">
-                  Sign in with your registered email and password.
+                  Role and profile identity are loaded dynamically from the verified identity store.
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="p-5 pt-0 space-y-4">
                 {error && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium">
-                    {error}
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
                   </div>
                 )}
 
+                {/* Email Address */}
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-xs">Email Address</Label>
                   <div className="relative">
@@ -181,7 +153,7 @@ export default function LoginPage() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="e.g. patient@medora.health"
+                      placeholder="e.g. patient@medora.health, priya@medora.health, doctor@medora.health"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-9 text-xs"
@@ -190,6 +162,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
+                {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password" className="text-xs">Password</Label>
@@ -217,18 +190,171 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full text-xs font-semibold" disabled={isLoading}>
-                  {isLoading ? "Signing In..." : "Sign In to Portal"}
+                <Button type="submit" className="w-full text-xs font-bold h-9 shadow-xs" disabled={isLoading}>
+                  {isLoading ? "Authenticating Session..." : "Sign In to MEDORA"}
                 </Button>
+
+                {/* Quick-Fill Sample Credentials Helper Strip */}
+                <div className="pt-2 border-t border-slate-100">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                    Quick-Fill Test Accounts:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("patient@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Patient A (Rahul)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("priya@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Patient B (Priya)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("amit@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Patient C (Amit)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("doctor@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-blue-50 hover:text-blue-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Doctor (Dr. Ananya)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("hospital@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Hospital (City Hosp)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("clinic@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Clinic (Green Care)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("lab@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Lab (ABC Diag)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("pharmacy@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Pharmacy (ABC Pharm)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("insurance@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Insurance
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("finance@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-purple-50 hover:text-purple-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Financing
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("government@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-orange-50 hover:text-orange-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Government
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("ambulance@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-red-50 hover:text-red-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Ambulance
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("staff@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Staff Member
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("admin@medora.health")}
+                      className="rounded bg-slate-100 hover:bg-slate-200 hover:text-slate-900 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Admin
+                    </button>
+                  </div>
+                </div>
               </CardContent>
 
               <CardFooter className="p-5 pt-0 border-t border-slate-100 flex items-center justify-center text-xs text-slate-500">
                 <span>New to MEDORA?</span>
                 <Link href="/register" className="ml-1.5 font-bold text-teal-700 hover:underline">
-                  Register as a New Patient
+                  Register an Account
                 </Link>
               </CardFooter>
             </form>
+          </Card>
+        )}
+
+        {/* Demo Fast Launcher Tab */}
+        {activeTab === "demo" && (
+          <Card className="bg-white border-teal-200 shadow-xs">
+            <CardHeader className="p-5 pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold text-slate-900">
+                  Select Ecosystem Account to Login Instantly
+                </CardTitle>
+                <Badge variant="teal" className="text-[10px]">
+                  14 Verified Accounts
+                </Badge>
+              </div>
+              <CardDescription className="text-xs text-slate-500">
+                Click any persona below to switch authenticated session and launch workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 pt-0 space-y-2 max-h-[380px] overflow-y-auto">
+              {DEMO_PERSONAS.map((persona) => (
+                <button
+                  key={persona.id}
+                  onClick={() => switchPersona(persona.identifier)}
+                  className="w-full text-left flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-all group active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      {getRoleIcon(persona.role)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-900">{persona.name}</span>
+                        <span className="text-[10px] font-mono text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded font-semibold">
+                          {persona.identifier}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 block truncate max-w-xs">
+                        {persona.organization}
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
+                </button>
+              ))}
+            </CardContent>
           </Card>
         )}
       </div>

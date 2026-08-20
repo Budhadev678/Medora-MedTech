@@ -17,8 +17,23 @@ import { RoleGuard } from "@/components/shared/role-guard";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function PatientEmergencyPage() {
+  const { user } = useAuth();
+  const patientData = user?.patientData;
+
+  const bloodGroup = patientData?.bloodGroup || "—";
+  const allergies = patientData?.allergies && patientData.allergies.length > 0 
+    ? patientData.allergies.join(", ") 
+    : "None Reported";
+  const conditions = patientData?.chronicConditions && patientData.chronicConditions.length > 0
+    ? patientData.chronicConditions.join(", ")
+    : "None Reported";
+  const emergencyContact = patientData?.emergencyContact 
+    ? `${patientData.emergencyContact.name} (${patientData.emergencyContact.phone})`
+    : "None Listed";
+
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
       <div className="space-y-5 animate-in fade-in-50 duration-200">
@@ -66,19 +81,19 @@ export default function PatientEmergencyPage() {
           <CardContent className="p-4 pt-1 space-y-2.5 text-xs">
             <div className="flex justify-between py-1.5 border-b border-slate-100">
               <span className="text-slate-500">Blood Group</span>
-              <span className="font-bold text-rose-700 text-sm">O Positive (O+)</span>
+              <span className="font-bold text-rose-700 text-sm">{bloodGroup}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-100">
               <span className="text-slate-500">Severe Allergies</span>
-              <span className="font-semibold text-slate-900">Penicillin, Peanuts</span>
+              <span className="font-semibold text-slate-900">{allergies}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-100">
               <span className="text-slate-500">Chronic Conditions</span>
-              <span className="font-semibold text-slate-900">Mild Hypertension</span>
+              <span className="font-semibold text-slate-900">{conditions}</span>
             </div>
             <div className="flex justify-between py-1.5">
               <span className="text-slate-500">Primary Emergency Contact</span>
-              <span className="font-semibold text-slate-900">Anita Verma (+91 98765 43210)</span>
+              <span className="font-semibold text-slate-900">{emergencyContact}</span>
             </div>
           </CardContent>
         </Card>

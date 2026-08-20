@@ -1,46 +1,58 @@
-# 📊 MEDORA — Live Build Status Dashboard
+# 🏗️ MEDORA — Build Status & System Health
 
-> **Last Updated:** 2026-08-20  
-> **Current Phase:** Phase 2 Completed & Verified | Ready for Phase 3  
-> **Overall Progress:** 35% Complete (Phase 0 Foundation, Phase 1 Auth Engine, Phase 2 App Shell & Role Workspaces Verified)
-
----
-
-## 🎯 Current Milestone
-
-| Field | Current Value |
-| :--- | :--- |
-| **Active Milestone** | `PHASE-2: App Shell & Role Dashboards Skeletons` |
-| **Status** | `VERIFIED` ✅ (Patient Mobile Shell, 5 Patient Hubs, 7 Operational Workspaces, Responsive Bottom Nav & 20/20 Routes Built) |
-| **Next Task** | `PHASE-3: Patient Profile & ABHA/Aadhaar Simulation` |
-| **Active Blocker** | None (Awaiting explicit instruction for Phase 3) |
+> **Current Position:** Phase 1 Completed & Verified ✅  
+> **Next Up:** Phase 2 (App Shell & Role Dashboards) ⏳  
+> **TypeScript Check:** `0 errors` (`tsc --noEmit` exit code 0)  
+> **Production Build:** `20/20 routes compiled successfully`  
+> **Development Server:** Active on `http://localhost:3000`  
 
 ---
 
-## 🧭 Phase-by-Phase Roadmap & Status
+## 🚦 Master Phase Plan & Tracking Table
 
-| Phase # | Module / Phase Name | Status | Key Deliverables | Verification |
-| :---: | :--- | :---: | :--- | :---: |
-| **00** | **Project Setup & Foundation** | `VERIFIED` | Next.js 14 scaffold, design tokens, primitives, 8 role dashboard shells, demo switcher | ✅ |
-| **01** | **Auth & Role Architecture** | `VERIFIED` | Supabase schema (`schema.sql`), unified `/login`, `/register` onboarding, `auth-context`, `RoleGuard`, `/access-denied`, role middleware | ✅ |
-| **02** | **App Shell & Role Workspaces** | `VERIFIED` | Patient mobile-first container (`/patient`, `/patient/health`, `/patient/care`, `/patient/emergency`, `/patient/profile`), bottom nav, 7 desktop operational workspaces, metrics & empty states | ✅ |
-| **03** | **Patient Foundation & Profile**| `NOT_STARTED` | Vitals manager, emergency medical card, ABHA QR card | ⬜ |
-| **04** | **Doctor Schedule & Availability** | `NOT_STARTED` | Duty status, queue, schedule manager | ⬜ |
-| **05** | **Hospital & Department Engine** | `NOT_STARTED` | Departments, doctors list, ward setup | ⬜ |
-| **06** | **Appointments & Token Queue** | `NOT_STARTED` | Slot booking, token engine, live queue | ⬜ |
-| **07** | **Digital Consultation & Rx** | `NOT_STARTED` | Clinical notes, structured Rx instructions | ⬜ |
-| **08** | **Connected Laboratory** | `NOT_STARTED` | Lab Order → Sample → Report approval | ⬜ |
-| **09** | **Connected Pharmacy** | `NOT_STARTED` | Rx pickup, Medora ID check, dispense log | ⬜ |
-| **10** | **Transparent Billing & 'Why charged?'**| `NOT_STARTED` | Itemized bill, lineage trace, versioning | ⬜ |
-| **11** | **Immutable Audit Trail** | `NOT_STARTED` | Append-only event logging (WHO/WHAT/WHEN) | ⬜ |
-| **12** | **Insurance & Financial Assistance** | `NOT_STARTED` | Claims, Govt schemes, Hospital aid split | ⬜ |
-| **13** | **Emergency & Triage Escalation** | `NOT_STARTED` | Triage levels, doctor reassignment | ⬜ |
-| **14** | **Blood Emergency Coordination** | `NOT_STARTED` | Urgent request, matching & fulfillment | ⬜ |
-| **15** | **Patient Record Sharing** | `NOT_STARTED` | Granular permissions, timed access tokens | ⬜ |
-| **16** | **Unified Healthcare Timeline** | `NOT_STARTED` | Chronological multi-event visual timeline | ⬜ |
-| **17** | **Recognition & Award Badging** | `NOT_STARTED` | Verified contribution badges (Bronze/Silver/Gold) | ⬜ |
-| **18** | **Road Accident Simulation** | `NOT_STARTED` | Crash pre-alert, ER readiness protocol | ⬜ |
-| **19** | **Polish, i18n & SIH Demo Ready** | `NOT_STARTED` | English/Hindi/Odia, full demo validation | ⬜ |
+| Phase | Name | Status |
+| :---: | :--- | :---: |
+| **0** | Project Setup & Docs Architecture | `VERIFIED` ✅ |
+| **1** | Auth & Role Base | `VERIFIED` ✅ |
+| **2** | App Shell & Role Dashboards | `NOT_STARTED` ⏳ |
+| **3** | Patient Profile & ABHA/Aadhaar | `NOT_STARTED` ⏳ |
+| **4** | Doctor Schedule & Availability | `NOT_STARTED` ⏳ |
+| **5** | Hospital, Department & Facility | `NOT_STARTED` ⏳ |
+| **6** | Appointments & Token/Queue | `NOT_STARTED` ⏳ |
+| **7** | Digital Consultation & Prescription | `NOT_STARTED` ⏳ |
+| **8** | Connected Laboratory | `NOT_STARTED` ⏳ |
+| **9** | Connected Pharmacy & Pickup | `NOT_STARTED` ⏳ |
+| **10** | Itemized Billing & Why Charged | `NOT_STARTED` ⏳ |
+| **11** | Immutable Audit Trail | `NOT_STARTED` ⏳ |
+| **12** | Insurance & Financial Assistance | `NOT_STARTED` ⏳ |
+| **13** | Emergency Triage & Reassignment | `NOT_STARTED` ⏳ |
+| **14** | Blood Coordination | `NOT_STARTED` ⏳ |
+| **15** | Patient Record Sharing | `NOT_STARTED` ⏳ |
+| **16** | Unified Healthcare Timeline | `NOT_STARTED` ⏳ |
+| **17** | Recognition & Badging | `NOT_STARTED` ⏳ |
+| **18** | Road Accident Simulation | `NOT_STARTED` ⏳ |
+| **19** | Localization, Polish & SIH Demo | `NOT_STARTED` ⏳ |
 
-*Status Legend:*  
-`NOT_STARTED` ⬜ | `IN_PROGRESS` ⏳ | `BUILT` 🔨 | `TESTING` 🧪 | `VERIFIED` ✅ | `BLOCKED` 🛑
+---
+
+## 🧭 Active Route Inventory (All 20 Compiled)
+* `/` — Public Homepage & Ecosystem Overview
+* `/login` — Unified Authentication (14 Fast-Launcher Personas)
+* `/register` — Multi-Role Registration (Patient, Doctor, Staff)
+* `/patient` — Patient Dashboard & Active Health Records
+* `/patient/health` — Vitals & Chronic Care Hub
+* `/patient/profile` — Digital Passport & ABHA
+* `/patient/emergency` — Emergency Card & Critical SOS
+* `/patient/care` — Active Care Plans & Prescriptions
+* `/doctor` — Clinical Workspace & Multi-Hospital Affiliations
+* `/hospital` — Command Center & Affiliated Doctor Roster
+* `/lab` — Diagnostic Pathology & Report Release
+* `/pharmacy` — Prescription Fulfillment Desk
+* `/emergency` — Trauma Care & Triage Unit
+* `/blood-bank` — Donor Network & Cross-Matching
+* `/finance` — Lineage Billing & Multi-Source Claims
+* `/admin` — Platform Governance & Immutable Audit Stream
+* `/verify/rx/[id]` — Digitally Signed Prescription Verification Slip (Public)
+* `/verify/lab/[id]` — Certified NABL Pathology Report Slip (Public)
+* `/access-denied` — 403 Role Guard Barrier
+* `/_not-found` — 404 Error Boundary

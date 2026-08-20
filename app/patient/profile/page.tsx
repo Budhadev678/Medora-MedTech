@@ -31,21 +31,21 @@ export default function PatientProfilePage() {
         {/* Profile Header */}
         <div className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-200 bg-white shadow-xs">
           <div className="h-14 w-14 rounded-full bg-teal-100 border-2 border-teal-500 flex items-center justify-center text-teal-800 font-extrabold text-lg flex-shrink-0">
-            {user?.full_name?.slice(0, 2).toUpperCase() || "RV"}
+            {(user?.fullName || "Patient").slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-extrabold text-slate-900 truncate">
-              {user?.full_name || "Rahul Verma"}
+              {user?.fullName || "Patient"}
             </h1>
             <span className="font-mono text-xs font-semibold text-teal-700 block">
-              MED-PAT-1001
+              {user?.identifier || "PAT-1001"}
             </span>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="teal" className="text-[10px] py-0 px-1.5">
-                Role: Patient
+              <Badge variant="teal" className="text-[10px] py-0 px-1.5 capitalize">
+                Role: {user?.role || "Patient"}
               </Badge>
-              <Badge variant="success" className="text-[10px] py-0 px-1.5">
-                Account Active
+              <Badge variant="success" className="text-[10px] py-0 px-1.5 capitalize">
+                Status: {user?.accountStatus || "Active"}
               </Badge>
             </div>
           </div>
@@ -63,21 +63,23 @@ export default function PatientProfilePage() {
               <span className="text-slate-500 flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-slate-400" /> Email Address
               </span>
-              <span className="font-medium text-slate-900">{user?.email || "patient@medora.health"}</span>
+              <span className="font-medium text-slate-900">{user?.email || "—"}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-100">
               <span className="text-slate-500 flex items-center gap-1.5">
                 <Phone className="h-3.5 w-3.5 text-slate-400" /> Phone Number
               </span>
-              <span className="font-medium text-slate-900">+91 98765 43210</span>
+              <span className="font-medium text-slate-900">{user?.phone || "—"}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-100">
               <span className="text-slate-500">Gender & DOB</span>
-              <span className="font-medium text-slate-900">Male • 14 May 1995</span>
+              <span className="font-medium text-slate-900 capitalize">
+                {user?.patientData?.gender || "—"} • {user?.patientData?.dob || "—"}
+              </span>
             </div>
             <div className="flex justify-between py-1.5">
               <span className="text-slate-500">Blood Group</span>
-              <span className="font-bold text-rose-700">O Positive (O+)</span>
+              <span className="font-bold text-rose-700">{user?.patientData?.bloodGroup || "—"}</span>
             </div>
           </CardContent>
         </Card>

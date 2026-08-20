@@ -19,14 +19,16 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RoleGuard } from "@/components/shared/role-guard";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function PharmacyWorkspacePage() {
+  const { user } = useAuth();
   const [searchId, setSearchId] = useState("");
 
   const prescriptions = [
-    { rxId: "RX-1001", patientName: "Rahul Verma", patientId: "MED-PAT-1001", doctor: "Dr. Rajesh Sharma", itemCount: "2 Medicines", status: "ready_for_pickup", issuedAt: "10:35 AM" },
-    { rxId: "RX-1002", patientName: "Ananya Mishra", patientId: "MED-PAT-1002", doctor: "Dr. Rajesh Sharma", itemCount: "1 Medicine", status: "dispensed", issuedAt: "09:45 AM" },
-    { rxId: "RX-1003", patientName: "Pooja Das", patientId: "MED-PAT-1004", doctor: "Dr. Rajesh Sharma", itemCount: "3 Medicines", status: "preparing", issuedAt: "11:10 AM" },
+    { rxId: "RX-1001", patientName: "Rahul Verma", patientId: "PAT-1001", doctor: "Dr. Ananya Sharma", itemCount: "2 Medicines", status: "ready_for_pickup", issuedAt: "10:35 AM" },
+    { rxId: "RX-1002", patientName: "Priya Sharma", patientId: "PAT-1002", doctor: "Dr. Ananya Sharma", itemCount: "1 Medicine", status: "dispensed", issuedAt: "09:45 AM" },
+    { rxId: "RX-1003", patientName: "Amit Das", patientId: "PAT-1003", doctor: "Dr. Ananya Sharma", itemCount: "3 Medicines", status: "preparing", issuedAt: "11:10 AM" },
   ];
 
   return (
@@ -37,14 +39,14 @@ export default function PharmacyWorkspacePage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">
-                Apex In-Hospital Pharmacy
+                {user?.organizationName || user?.fullName || "City Pharmacy Desk"}
               </h1>
-              <Badge variant="teal" className="text-xs">
-                MED-PHARM-1001
+              <Badge variant="teal" className="text-xs font-mono">
+                {user?.identifier || "PHA-1001"}
               </Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Prescription Verification & Physical Pickup Desk • Counter 1-4
+              Prescription Verification & Physical Pickup Desk
             </p>
           </div>
 

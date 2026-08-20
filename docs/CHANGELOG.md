@@ -1,45 +1,16 @@
-# 📝 MEDORA Project Changelog
+# 📝 MEDORA — Engineering Changelog
 
-All notable changes to the MEDORA platform are documented in this file.
-
----
-
-## [Phase 2] - 2026-08-20 — App Shell + Role Workspaces + Responsive Experience
-
+## [2026-08-20] — Master Ecosystem Architecture & Connectivity Model
 ### Added
-- **Patient Mobile-First Shell**:
-  - `components/shared/role-bottom-nav.tsx`: 5-tab mobile bottom navigation (`Home`, `Health`, `Care`, `Emergency`, `Profile`) with active badges and emergency quick trigger.
-  - `app/patient/page.tsx`: Mobile consumer healthcare homepage with digital Medora ID card (`MED-PAT-1001`), touch-optimized quick action cards (`Find Doctor`, `Hospitals`, `Reports`, `Medicines`), upcoming visit card, recent activity list, and audit notice.
-  - `app/patient/health/page.tsx`: Structural health hub with scrollable navigation pills (`Journey Timeline`, `Prescriptions`, `Lab Reports`, `All Records`) and empty state placeholders.
-  - `app/patient/care/page.tsx`: Care discovery hub with specialty search, doctor directory cards, hospital listings, and visit token schedules.
-  - `app/patient/emergency/page.tsx`: Prominent emergency hub with one-tap national helpline triggers (112, 108), emergency medical vitals snapshot, and nearest trauma center link.
-  - `app/patient/profile/page.tsx`: Personal profile destination with account status indicator, ABHA placeholder card, timed record sharing link, and sign-out control.
-- **Operational Tablet/Desktop Workspaces**:
-  - `app/doctor/page.tsx`: Clinical workspace with live duty status selector, operational overview metrics, tabbed queue, slot schedule, and pending diagnostic reviews.
-  - `app/hospital/page.tsx`: Command center with department roster, occupancy tracking, and audit links.
-  - `app/lab/page.tsx`: Diagnostic laboratory queue, testing states, and pathologist approvals.
-  - `app/pharmacy/page.tsx`: Prescription dispensing queue with counter pickup patient verification desk.
-  - `app/admin/page.tsx`: Master system audit stream and security posture matrix.
-  - `app/emergency/page.tsx`, `app/blood-bank/page.tsx`, `app/finance/page.tsx`: Role workspaces with RoleGuard protection, empty states, and phase notices.
-- **Responsive Container Strategy**:
-  - `components/shared/app-shell.tsx`: Automatically switches between centered consumer mobile container for Patients (`max-w-xl md:max-w-2xl`) and high-density full workspace for Doctors/Hospitals/Admins.
+- **Canonical Ecosystem Entity Hierarchy:** Defined Category A (Identities), Category B (Relationships), Category C (Healthcare Events), and Category D (Financial & Governance Events) in `types/database.types.ts` and `supabase/schema.sql`.
+- **Doctor Multi-Hospital Affiliations:** Many-to-Many relationship model (`doctor_affiliations`) decoupling Doctor identities from single hospital ownership.
+- **Multi-Branch Facility Model:** Distinguishes parent Organization entities (e.g. City Hospital Group) from physical Branches (`HSP-1001-BBSR`, `HSP-1001-ROU`, `HSP-1001-CTC`).
+- **Open Prescription Architecture:** Decoupled prescription creation from pharmacy fulfillment.
+- **Traceable Billing Architecture:** Every `bill_item` references its underlying medical event (`linked_event_type`, `linked_event_id`) to power "Why Was I Charged?".
+- **Doctor & Hospital Interactive Workspaces:** Added "My Hospital Affiliations" tab and "Request New Affiliation" modal in `/doctor`, and "Affiliated Doctors" roster with 1-click `[Approve]`, `[Reject]`, `[End Affiliation]` and "Invite Doctor" in `/hospital`.
 
----
-
-## [Phase 1] - 2026-08-20 — Authentication & Role Foundation
-
-### Added
-- Master PostgreSQL relational schema (`supabase/schema.sql`) with 15 tables and RLS security policies.
-- Centralized auth provider (`lib/auth/auth-context.tsx`) with Supabase client integration and multi-role session persistence.
-- Unified login portal (`app/(auth)/login/page.tsx`) with password show/hide toggle and SIH Demo Role Launcher.
-- 3-Step Patient Onboarding (`app/(auth)/register/page.tsx`) with ABHA ID generation.
-- Role protection guard (`components/shared/role-guard.tsx`) and 403 Forbidden access denial page (`app/access-denied/page.tsx`).
-
----
-
-## [Phase 0] - 2026-08-20 — Project Scaffolding & Design System
-
-### Added
-- Next.js 14 App Router setup with Tailwind CSS and custom tokens.
-- Standardized UI component primitives in `components/ui/`.
-- Shared App Shell, Navbar, and SIH Demo Persona Switcher in `components/shared/`.
+### Verified
+- Zero cross-account data leakage across all 14 ecosystem test personas.
+- Strict session invalidation on logout.
+- 0 TypeScript compilation errors (`tsc --noEmit`).
+- All 20 Next.js routes compiled and building cleanly.

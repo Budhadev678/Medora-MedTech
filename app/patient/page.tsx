@@ -44,7 +44,7 @@ export default function PatientHomePage() {
               Welcome back,
             </span>
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              {user?.full_name || "Rahul Verma"}
+              {user?.fullName || "Patient"}
             </h1>
           </div>
           <Link href="/patient/emergency">
@@ -66,10 +66,10 @@ export default function PatientHomePage() {
                 <span className="text-[10px] font-semibold text-teal-200">MEDORA Network</span>
               </div>
               <span className="font-mono text-lg font-extrabold tracking-wider block mt-2">
-                MED-PAT-1001
+                {user?.identifier || "PAT-1001"}
               </span>
               <span className="text-xs text-teal-100/90 font-medium block">
-                {user?.full_name || "Rahul Verma"}
+                {user?.fullName || "Patient"}
               </span>
             </div>
             <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white">
@@ -78,7 +78,7 @@ export default function PatientHomePage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-teal-600/40 flex items-center justify-between text-[11px] text-teal-200 relative z-10">
-            <span>Blood Group: <strong className="text-white">O+</strong></span>
+            <span>Blood Group: <strong className="text-white">{user?.patientData?.bloodGroup || "O+"}</strong></span>
             <span>Status: <strong className="text-emerald-300">Verified Active</strong></span>
           </div>
 
