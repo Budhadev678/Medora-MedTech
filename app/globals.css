@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surface & Background */
+    --background: 210 40% 98%; /* #F8FAFC (Slate-50) */
+    --foreground: 222.2 84% 4.9%; /* #0F172A (Slate-900) */
+    
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 222.2 84% 4.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    
+    /* Brand Accent (Medora Teal) */
+    --primary: 174 84% 31%; /* #0D9488 (Teal-600) */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 175 77% 26%; /* #0F766E (Teal-700) */
+    --primary-light: 168 76% 97%; /* #F0FDFA (Teal-50) */
+    --primary-dark: 176 69% 22%; /* #115E59 (Teal-800) */
+    
+    /* Neutrals */
+    --secondary: 210 40% 96.1%; /* #F1F5F9 (Slate-100) */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B (Slate-500) */
+    
+    --accent: 174 84% 31%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84.2% 60.2%; /* Red-500 */
+    --destructive-foreground: 210 40% 98%;
+
+    /* Semantic States */
+    --success: 142 76% 36%; /* Green-600 */
+    --success-foreground: 0 0% 100%;
+    --success-light: 138 76% 97%; /* Green-50 */
+    
+    --warning: 38 92% 50%; /* Amber-500 */
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 48 100% 96%; /* Amber-50 */
+
+    --info: 221 83% 53%; /* Blue-600 */
+    --info-foreground: 0 0% 100%;
+    --info-light: 214 100% 97%; /* Blue-50 */
+
+    /* Emergency Triage Levels */
+    --emergency-critical: 0 72% 51%; /* Red-600 */
+    --emergency-high: 24 95% 53%; /* Orange-500 */
+    --emergency-moderate: 45 93% 47%; /* Yellow-500 */
+    --emergency-low: 142 71% 45%; /* Green-500 */
+    
+    --border: 214.3 31.8% 91.4%; /* #E2E8F0 (Slate-200) */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 174 84% 31%;
+    
+    --radius: 0.625rem; /* 10px */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 174 84% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 174 84% 31%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 174 84% 31%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom Healthcare Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
