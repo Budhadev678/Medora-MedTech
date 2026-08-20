@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Share2,
   Stethoscope,
-  Building2
+  Building2,
+  Calendar,
+  Store,
+  QrCode
 } from "lucide-react";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { Badge } from "@/components/ui/badge";
@@ -25,23 +28,38 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Timeline, type TimelineItemData } from "@/components/ui/timeline";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getPatientEncounters, HealthcareEncounter } from "@/lib/data/encounter-store";
+import { getPatientPrescriptions, HealthcarePrescription } from "@/lib/data/prescription-store";
+import { getPatientLabOrders, HealthcareLabOrder } from "@/lib/data/lab-order-store";
 
 export default function PatientHealthPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"timeline" | "prescriptions" | "reports" | "records">("timeline");
   const [encounters, setEncounters] = useState<HealthcareEncounter[]>([]);
+  const [prescriptions, setPrescriptions] = useState<HealthcarePrescription[]>([]);
+  const [labOrders, setLabOrders] = useState<HealthcareLabOrder[]>([]);
 
   const refreshData = () => {
     if (!user) return;
-    const data = getPatientEncounters(user.identifier || user.id);
-    setEncounters(data);
+    const pId = user.identifier || user.id;
+    setEncounters(getPatientEncounters(pId));
+    setPrescriptions(getPatientPrescriptions(pId, false));
+    setLabOrders(getPatientLabOrders(pId, false));
   };
 
   useEffect(() => {
     refreshData();
-    window.addEventListener("medora-encounters-updated", refreshData);
-    return () => window.removeEventListener("medora-encounters-updated", refreshData);
+    const handleUpdate = () => refreshData();
+    window.addEventListener("medora-encounters-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    window.addEventListener("medora-lab-orders-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-encounters-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+      window.removeEventListener("medora-lab-orders-updated", handleUpdate);
+    };
   }, [user]);
+
+  const isRahul = user?.identifier === "PAT-1001";
 
   const dynamicTimeline: TimelineItemData[] = encounters.map((enc) => ({
     id: enc.id,
@@ -58,10 +76,10 @@ export default function PatientHealthPage() {
       id: "tl-1",
       type: "consultation",
       title: "Consultation Completed",
-      summary: "Dr. Rajesh Sharma recorded clinical assessment for mild hypertension and created RX-1001.",
-      timestamp: "2026-08-19T10:30:00Z",
-      actor: "Dr. Rajesh Sharma",
-      organization: "Apex Multispeciality Hospital",
+      summary: "Dr. Ananya Sharma recorded clinical assessment for mild hypertension and created RX-1001.",
+      timestamp: "2026-08-20T10:30:00Z",
+      actor: "Dr. Ananya Sharma",
+      organization: "City Hospital",
     },
   ];
 
@@ -74,16 +92,18 @@ export default function PatientHealthPage() {
             <span className="text-xs font-semibold text-slate-500 block">Health Hub</span>
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <HeartPulse className="h-5 w-5 text-teal-600" />
-              Your Health Records
+              Your Longitudinal Health
             </h1>
           </div>
-          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8">
-            <Share2 className="h-3.5 w-3.5 text-teal-600" />
-            <span>Share (24h)</span>
-          </Button>
+          <Link href="/patient/records">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 text-teal-800 border-teal-200">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Full Medical Records</span>
+            </Button>
+          </Link>
         </div>
 
-        {/* Structural Navigation Tabs (Mobile-Friendly Pill Scroll) */}
+        {/* Structural Navigation Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
           <button
             onClick={() => setActiveTab("timeline")}
@@ -93,7 +113,7 @@ export default function PatientHealthPage() {
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            Journey Timeline
+            Care Timeline ({encounters.length})
           </button>
           <button
             onClick={() => setActiveTab("prescriptions")}
@@ -103,7 +123,7 @@ export default function PatientHealthPage() {
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            Prescriptions (1)
+            Prescriptions ({prescriptions.length})
           </button>
           <button
             onClick={() => setActiveTab("reports")}
@@ -113,7 +133,7 @@ export default function PatientHealthPage() {
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            Lab Reports (1)
+            Lab Orders ({labOrders.length + (isRahul ? 1 : 0)})
           </button>
           <button
             onClick={() => setActiveTab("records")}
@@ -123,7 +143,7 @@ export default function PatientHealthPage() {
                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            All Records
+            All Encounters ({encounters.length})
           </button>
         </div>
 
@@ -132,9 +152,9 @@ export default function PatientHealthPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Connected Medical Milestones
+                Authoritative Health Milestones
               </h2>
-              <Badge variant="teal" className="text-[10px]">Traceable Events</Badge>
+              <Badge variant="teal" className="text-[10px]">Verifiable Events</Badge>
             </div>
             <Timeline items={sampleTimeline} />
           </div>
@@ -143,77 +163,116 @@ export default function PatientHealthPage() {
         {/* Tab 2: Prescriptions */}
         {activeTab === "prescriptions" && (
           <div className="space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Active Prescriptions
-            </h2>
-            <Card className="bg-white border-teal-200">
-              <CardHeader className="p-4 pb-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-slate-900">RX-1001</span>
-                  <StatusBadge status="ready_for_pickup" size="sm" />
-                </div>
-                <CardTitle className="text-sm font-bold text-slate-900 mt-1">
-                  Dr. Rajesh Sharma (Cardiology)
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Apex Multispeciality Hospital • Issued 19 Aug 2026
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-2 text-xs text-slate-700 space-y-2">
-                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="font-semibold block text-slate-900">1. Amoxicillin 500mg</span>
-                  <span className="text-[11px] text-slate-500">1 Capsule • 3x Daily • After Food • 5 Days</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="font-semibold block text-slate-900">2. Paracetamol 650mg</span>
-                  <span className="text-[11px] text-slate-500">1 Tablet • SOS (as needed for fever)</span>
-                </div>
-                <div className="pt-2 text-[11px] text-slate-500 border-t border-slate-100">
-                  Pickup Status: <strong className="text-teal-800">Packaged at Counter 3</strong>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Active Prescriptions
+              </h2>
+              <Link href="/patient/prescriptions" className="text-xs font-bold text-teal-700 hover:underline">
+                View All & Fulfill $\rightarrow$
+              </Link>
+            </div>
+            {prescriptions.length > 0 ? (
+              <div className="space-y-3">
+                {prescriptions.map((rx) => (
+                  <div key={rx.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">
+                        {rx.prescription_reference}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] font-bold bg-emerald-50 text-emerald-800">
+                        {rx.status}
+                      </Badge>
+                    </div>
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900 block">{rx.prescriber_name}</span>
+                      <span className="text-[11px] text-slate-500">{rx.organization_name}</span>
+                    </div>
+                    <div className="space-y-1 pt-1">
+                      {rx.items.map((item, idx) => (
+                        <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-800">{item.medicine_name} {item.strength && `(${item.strength})`}</span>
+                          <span className="text-[11px] text-slate-500">{item.dosage}, {item.frequency}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Pill className="h-6 w-6 text-teal-600" />}
+                title="No Active Prescriptions"
+                description="Prescriptions authored during doctor visits will aggregate here."
+              />
+            )}
           </div>
         )}
 
-        {/* Tab 3: Lab Reports */}
+        {/* Tab 3: Lab Orders */}
         {activeTab === "reports" && (
           <div className="space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Diagnostic & Pathology Reports
-            </h2>
-            <Card className="bg-white border-amber-200">
-              <CardHeader className="p-4 pb-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-slate-900">LAB-1001</span>
-                  <StatusBadge status="sample_collected" size="sm" />
-                </div>
-                <CardTitle className="text-sm font-bold text-slate-900 mt-1">
-                  Complete Blood Count (CBC)
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Central Pathology Lab • Sample SMP-1001 Collected
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-2 text-xs text-slate-600 space-y-2">
-                <p className="text-[11px] leading-relaxed">
-                  Sample received and undergoing automated hematology analyzer processing. Pathologist review pending.
-                </p>
-                <div className="p-2 rounded-lg bg-amber-50 text-[11px] text-amber-900 font-medium">
-                  ⏳ Estimated approval time: 45 minutes
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Diagnostic Lab Orders
+              </h2>
+              <Link href="/patient/reports" className="text-xs font-bold text-blue-700 hover:underline">
+                View All & Book $\rightarrow$
+              </Link>
+            </div>
+            {labOrders.length > 0 ? (
+              <div className="space-y-3">
+                {labOrders.map((order) => (
+                  <div key={order.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">
+                        {order.order_reference}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-800">
+                        {order.status}
+                      </Badge>
+                    </div>
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900 block">{order.ordering_provider_name}</span>
+                      <span className="text-[11px] text-slate-500">{order.organization_name}</span>
+                    </div>
+                    <div className="space-y-1 pt-1">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-800">{item.test_name}</span>
+                          {item.specimen_type && <span className="text-[10px] text-slate-500">{item.specimen_type}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<FlaskConical className="h-6 w-6 text-blue-600" />}
+                title="No Lab Orders"
+                description="Diagnostic tests requested during consultations will appear here."
+              />
+            )}
           </div>
         )}
 
-        {/* Tab 4: All Records Empty State */}
+        {/* Tab 4: All Encounters */}
         {activeTab === "records" && (
-          <EmptyState
-            icon={<FolderOpen className="h-6 w-6 text-teal-600" />}
-            title="Archived Hospital Records"
-            description="Historical discharge summaries, imaging DICOM files, and previous clinic encounters will appear here."
-          />
+          <div className="space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Healthcare Encounters ({encounters.length})
+            </h2>
+            {encounters.map((enc) => (
+              <div key={enc.id} className="p-3 rounded-xl border border-slate-200 bg-white space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">{enc.encounter_type.replace(/_/g, " ")} — {enc.department_name}</span>
+                  <StatusBadge status={enc.status.toLowerCase() as any} />
+                </div>
+                <p className="text-slate-600"><strong>Doctor:</strong> {enc.provider_name} ({enc.organization_name})</p>
+                <p className="text-slate-500 text-[11px]">Reason: {enc.reason_for_visit}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </RoleGuard>

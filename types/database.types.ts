@@ -395,7 +395,17 @@ export type AuditEventType =
   | "CLINICAL_RECORD_COMPLETED"
   | "CLINICAL_RECORD_AMENDED"
   | "CLINICAL_RECORD_VIEWED"
-  | "CLINICAL_RECORD_CANCELLED";
+  | "CLINICAL_RECORD_CANCELLED"
+  | "PRESCRIPTION_CREATED"
+  | "PRESCRIPTION_UPDATED"
+  | "PRESCRIPTION_ISSUED"
+  | "PRESCRIPTION_CANCELLED"
+  | "PRESCRIPTION_VIEWED"
+  | "LAB_ORDER_CREATED"
+  | "LAB_ORDER_UPDATED"
+  | "LAB_ORDER_ORDERED"
+  | "LAB_ORDER_CANCELLED"
+  | "LAB_ORDER_VIEWED";
 
 export interface StoredAuditEvent {
   id: string;
@@ -584,6 +594,104 @@ export interface ClinicalRecord {
   amendment_reason?: string;
 }
 
+// ============================================================
+// PRESCRIPTION DOMAIN MODEL (PHASE 4.3)
+// Clinician-authorized medication orders bound to an Encounter.
+// ============================================================
+
+export type PrescriptionStatus = "DRAFT" | "ISSUED" | "CANCELLED" | "COMPLETED" | "EXPIRED";
+
+export type PrescriptionRoute = "ORAL" | "TOPICAL" | "INHALATION" | "INJECTION" | "OTHER";
+
+export interface PrescriptionItem {
+  id: string; // e.g. "RXI-1"
+  prescription_id?: string;
+  medicine_name: string; // e.g. "Telmisartan"
+  strength?: string; // e.g. "40 mg"
+  dosage: string; // e.g. "1 tablet"
+  route: PrescriptionRoute; // e.g. "ORAL"
+  frequency: string; // e.g. "Once daily (morning)"
+  duration: string; // e.g. "30 days"
+  duration_days?: number;
+  quantity?: string; // e.g. "30 tablets"
+  instructions?: string; // e.g. "Take after breakfast with water"
+}
+
+export interface HealthcarePrescription {
+  id: string; // e.g. "RX-1001"
+  prescription_reference: string; // e.g. "RX-1001"
+  patient_id: string; // FK -> patients.medora_id (PAT-1001)
+  patient_name: string;
+  encounter_id: string; // FK -> HealthcareEncounter (ENC-1001)
+  clinical_record_id?: string; // FK -> ClinicalRecord (CR-1001)
+  prescriber_id: string; // FK -> doctors.identifier (DOC-1001)
+  prescriber_name: string;
+  prescriber_role: string;
+  organization_id: string; // FK -> organizations.identifier (HSP-1001)
+  organization_name: string;
+  department_name?: string;
+  status: PrescriptionStatus;
+  items: PrescriptionItem[];
+  refills_allowed: number;
+  refills_used: number;
+  notes?: string;
+  issued_at?: string;
+  created_at: string;
+  updated_at: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
+}
+
+// ============================================================
+// LABORATORY ORDER DOMAIN MODEL (PHASE 4.3)
+// Clinician-requested diagnostic test orders bound to an Encounter.
+// ============================================================
+
+export type LabOrderPriority = "ROUTINE" | "URGENT";
+
+export type LabOrderStatus =
+  | "DRAFT"
+  | "ORDERED"
+  | "ACCEPTED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export interface LabOrderItem {
+  id: string; // e.g. "LOI-1"
+  test_name: string; // e.g. "Complete Blood Count (CBC) with Differential"
+  test_code?: string; // e.g. "CBC-01"
+  specimen_type?: string; // e.g. "Whole Blood (EDTA)"
+  instructions?: string; // e.g. "Standard venipuncture"
+}
+
+export interface HealthcareLabOrder {
+  id: string; // e.g. "LAB-ORD-1001"
+  order_reference: string; // e.g. "LAB-ORD-1001"
+  patient_id: string; // FK -> patients.medora_id (PAT-1001)
+  patient_name: string;
+  encounter_id: string; // FK -> HealthcareEncounter (ENC-1001)
+  clinical_record_id?: string; // FK -> ClinicalRecord (CR-1001)
+  ordering_provider_id: string; // FK -> doctors.identifier (DOC-1001)
+  ordering_provider_name: string;
+  ordering_provider_role: string;
+  organization_id: string; // FK -> organizations.identifier (HSP-1001)
+  organization_name: string;
+  department_name?: string;
+  laboratory_id?: string; // Optional assigned lab (preserving patient choice)
+  laboratory_name?: string;
+  priority: LabOrderPriority;
+  reason: string; // e.g. "Baseline cardiovascular risk evaluation"
+  instructions?: string; // e.g. "12-hour overnight fasting required"
+  status: LabOrderStatus;
+  items: LabOrderItem[];
+  ordered_at?: string;
+  created_at: string;
+  updated_at: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
+}
+
 export type AppointmentStatus =
   | "REQUESTED"
   | "CONFIRMED"
@@ -656,16 +764,6 @@ export interface Prescription {
   status: "active" | "dispensed" | "cancelled";
   digital_signature_hash?: string;
   created_at: string;
-}
-
-export interface PrescriptionItem {
-  id: string;
-  prescription_id: string;
-  medicine_name: string;
-  dosage: string;
-  frequency: string; // e.g. "1-0-1"
-  duration_days: number;
-  instructions: string; // e.g. "After food"
 }
 
 export interface PrescriptionDispensing {

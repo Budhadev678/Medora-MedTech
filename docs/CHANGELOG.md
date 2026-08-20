@@ -1,5 +1,20 @@
 # 📝 MEDORA — Engineering Changelog
 
+## [Phase 4.3 - Prescription & Lab Order Foundation] - 2026-08-20
+### Added
+- **Prescription Core Entity & Store (`lib/data/prescription-store.ts`):** Implemented authoritative `HealthcarePrescription` model (`RX-*`) attached to parent `HealthcareEncounter` (`ENC-*`).
+- **Structured Multi-Medicine Prescription Items:** Medicine name, strength, dosage, route (`ORAL`, `TOPICAL`, `INHALATION`, `INJECTION`, `OTHER`), frequency, duration, quantity, and specific intake instructions.
+- **Diagnostic Lab Order Entity & Store (`lib/data/lab-order-store.ts`):** Implemented authoritative `HealthcareLabOrder` model (`LAB-ORD-*`) with structured test items, specimen types, order priority (`ROUTINE` / `URGENT`), and mandatory clinical indications.
+- **Open Patient Choice Guarantee:** Built strict architectural decoupling guaranteeing patients the freedom to choose any licensed hospital or independent retail pharmacy to fulfill prescriptions, and any accredited laboratory for diagnostic investigations.
+- **Doctor Consultation Orders & Workbench (`app/doctor/consultations/page.tsx`):** Added direct `[Prescribe]` and `[Order Lab]` action modals pre-bound to encounter context without redundant data entry.
+- **Doctor Prescriptions & Lab Order Desks (`app/doctor/prescriptions/page.tsx` & `app/doctor/lab-orders/page.tsx`):** Dedicated operational desks for practitioners to filter, review, and cancel orders with documented reasons.
+- **Patient Mobile Prescriptions & Reports (`app/patient/prescriptions/page.tsx` & `app/patient/reports/page.tsx`):** Mobile-first prescription cards with QR verification slips, open pharmacy choice notices, and diagnostic lab order trackers.
+- **Assigned Lab Queue (`app/lab/orders/page.tsx`):** Scoped laboratory workspace queue strictly showing orders assigned to the active laboratory facility (`LAB-1001`).
+- **Security Audit & Tri-Lingual Localization:** Added `PRESCRIPTION_ISSUED`, `PRESCRIPTION_CANCELLED`, `LAB_ORDER_ORDERED`, and `LAB_ORDER_CANCELLED` audit events with full sanitization and localized dictionary strings in English, Hindi, and Odia.
+- **Automated Verification:** 47/47 assertions passed in `scripts/test-phase4-prescription-lab.ts` across 110 compiled routes.
+
+---
+
 ## [Phase 4.2 - Clinical Record Core] - 2026-08-20
 ### Added
 - **Clinical Record Core Entity & Store (`lib/data/clinical-record-store.ts`):** Implemented authoritative `ClinicalRecord` model (`CR-*`) attached to parent `HealthcareEncounter` (`ENC-*`).
