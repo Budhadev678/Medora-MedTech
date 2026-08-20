@@ -51,11 +51,12 @@ export class AbhaService {
    */
   public static requestOtp(
     identifier: string,
-    method: "aadhaar" | "mobile" | "abha_number"
+    method: "aadhaar" | "mobile" | "abha_number",
+    patientContext?: { fullName?: string; dob?: string; gender?: "male" | "female" | "other" } | string
   ): { success: boolean; txnId?: string; error?: string; cooldownSeconds?: number; demoOtpHint?: string } {
     const cleanId = identifier.replace(/\s+/g, "");
 
-    if (method === "aadhaar" && cleanId.length !== 12) {
+    if (method === "aadhaar" && cleanId.length !== 12 && cleanId.length !== 4 && !cleanId.startsWith("XXXX")) {
       return { success: false, error: "Please enter a valid 12-digit Aadhaar number." };
     }
     if (method === "mobile" && cleanId.length < 10) {
@@ -70,14 +71,38 @@ export class AbhaService {
     const last4 = cleanId.slice(-4);
     const maskedAadhaar = `XXXX XXXX ${last4}`;
 
-    // Mock external verified identity based on identifier
+    // Resolve matching persona in sandbox mode
+    let verifiedName = "Rahul Verma";
+    let verifiedDob = "1995-05-14";
+    let verifiedGender: "male" | "female" | "other" = "male";
+
+    if (cleanId.endsWith("9999")) {
+      verifiedName = "Unknown Mismatched Identity";
+      verifiedDob = "1970-01-01";
+      verifiedGender = "other";
+    } else if (cleanId.endsWith("8821") || (typeof patientContext === "string" && patientContext === "PAT-1002")) {
+      verifiedName = "Priya Sharma";
+      verifiedDob = "1998-09-22";
+      verifiedGender = "female";
+    } else if (cleanId.endsWith("7665") || (typeof patientContext === "string" && patientContext === "PAT-1003")) {
+      verifiedName = "Amit Das";
+      verifiedDob = "1990-12-05";
+      verifiedGender = "male";
+    } else if (typeof patientContext === "object" && patientContext?.fullName) {
+      verifiedName = patientContext.fullName;
+      if (patientContext.dob) verifiedDob = patientContext.dob;
+      if (patientContext.gender) verifiedGender = patientContext.gender;
+    }
+
+    const usernameBase = verifiedName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
     const mockIdentity: ExternalVerifiedIdentity = {
-      verifiedName: cleanId.endsWith("9999") ? "Different Person Name" : "Rahul Verma",
-      dob: "1995-05-14",
-      gender: "male",
+      verifiedName,
+      dob: verifiedDob,
+      gender: verifiedGender,
       maskedAadhaar,
       mobileMasked: "+91 XXXXX " + (cleanId.slice(-5) || "43210"),
-      suggestedAbhaAddress: `user${last4}@abdm`,
+      suggestedAbhaAddress: `${usernameBase}${last4}@abdm`,
       suggestedAbhaNumber: `91-4589-2041-${last4}`,
     };
 

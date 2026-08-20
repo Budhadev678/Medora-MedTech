@@ -107,12 +107,11 @@ export class AccessEngine {
 
     // 5c. Verify Patient Consent
     const consents = getPatientConsents(targetPatientId);
-    const matchingConsent = consents.find(
-      (c) => c.organization_id === organizationId || 
-             c.requester_id === actor.identifier
+    const orgConsents = consents.filter(
+      (c) => c.organization_id === organizationId || c.requester_id === actor.identifier
     );
 
-    if (!matchingConsent) {
+    if (orgConsents.length === 0) {
       return {
         decision: "CONSENT_REQUIRED",
         allowed: false,
@@ -122,57 +121,65 @@ export class AccessEngine {
       };
     }
 
-    if (matchingConsent.status === "REVOKED") {
+    // Check for an active, validly unexpired consent grant
+    const activeGrant = orgConsents.find(
+      (c) => c.status === "GRANTED" && new Date(c.expires_at).getTime() >= Date.now()
+    );
+
+    if (activeGrant) {
+      // 5d. Verify Scope Authorization
+      if (requiredScope && !activeGrant.granted_scopes.includes(requiredScope)) {
+        return {
+          decision: "SCOPE_NOT_ALLOWED",
+          allowed: false,
+          reason: `Consent scope does not include requested data category (${requiredScope}). Authorized scopes: ${activeGrant.granted_scopes.join(", ")}.`,
+          evaluated_at: now,
+          consent_id: activeGrant.id,
+          authorized_scopes: activeGrant.granted_scopes,
+        };
+      }
+
+      // All Checks Passed: ALLOW
+      return {
+        decision: "ALLOW",
+        allowed: true,
+        reason: `Authorized under active consent ${activeGrant.id} for purpose: ${activeGrant.purpose}.`,
+        evaluated_at: now,
+        consent_id: activeGrant.id,
+        relationship_id: orgRel.id,
+        authorized_scopes: activeGrant.granted_scopes,
+      };
+    }
+
+    // No active grant found: inspect most recent consent to provide exact rejection reason
+    const latestConsent = orgConsents[0];
+
+    if (latestConsent.status === "REVOKED") {
       return {
         decision: "CONSENT_REVOKED",
         allowed: false,
         reason: "Patient has explicitly revoked access permissions for this organization.",
         evaluated_at: now,
-        consent_id: matchingConsent.id,
+        consent_id: latestConsent.id,
       };
     }
 
-    if (matchingConsent.status === "EXPIRED" || new Date(matchingConsent.expires_at).getTime() < Date.now()) {
+    if (latestConsent.status === "EXPIRED" || new Date(latestConsent.expires_at).getTime() < Date.now()) {
       return {
         decision: "CONSENT_EXPIRED",
         allowed: false,
         reason: "The time-bound consent granted by the patient has expired.",
         evaluated_at: now,
-        consent_id: matchingConsent.id,
+        consent_id: latestConsent.id,
       };
     }
 
-    if (matchingConsent.status !== "GRANTED") {
-      return {
-        decision: "DENY",
-        allowed: false,
-        reason: `Consent status is ${matchingConsent.status.toLowerCase()}. Access cannot be granted.`,
-        evaluated_at: now,
-        consent_id: matchingConsent.id,
-      };
-    }
-
-    // 5d. Verify Scope Authorization
-    if (requiredScope && !matchingConsent.granted_scopes.includes(requiredScope)) {
-      return {
-        decision: "SCOPE_NOT_ALLOWED",
-        allowed: false,
-        reason: `Consent scope does not include requested data category (${requiredScope}). Authorized scopes: ${matchingConsent.granted_scopes.join(", ")}.`,
-        evaluated_at: now,
-        consent_id: matchingConsent.id,
-        authorized_scopes: matchingConsent.granted_scopes,
-      };
-    }
-
-    // All Checks Passed: ALLOW
     return {
-      decision: "ALLOW",
-      allowed: true,
-      reason: `Authorized under active consent ${matchingConsent.id} for purpose: ${matchingConsent.purpose}.`,
+      decision: "DENY",
+      allowed: false,
+      reason: `Consent status is ${latestConsent.status.toLowerCase()}. Access cannot be granted.`,
       evaluated_at: now,
-      consent_id: matchingConsent.id,
-      relationship_id: orgRel.id,
-      authorized_scopes: matchingConsent.granted_scopes,
+      consent_id: latestConsent.id,
     };
   }
 }

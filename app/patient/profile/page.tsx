@@ -172,14 +172,18 @@ export default function PatientProfilePage() {
 
   useEffect(() => {
     refreshData();
+    window.addEventListener("medora-identity-updated", refreshData);
     window.addEventListener("medora-consent-updated", refreshData);
     window.addEventListener("medora-corrections-updated", refreshData);
     window.addEventListener("medora-relationships-updated", refreshData);
+    window.addEventListener("medora-audit-updated", refreshData);
 
     return () => {
+      window.removeEventListener("medora-identity-updated", refreshData);
       window.removeEventListener("medora-consent-updated", refreshData);
       window.removeEventListener("medora-corrections-updated", refreshData);
       window.removeEventListener("medora-relationships-updated", refreshData);
+      window.removeEventListener("medora-audit-updated", refreshData);
     };
   }, [user]);
 

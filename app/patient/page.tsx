@@ -33,13 +33,29 @@ import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AppointmentCard } from "@/components/patient/appointment-card";
 import { RecordCard } from "@/components/patient/record-card";
-import { findIdentityById, calculateProfileCompleteness } from "@/lib/data/identity-store";
+import { findIdentityById, calculateProfileCompleteness, StoredIdentity } from "@/lib/data/identity-store";
 
 export default function PatientHomePage() {
   const { user } = useAuth();
-  const livePatient = user ? findIdentityById(user.identifier) || user : null;
+  const [livePatient, setLivePatient] = React.useState<StoredIdentity | null>(() => {
+    return user ? findIdentityById(user.identifier) || user : null;
+  });
+  const [completeness, setCompleteness] = React.useState(() => calculateProfileCompleteness(livePatient));
+
+  React.useEffect(() => {
+    const refresh = () => {
+      if (user) {
+        const live = findIdentityById(user.identifier) || user;
+        setLivePatient(live);
+        setCompleteness(calculateProfileCompleteness(live));
+      }
+    };
+    refresh();
+    window.addEventListener("medora-identity-updated", refresh);
+    return () => window.removeEventListener("medora-identity-updated", refresh);
+  }, [user]);
+
   const isRahul = livePatient?.identifier === "PAT-1001";
-  const completeness = calculateProfileCompleteness(livePatient);
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>

@@ -60,15 +60,19 @@ const doctorAnanya: StoredIdentity = {
   createdAt: "2026-01-10T08:00:00Z",
   doctorData: {
     medicalRegNo: "MCI-2018-88231",
+    medicalCouncil: "Odisha Medical Council",
+    experienceYears: 12,
     qualifications: "MBBS, MD (Cardiology)",
-    specialties: ["Cardiology"],
+    specialization: "Cardiology",
     affiliations: [
       {
         organizationId: "HSP-1001",
         organizationIdentifier: "HSP-1001",
         organizationName: "City Hospital",
         roleTitle: "Consultant Cardiologist",
+        consultationFee: 800,
         status: "active",
+        verificationStatus: "verified",
       },
     ],
   },

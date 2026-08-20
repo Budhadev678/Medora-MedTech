@@ -658,7 +658,10 @@ export function saveIdentity(identity: StoredIdentity): void {
   } else {
     current.push(identity);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    window.dispatchEvent(new Event("medora-identity-updated"));
+  } catch (e) {}
 }
 
 export function findIdentityByEmail(email: string): StoredIdentity | null {

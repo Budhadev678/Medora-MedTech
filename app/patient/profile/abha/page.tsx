@@ -79,7 +79,11 @@ export default function AbhaLinkingPage() {
     setErrorMessage(null);
     setLoading(true);
 
-    const res = AbhaService.requestOtp(identifierInput, method);
+    const res = AbhaService.requestOtp(
+      identifierInput, 
+      method, 
+      patient ? { fullName: patient.fullName, dob: patient.patientData?.dob, gender: patient.patientData?.gender } : undefined
+    );
     setLoading(false);
 
     if (!res.success) {
