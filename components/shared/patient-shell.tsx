@@ -5,19 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Activity, 
-  Home, 
-  Calendar, 
-  FileText, 
   Menu, 
   X, 
   AlertTriangle, 
-  Pill, 
-  FlaskConical, 
-  Package, 
-  Receipt, 
-  User, 
-  Stethoscope, 
-  HeartPulse, 
   ChevronRight, 
   LogOut,
   Sparkles
@@ -42,9 +32,9 @@ export function PatientShell({ children }: PatientShellProps) {
     <div className="min-h-screen bg-slate-50 text-foreground flex flex-col font-sans">
       {/* 1. Mobile-First Patient Top Header */}
       <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur-md">
-        <Link href="/patient" className="flex items-center gap-2 group">
+        <Link href="/patient" className="flex items-center gap-2 group" aria-label="MEDORA Patient Home">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white shadow-xs">
-            <Activity className="h-4 w-4" />
+            <Activity className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
@@ -58,10 +48,36 @@ export function PatientShell({ children }: PatientShellProps) {
           </div>
         </Link>
 
+        {/* Desktop Primary Navigation Links */}
+        <nav aria-label="Desktop Patient Navigation" className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
+          {PATIENT_PRIMARY_NAV.map((item) => {
+            const isActive = item.exact 
+              ? pathname === item.href 
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors",
+                  isActive
+                    ? "bg-teal-50 text-teal-800 font-extrabold"
+                    : "hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
         <div className="flex items-center gap-1.5">
-          <Link href="/patient/emergency">
-            <div className="flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 transition-colors">
-              <AlertTriangle className="h-3 w-3 text-red-600" />
+          <Link href="/patient/emergency" aria-label="Emergency and Urgent Care Assistance">
+            <div className="flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 transition-colors">
+              <AlertTriangle className="h-3 w-3 text-red-600" aria-hidden="true" />
               <span>SOS</span>
             </div>
           </Link>
@@ -71,14 +87,14 @@ export function PatientShell({ children }: PatientShellProps) {
       </header>
 
       {/* 2. Scrollable Mobile-First Patient Content Container */}
-      <main className="flex-1 w-full max-w-xl md:max-w-2xl mx-auto px-4 py-4 sm:py-6 pb-28 md:pb-16">
+      <main className="flex-1 w-full max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 sm:py-6 pb-28 md:pb-16">
         {children}
       </main>
 
-      {/* 3. Primary Mobile Bottom Navigation Bar */}
+      {/* 3. Primary Mobile Bottom Navigation Bar (5 Core Items) */}
       <nav 
         aria-label="Patient Bottom Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white/95 backdrop-blur-md px-2 shadow-lg md:max-w-md md:mx-auto md:bottom-3 md:rounded-2xl md:border"
+        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white/95 backdrop-blur-md px-1 shadow-lg md:hidden"
       >
         {PATIENT_PRIMARY_NAV.map((item) => {
           const isActive = item.exact 
@@ -86,66 +102,42 @@ export function PatientShell({ children }: PatientShellProps) {
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
-          if (item.href === "/patient/emergency") {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-transform active:scale-95",
-                  isActive ? "text-red-700 font-bold" : "text-red-600 hover:text-red-700"
-                )}
-              >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-600">
-                  <Icon className="h-3.5 w-3.5" />
-                </div>
-                <span>{item.label}</span>
-              </Link>
-            );
-          }
-
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors py-1 px-3 rounded-lg active:scale-95",
+                "flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors py-1.5 px-0.5 rounded-xl active:scale-95",
                 isActive 
-                  ? "text-teal-700 font-bold bg-teal-50/80" 
+                  ? "text-teal-700 font-extrabold bg-teal-50/80" 
                   : "text-slate-500 hover:text-slate-900"
               )}
             >
-              <Icon className={cn("h-4 w-4", isActive ? "text-teal-700" : "text-slate-500")} />
-              <span>{item.label}</span>
+              <Icon className={cn("h-4.5 w-4.5 shrink-0", isActive ? "text-teal-700 stroke-[2.5]" : "text-slate-500")} aria-hidden="true" />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
-
-        {/* 4th Item: "More" Drawer Trigger */}
-        <button
-          type="button"
-          onClick={() => setIsMoreOpen(true)}
-          className={cn(
-            "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors py-1 px-3 rounded-lg active:scale-95 text-slate-500 hover:text-slate-900",
-            isMoreOpen ? "text-teal-700 font-bold bg-teal-50/80" : ""
-          )}
-        >
-          <Menu className="h-4 w-4" />
-          <span>More</span>
-        </button>
       </nav>
 
-      {/* 4. "More" Navigation Drawer / Modal */}
+      {/* 4. Secondary Drawer / Utilities Modal */}
       {isMoreOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150">
+        <div 
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="patient-more-title"
+        >
           <div className="fixed inset-0" onClick={() => setIsMoreOpen(false)} />
           
-          <div className="relative z-50 w-full max-w-lg mx-auto rounded-t-2xl border-t border-slate-200 bg-white p-5 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+          <div className="relative z-50 w-full max-w-lg mx-auto rounded-t-3xl border-t border-slate-200 bg-white p-5 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
             {/* Drawer Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
               <div>
-                <span className="font-bold text-sm text-slate-900 block">
-                  All Patient Healthcare Services
+                <span className="font-extrabold text-sm text-slate-900 block" id="patient-more-title">
+                  Patient Services & Utilities
                 </span>
                 <span className="text-[11px] text-slate-500">
                   {user?.fullName || "Patient"} • {user?.identifier || "PAT-1001"}
@@ -155,6 +147,7 @@ export function PatientShell({ children }: PatientShellProps) {
                 type="button"
                 onClick={() => setIsMoreOpen(false)}
                 className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close menu"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -169,22 +162,17 @@ export function PatientShell({ children }: PatientShellProps) {
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMoreOpen(false)}
-                    className="flex items-center justify-between py-3 px-1 hover:bg-slate-50 rounded-lg transition-colors group"
+                    className="flex items-center justify-between py-3 px-1 hover:bg-slate-50 rounded-xl transition-colors group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-                        <Icon className="h-4 w-4" />
+                      <div className="h-8 w-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-xs text-slate-900 group-hover:text-teal-700 transition-colors">
                             {item.label}
                           </span>
-                          {item.comingSoon && (
-                            <Badge variant="outline" className="text-[9px] py-0 text-slate-500 border-slate-200">
-                              {item.phase || "Coming Soon"}
-                            </Badge>
-                          )}
                         </div>
                         {item.description && (
                           <span className="text-[11px] text-slate-500 block leading-tight">
@@ -193,7 +181,7 @@ export function PatientShell({ children }: PatientShellProps) {
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
                   </Link>
                 );
               })}
@@ -207,9 +195,9 @@ export function PatientShell({ children }: PatientShellProps) {
                   setIsMoreOpen(false);
                   logout();
                 }}
-                className="w-full py-2.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-3 rounded-2xl bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
               >
-                <LogOut className="h-3.5 w-3.5" /> Sign Out of Patient Account
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Sign Out of Patient Account
               </button>
             </div>
           </div>

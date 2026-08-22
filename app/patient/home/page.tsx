@@ -3,16 +3,16 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function PatientBillsRedirect() {
+export default function PatientHomeRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/patient/billing");
+    router.replace("/patient");
   }, [router]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center text-xs text-slate-500 font-medium">
-      Loading Patient Bills & Payments...
+      Loading Patient Home...
     </div>
   );
 }

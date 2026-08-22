@@ -41,9 +41,6 @@ export function Navbar() {
               <span className="text-lg font-bold tracking-tight text-slate-900">
                 MEDORA
               </span>
-              <span className="rounded bg-teal-100 px-1.5 py-0.2 text-[10px] font-bold text-teal-800 tracking-wide uppercase">
-                Prototype
-              </span>
             </div>
             <span className="text-[10px] text-slate-500 tracking-tight block -mt-0.5">
               Connected Healthcare Platform

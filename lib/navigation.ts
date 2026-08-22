@@ -38,6 +38,8 @@ import {
   Truck,
   FileSpreadsheet,
   HandHeart,
+  HeartPulse,
+  Globe,
   LucideIcon
 } from "lucide-react";
 import { UserRole } from "@/lib/constants";
@@ -55,26 +57,23 @@ export interface NavItem {
   description?: string;
 }
 
-// 1. Patient Primary Bottom Navigation (4 Core Mobile Tabs)
+// 1. Patient Primary Navigation (5 Canonical Workspaces)
 export const PATIENT_PRIMARY_NAV: NavItem[] = [
   { label: "Home", href: "/patient", icon: Home, exact: true },
   { label: "Appointments", href: "/patient/appointments", icon: Calendar },
-  { label: "Health", href: "/patient/health", icon: Activity, exact: false },
+  { label: "My Health", href: "/patient/health", icon: HeartPulse, exact: false },
+  { label: "Bills & Payments", href: "/patient/billing", icon: Receipt, exact: false },
+  { label: "Profile", href: "/patient/profile", icon: User, exact: false },
 ];
 
-// 2. Patient "More" Navigation Drawer (Comprehensive Patient Services)
+// 2. Patient Secondary Utilities Navigation (Genuinely Secondary Functions)
 export const PATIENT_MORE_NAV: NavItem[] = [
-  { label: "Health Timeline", href: "/patient/health", icon: Activity, description: "Chronological medical history & care timeline" },
-  { label: "Medical Documents Vault", href: "/patient/documents", icon: FolderOpen, description: "Certified clinical documents & patient uploads" },
-  { label: "Digital Prescriptions", href: "/patient/pharmacy", icon: Pill, description: "Verified e-prescriptions & pickup status" },
-  { label: "Diagnostic Lab Reports", href: "/patient/lab", icon: FlaskConical, description: "Pathology & diagnostic test results" },
-  { label: "Itemized Hospital Bills", href: "/patient/billing", icon: Receipt, description: "Transparent breakdown & 'Why Was I Charged?'" },
-  { label: "Insurance & Benefits", href: "/patient/billing", icon: Shield, description: "Policy coverage, pre-auth & verified claims" },
-  { label: "Government Schemes", href: "/patient/billing", icon: Landmark, description: "BSKY, PM-JAY & subsidy assistance status" },
-  { label: "Financial Support & Receipts", href: "/patient/billing/payments", icon: CreditCard, description: "Payment receipts & transaction history" },
-  { label: "Billing Disputes & Questions", href: "/patient/billing/disputes", icon: HelpCircle, description: "File billing inquiries with full evidence tracking" },
-  { label: "Health Passport & Profile", href: "/patient/profile", icon: User, description: "Demographics, emergency QR & ABHA link" },
-  { label: "Emergency & SOS", href: "/patient/emergency", icon: AlertTriangle, description: "Emergency hospital contacts & break-glass pathway" },
+  { label: "Notifications", href: "/patient/notifications", icon: Bell, description: "Alerts, clinical updates & reminders" },
+  { label: "Help & Support", href: "/patient/help", icon: HelpCircle, description: "Patient guides, FAQs & assistance" },
+  { label: "App & Security Settings", href: "/patient/settings", icon: Settings, description: "Notification channels & account security" },
+  { label: "Privacy & Consent", href: "/patient/consent", icon: ShieldCheck, description: "Healthcare data sharing & authorization" },
+  { label: "Language Settings", href: "/patient/language", icon: Globe, description: "Preferred communication & display language" },
+  { label: "About MEDORA", href: "/patient/about", icon: Activity, description: "Transparent connected healthcare ecosystem" },
 ];
 
 // 3. Doctor Clinical Workspace Navigation

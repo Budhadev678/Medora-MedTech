@@ -46,10 +46,28 @@ export default function PatientBillingDashboardPage() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-emerald-600" /> Patient Medical Bills & Transparency
+                <Receipt className="h-5 w-5 text-emerald-600" /> Bills & Payments
               </h1>
-              <p className="text-xs text-slate-500">Transparent itemized charges, "Why Was I Charged?", and financial coverage waterfall</p>
+              <p className="text-xs text-slate-500">Transparent itemized charges, "Why Was I Charged?", and financial assistance</p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/patient/billing/payments">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
+                Payment History
+              </Button>
+            </Link>
+            <Link href="/patient/insurance">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
+                Insurance
+              </Button>
+            </Link>
+            <Link href="/patient/billing/disputes">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
+                Disputes
+              </Button>
+            </Link>
           </div>
         </div>
 

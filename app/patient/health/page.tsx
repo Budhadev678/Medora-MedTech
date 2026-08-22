@@ -220,40 +220,54 @@ export default function PatientHealthPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Unified Care Record & Continuity</span>
+            <span className="text-xs font-semibold text-slate-500 block">Unified Patient Health Records</span>
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <HeartPulse className="h-5 w-5 text-teal-600" />
-              My Health Journey
+              My Health Hub
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
             <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 text-xs font-bold text-slate-600">
               <button
-                onClick={() => setActiveView("stream")}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  activeView === "stream"
-                    ? "bg-white text-teal-900 shadow-2xs font-extrabold"
-                    : "hover:text-slate-900"
-                }`}
-              >
-                Timeline Stream
-              </button>
-              <button
                 onClick={() => setActiveView("bundles")}
-                className={`px-3 py-1 rounded-lg transition-all ${
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                   activeView === "bundles"
                     ? "bg-white text-teal-900 shadow-2xs font-extrabold"
                     : "hover:text-slate-900"
                 }`}
               >
-                Encounter Bundles ({bundles.length})
+                <Stethoscope className="h-3.5 w-3.5 text-teal-700" />
+                <span>Visits & Consultations ({bundles.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveView("stream")}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  activeView === "stream"
+                    ? "bg-white text-teal-900 shadow-2xs font-extrabold"
+                    : "hover:text-slate-900"
+                }`}
+              >
+                <History className="h-3.5 w-3.5 text-teal-700" />
+                <span>Health Timeline</span>
               </button>
             </div>
+            <Link href="/patient/pharmacy">
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl">
+                <Pill className="h-3.5 w-3.5 text-amber-600" />
+                <span>Prescriptions</span>
+              </Button>
+            </Link>
+            <Link href="/patient/lab">
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 text-slate-700 border-slate-200 hover:bg-slate-50 rounded-xl">
+                <FlaskConical className="h-3.5 w-3.5 text-blue-600" />
+                <span>Lab Reports</span>
+              </Button>
+            </Link>
             <Link href="/patient/documents">
-              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 text-teal-800 border-teal-200 hover:bg-teal-50">
-                <FolderOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Vault</span>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 text-teal-800 border-teal-200 hover:bg-teal-50 rounded-xl">
+                <FolderOpen className="h-3.5 w-3.5 text-teal-700" />
+                <span>Documents</span>
               </Button>
             </Link>
           </div>
