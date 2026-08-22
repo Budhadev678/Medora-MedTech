@@ -1,3 +1,23 @@
+## [Appointment System Reconstruction] — 2026-08-22 — Four-Layer Unified Appointment Engine & Cross-Role Synchronous Roster
+
+### Added & Reconstructed
+- **Layer 1: Frontend Architecture (Prompt 1)**:
+  - Centralized frontend client service (`lib/services/frontend-appointment-service.ts`) routing all appointment requests through authorized API routes.
+  - Universal multi-role appointment card (`components/appointment/appointment-card.tsx`), canonical status badge (`components/appointment/appointment-status-badge.tsx`), filter bar (`components/appointment/appointment-filter-bar.tsx`), reschedule modal (`components/appointment/reschedule-modal.tsx`), and cancel modal (`components/appointment/cancel-modal.tsx`).
+  - Dedicated role-specific detail routes: `/patient/appointments/[id]`, `/doctor/appointments/[id]`, `/hospital/appointments/[id]`.
+- **Layer 2: Backend & Database Foundation (Prompt 2)**:
+  - Server-authoritative API route handlers: `/api/appointments/[id]`, `/api/appointments/reschedule`, `/api/appointments/cancel`, `/api/appointments/availability` with Anti-IDOR role authorization.
+  - 29-point backend validation test suite (`scripts/test-appointment-backend.ts`, 29/29 assertions passed, 100%).
+- **Layer 3: UI/UX & Accessibility Polish (Prompt 3)**:
+  - Accessible high-contrast typography, semantic status icons, responsive layout rhythm across Mobile (<640px), Tablet (640-1024px), and Desktop (>1024px).
+  - Patient-friendly terminology ("Hospital or Clinic", "Scheduled Time", "OPD Queue Token").
+- **Layer 4: Business Logic, Concurrency & E2E Integration (Prompt 4)**:
+  - Atomic double-booking lock and high-concurrency race condition defense.
+  - Real-time cross-role roster synchronization (Patient $\rightarrow$ Doctor $\rightarrow$ Hospital $\rightarrow$ Reception $\rightarrow$ Consultation Encounter $\rightarrow$ Completion).
+  - 18-point E2E integration test suite (`scripts/test-appointment-e2e-integration.ts`, 18/18 assertions passed, 100%).
+
+---
+
 ## [Phase 10.1, 10.2, 10.3 & 10.4] — 2026-08-21 — Itemized Billing, Coverage Waterfall, Payments, 3-Way Reconciliation, Financial Disputes & Anomaly Engine
 
 ### Added

@@ -500,6 +500,23 @@ class AppointmentRepository {
     });
   }
 
+  public getAppointmentsForOrganization(orgIdentifier: string): Appointment[] {
+    const clean = orgIdentifier.toLowerCase();
+    return this.getAllAppointments().filter(
+      (a) =>
+        (a.organization_identifier && a.organization_identifier.toLowerCase() === clean) ||
+        (a.organization_id && a.organization_id.toLowerCase() === clean) ||
+        (a.facility_id && a.facility_id.toLowerCase() === clean)
+    );
+  }
+
+  public getAppointmentsForFacility(facilityId: string): Appointment[] {
+    const clean = facilityId.toLowerCase();
+    return this.getAllAppointments().filter(
+      (a) => a.facility_id && a.facility_id.toLowerCase() === clean
+    );
+  }
+
   public saveAppointment(appointment: Appointment): Appointment {
     const updated = {
       ...appointment,

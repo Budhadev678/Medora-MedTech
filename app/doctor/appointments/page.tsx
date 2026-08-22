@@ -175,9 +175,14 @@ export default function DoctorAppointmentsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link href={`/doctor/appointments/${apt.id}`}>
+                      <Button variant="outline" size="sm" className="h-8 text-xs font-semibold rounded-xl text-slate-700">
+                        Details
+                      </Button>
+                    </Link>
                     <Link href={`/doctor/consultations?patientId=${apt.patient_id}&aptId=${apt.id}`}>
                       <Button size="sm" className="h-8 text-xs font-bold bg-teal-700 hover:bg-teal-800 rounded-xl">
-                        <span>Open Clinical Note</span>
+                        <span>Consultation</span>
                         <ArrowRight className="h-3.5 w-3.5 ml-1" />
                       </Button>
                     </Link>
