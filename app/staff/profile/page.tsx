@@ -41,7 +41,7 @@ export default function StaffProfilePage() {
             <CardContent className="p-5 pt-0 space-y-2 text-xs text-slate-600">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span>Role:</span>
-                <span className="font-semibold text-slate-900">{currentMembership?.roleTitle || "Head Nurse"}</span>
+                <span className="font-semibold text-slate-900">{currentMembership?.roleTitle || "Admissions & Front Desk Staff"}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span>Hospital:</span>

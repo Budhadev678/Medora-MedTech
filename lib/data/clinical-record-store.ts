@@ -249,6 +249,8 @@ export const SEEDED_CLINICAL_RECORDS: ClinicalRecord[] = [
 
 const STORAGE_KEY = "medora_clinical_records_store_v1";
 
+let inMemoryRecords: ClinicalRecord[] = [...SEEDED_CLINICAL_RECORDS];
+
 // Cache for debounce / rapid submission lock
 const recentSubmissions = new Map<string, number>();
 
@@ -257,25 +259,27 @@ const recentSubmissions = new Map<string, number>();
  */
 export function getAllClinicalRecords(): ClinicalRecord[] {
   if (typeof window === "undefined") {
-    return SEEDED_CLINICAL_RECORDS;
+    return inMemoryRecords;
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEEDED_CLINICAL_RECORDS));
-      return SEEDED_CLINICAL_RECORDS;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryRecords));
+      return inMemoryRecords;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEEDED_CLINICAL_RECORDS;
+    inMemoryRecords = Array.isArray(parsed) && parsed.length > 0 ? parsed : inMemoryRecords;
+    return inMemoryRecords;
   } catch {
-    return SEEDED_CLINICAL_RECORDS;
+    return inMemoryRecords;
   }
 }
 
 /**
  * Persist records to localStorage and dispatch update event.
  */
-function saveRecords(records: ClinicalRecord[]): void {
+export function saveRecords(records: ClinicalRecord[]): void {
+  inMemoryRecords = [...records];
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
@@ -289,8 +293,9 @@ function saveRecords(records: ClinicalRecord[]): void {
  * Retrieve a single clinical record by ID.
  */
 export function getClinicalRecordById(id: string): ClinicalRecord | null {
+  if (!id) return null;
   const all = getAllClinicalRecords();
-  const cleanId = id.trim();
+  const cleanId = String(id).trim();
   return all.find((r) => r.id === cleanId || r.record_reference === cleanId) || null;
 }
 
@@ -298,8 +303,9 @@ export function getClinicalRecordById(id: string): ClinicalRecord | null {
  * Retrieve the active clinical record for a specific Encounter.
  */
 export function getClinicalRecordByEncounterId(encounterId: string): ClinicalRecord | null {
+  if (!encounterId) return null;
   const all = getAllClinicalRecords();
-  const cleanId = encounterId.trim();
+  const cleanId = String(encounterId).trim();
   return all.find((r) => r.encounter_id === cleanId) || null;
 }
 
@@ -402,13 +408,7 @@ export function saveClinicalRecordDraft(
     actorRole,
   } = params;
 
-  // 1. Debounce protection (3s lock per encounter)
-  const debounceKey = `draft_${encounterId}_${actorId}`;
-  const lastTime = recentSubmissions.get(debounceKey) || 0;
-  if (Date.now() - lastTime < 2000) {
-    return { success: false, error: "A save operation is currently processing. Please wait." };
-  }
-  recentSubmissions.set(debounceKey, Date.now());
+  // 1. Validate Encounter Exists & Is Not Cancelled
 
   // 2. Validate Encounter Exists & Is Not Cancelled
   const encounter = getEncounterById(encounterId);
@@ -454,10 +454,10 @@ export function saveClinicalRecordDraft(
     const existing = all[existingIndex];
 
     // Completed records cannot be silently modified via saveDraft; require amendment flow
-    if (existing.status === "COMPLETED" || existing.status === "AMENDED") {
+    if (existing.status === "COMPLETED" || existing.status === "AMENDED" || existing.status === "FINALIZED") {
       return {
         success: false,
-        error: "This clinical record has already been COMPLETED. Modifications require a documented amendment.",
+        error: "This clinical record has already been FINALIZED. Modifications require a documented amendment.",
       };
     }
 

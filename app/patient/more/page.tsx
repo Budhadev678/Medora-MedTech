@@ -17,7 +17,10 @@ import {
   LogOut,
   Sparkles,
   HeartPulse,
-  Stethoscope
+  Stethoscope,
+  FolderOpen,
+  Landmark,
+  CreditCard
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { RoleGuard } from "@/components/shared/role-guard";
@@ -30,14 +33,21 @@ export default function PatientMorePage() {
 
   const sections = [
     {
-      title: "Healthcare Services",
+      title: "Health Records & Clinical Care",
       items: [
-        { label: "Digital Prescriptions", href: "/patient/prescriptions", icon: Pill, color: "text-emerald-700 bg-emerald-50", badge: "Phase 7" },
-        { label: "Diagnostic Lab Reports", href: "/patient/reports", icon: FlaskConical, color: "text-blue-700 bg-blue-50", badge: "Phase 8" },
-        { label: "Connected Pharmacy", href: "/patient/pharmacy", icon: Package, color: "text-teal-700 bg-teal-50", badge: "Phase 9" },
-        { label: "Itemized Hospital Bills", href: "/patient/bills", icon: Receipt, color: "text-purple-700 bg-purple-50", badge: "Phase 10" },
-        { label: "Vitals & Chronic Care Hub", href: "/patient/health", icon: HeartPulse, color: "text-rose-700 bg-rose-50" },
-        { label: "Care Plans & Advice", href: "/patient/care", icon: Stethoscope, color: "text-amber-700 bg-amber-50" },
+        { label: "My Health Journey", href: "/patient/health", icon: HeartPulse, color: "text-rose-700 bg-rose-50", badge: "Timeline" },
+        { label: "Medical Documents Vault", href: "/patient/documents", icon: FolderOpen, color: "text-teal-700 bg-teal-50", badge: "Vault" },
+        { label: "Digital Prescriptions", href: "/patient/prescriptions", icon: Pill, color: "text-emerald-700 bg-emerald-50", badge: "Active" },
+        { label: "Diagnostic Lab Reports", href: "/patient/reports", icon: FlaskConical, color: "text-blue-700 bg-blue-50", badge: "Verified" },
+      ],
+    },
+    {
+      title: "Financial & Welfare Services",
+      items: [
+        { label: "Itemized Hospital Bills", href: "/patient/bills", icon: Receipt, color: "text-purple-700 bg-purple-50", badge: "Invoices" },
+        { label: "Insurance & Pre-Authorizations", href: "/patient/insurance", icon: ShieldCheck, color: "text-blue-700 bg-blue-50", badge: "Coverage" },
+        { label: "Government Schemes (BSKY)", href: "/patient/government", icon: Landmark, color: "text-emerald-700 bg-emerald-50", badge: "Subsidy" },
+        { label: "CarePay Treatment Financing", href: "/patient/finance", icon: CreditCard, color: "text-indigo-700 bg-indigo-50", badge: "0% EMI" },
       ],
     },
     {

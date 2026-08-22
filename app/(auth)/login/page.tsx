@@ -24,10 +24,12 @@ import {
   Ambulance,
   Landmark,
   Shield,
-  UserCheck
+  UserCheck,
+  ClipboardList,
+  HeartPulse
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { DEMO_PERSONAS, ROLE_LABELS, type UserRole } from "@/lib/constants";
+import { DEMO_PERSONAS, ROLE_LABELS, ROLE_DASHBOARD_ROUTES, type UserRole, type DemoPersona } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +60,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoLaunch = (persona: DemoPersona) => {
+    switchPersona(persona.identifier);
+    const targetRoute = ROLE_DASHBOARD_ROUTES[persona.role] || "/patient";
+    router.push(targetRoute);
+  };
+
   const quickFillPreset = (presetEmail: string) => {
     setEmail(presetEmail);
     setPassword("Password@123");
@@ -65,47 +73,42 @@ export default function LoginPage() {
     setError(null);
   };
 
-  const getRoleIcon = (role: UserRole) => {
+  const getRoleIcon = (role: string) => {
     switch (role) {
       case "patient": return <Users className="h-4 w-4 text-teal-600" />;
       case "doctor": return <Stethoscope className="h-4 w-4 text-blue-600" />;
+      case "receptionist": return <ClipboardList className="h-4 w-4 text-amber-600" />;
       case "hospital_admin": return <Building2 className="h-4 w-4 text-indigo-600" />;
-      case "lab_staff": return <FlaskConical className="h-4 w-4 text-amber-600" />;
+      case "lab_staff": return <FlaskConical className="h-4 w-4 text-purple-600" />;
       case "pharmacy_staff": return <Pill className="h-4 w-4 text-emerald-600" />;
-      case "emergency_staff": return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case "blood_staff": return <Droplet className="h-4 w-4 text-rose-600" />;
-      case "finance_staff": return <Receipt className="h-4 w-4 text-purple-600" />;
-      case "insurance_staff": return <Shield className="h-4 w-4 text-sky-600" />;
-      case "government_staff": return <Landmark className="h-4 w-4 text-orange-600" />;
-      case "ambulance_staff": return <Ambulance className="h-4 w-4 text-red-600" />;
-      case "staff": return <UserCheck className="h-4 w-4 text-teal-700" />;
-      case "admin": return <ShieldCheck className="h-4 w-4 text-slate-700" />;
+      case "admin": return <ShieldCheck className="h-4 w-4 text-slate-800" />;
       default: return <Activity className="h-4 w-4 text-teal-600" />;
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-10 px-4 sm:px-6">
+    <div className="min-h-[85vh] flex items-center justify-center py-10 px-4 sm:px-6 animate-in fade-in-50 duration-150">
       <div className="w-full max-w-xl space-y-6">
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-teal-600 text-white shadow-xs">
-            <Activity className="h-6 w-6" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-xs">
+            <Activity className="h-6 w-6 stroke-[2.5]" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             Sign In to MEDORA
           </h1>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
             Transparent, Connected & Auditable Healthcare Platform. Identity is strictly verified with zero cross-account data leakage.
           </p>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-xs font-semibold">
+        <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("standard")}
-            className={`flex-1 py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "standard" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -115,18 +118,18 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setActiveTab("demo")}
-            className={`flex-1 py-2 rounded-md transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "demo" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-            Verified Demo Accounts (14)
+            Verified Demo Accounts ({DEMO_PERSONAS.length})
           </button>
         </div>
 
         {/* Standard Email/Password Form Tab */}
         {activeTab === "standard" && (
-          <Card className="bg-white shadow-xs">
+          <Card className="bg-white shadow-xs border-slate-200 rounded-2xl">
             <form onSubmit={handleSubmit}>
               <CardHeader className="p-5 pb-3">
                 <CardTitle className="text-sm font-bold text-slate-900">
@@ -139,7 +142,7 @@ export default function LoginPage() {
 
               <CardContent className="p-5 pt-0 space-y-4">
                 {error && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-start gap-2">
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
@@ -147,16 +150,16 @@ export default function LoginPage() {
 
                 {/* Email Address */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs">Email Address</Label>
+                  <Label htmlFor="email" className="text-xs font-semibold">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="e.g. patient@medora.health, priya@medora.health, doctor@medora.health"
+                      placeholder="e.g. patient@medora.health, doctor@medora.health, anita@cityhospital.org"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9 text-xs"
+                      className="pl-9 text-xs rounded-xl"
                       required
                     />
                   </div>
@@ -165,7 +168,7 @@ export default function LoginPage() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs">Password</Label>
+                    <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
                     <a href="#" className="text-[11px] text-teal-700 hover:underline">Forgot password?</a>
                   </div>
                   <div className="relative">
@@ -176,7 +179,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9 pr-9 text-xs"
+                      className="pl-9 pr-9 text-xs rounded-xl"
                     />
                     <button
                       type="button"
@@ -190,7 +193,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full text-xs font-bold h-9 shadow-xs" disabled={isLoading}>
+                <Button type="submit" className="w-full text-xs font-bold h-9 shadow-xs rounded-xl bg-teal-700 hover:bg-teal-800" disabled={isLoading}>
                   {isLoading ? "Authenticating Session..." : "Sign In to MEDORA"}
                 </Button>
 
@@ -203,100 +206,72 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => quickFillPreset("patient@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Patient A (Rahul)
                     </button>
                     <button
                       type="button"
                       onClick={() => quickFillPreset("priya@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Patient B (Priya)
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickFillPreset("amit@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Patient C (Amit)
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => quickFillPreset("doctor@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-blue-50 hover:text-blue-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Doctor (Dr. Ananya)
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickFillPreset("hospital@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      onClick={() => quickFillPreset("anita@cityhospital.org")}
+                      className="rounded-lg bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
+                    >
+                      Receptionist (Anita)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quickFillPreset("admin@cityhospital.org")}
+                      className="rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Hospital (City Hosp)
                     </button>
                     <button
                       type="button"
                       onClick={() => quickFillPreset("clinic@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Clinic (Green Care)
                     </button>
                     <button
                       type="button"
                       onClick={() => quickFillPreset("lab@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-purple-50 hover:text-purple-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Lab (ABC Diag)
                     </button>
                     <button
                       type="button"
                       onClick={() => quickFillPreset("pharmacy@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Pharmacy (ABC Pharm)
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickFillPreset("insurance@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      onClick={() => quickFillPreset("bloodbank@medora.health")}
+                      className="rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
-                      Insurance
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickFillPreset("finance@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-purple-50 hover:text-purple-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Financing
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickFillPreset("government@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-orange-50 hover:text-orange-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Government
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickFillPreset("ambulance@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-red-50 hover:text-red-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Ambulance
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickFillPreset("staff@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Staff Member
+                      Blood Centre
                     </button>
                     <button
                       type="button"
                       onClick={() => quickFillPreset("admin@medora.health")}
-                      className="rounded bg-slate-100 hover:bg-slate-200 hover:text-slate-900 text-slate-700 px-2 py-1 text-[11px] font-medium transition-colors"
+                      className="rounded-lg bg-slate-100 hover:bg-slate-200 hover:text-slate-900 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
-                      Admin
+                      Platform Admin
                     </button>
                   </div>
                 </div>
@@ -314,29 +289,29 @@ export default function LoginPage() {
 
         {/* Demo Fast Launcher Tab */}
         {activeTab === "demo" && (
-          <Card className="bg-white border-teal-200 shadow-xs">
+          <Card className="bg-white border-teal-200 shadow-xs rounded-2xl">
             <CardHeader className="p-5 pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-bold text-slate-900">
-                  Select Ecosystem Account to Login Instantly
+                  Select Verified Persona to Login & Launch
                 </CardTitle>
                 <Badge variant="teal" className="text-[10px]">
-                  14 Verified Accounts
+                  {DEMO_PERSONAS.length} Verified Accounts
                 </Badge>
               </div>
               <CardDescription className="text-xs text-slate-500">
-                Click any persona below to switch authenticated session and launch workspace.
+                Click any persona below to authenticate session and route directly into their scoped workspace.
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-5 pt-0 space-y-2 max-h-[380px] overflow-y-auto">
+            <CardContent className="p-5 pt-0 space-y-2 max-h-[400px] overflow-y-auto">
               {DEMO_PERSONAS.map((persona) => (
                 <button
                   key={persona.id}
-                  onClick={() => switchPersona(persona.identifier)}
-                  className="w-full text-left flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-all group active:scale-[0.99]"
+                  onClick={() => handleDemoLaunch(persona)}
+                  className="w-full text-left flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-all group active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:scale-105 transition-transform">
                       {getRoleIcon(persona.role)}
                     </div>
                     <div>

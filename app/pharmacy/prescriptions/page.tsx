@@ -1,60 +1,162 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ClipboardList, Pill, FileText } from "lucide-react";
-import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { RoleGuard } from "@/components/shared/role-guard";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  FileText,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Search,
+  Filter,
+  ChevronRight,
+  ArrowLeft,
+  RefreshCw,
+  Building2,
+  User,
+  ShieldCheck,
+} from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RoleGuard } from "@/components/shared/role-guard";
+import { useAuth } from "@/lib/auth/auth-context";
+import { getAllIntakes, getIntakesByFacility } from "@/lib/data/pharmacy-intake-store";
+import { getAllPharmacyFacilities } from "@/lib/data/pharmacy-organization-store";
+import { PharmacyPrescriptionIntake, PharmacyFacility } from "@/types/database.types";
 
-export default function PharmacyPrescriptionsPage() {
+export default function PharmacyPrescriptionQueuePage() {
+  const { user } = useAuth();
+  const [facilities, setFacilities] = useState<PharmacyFacility[]>([]);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>("PHARM-FAC-1001");
+  const [intakes, setIntakes] = useState<PharmacyPrescriptionIntake[]>([]);
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const refresh = () => {
+    setFacilities(getAllPharmacyFacilities());
+    const list = selectedFacilityId ? getIntakesByFacility(selectedFacilityId, filterStatus) : getAllIntakes();
+    setIntakes(list);
+  };
+
+  useEffect(() => {
+    refresh();
+  }, [selectedFacilityId, filterStatus]);
+
+  const filteredIntakes = intakes.filter((item) => {
+    if (searchTerm.trim()) {
+      const q = searchTerm.trim().toLowerCase();
+      const match =
+        item.id.toLowerCase().includes(q) ||
+        item.prescription_id.toLowerCase().includes(q) ||
+        item.patient_name.toLowerCase().includes(q) ||
+        item.prescriber_name.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
+
   return (
-    <RoleGuard allowedRoles={["pharmacy_staff", "admin"]}>
-      <div className="space-y-4">
-        <PageHeader
-          title="Incoming Digital Prescription Queue"
-          description="E-prescriptions submitted for verification, stock availability check, and fulfillment."
-          breadcrumbs={[{ label: "Pharmacy Desk", href: "/pharmacy" }, { label: "Prescriptions" }]}
-        />
-
-        {/* Sample Incoming Prescription */}
-        <Card className="bg-white border-emerald-200 shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
-                RX-1001
-              </span>
-              <Badge variant="teal" className="text-[10px]">
-                ● Ready for Dispensing
-              </Badge>
-            </div>
-            <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-              Patient: Rahul Verma (PAT-1001)
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Prescribed by Dr. Ananya Sharma (DOC-1001) • Telmisartan 40mg + Aspirin 75mg
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-2">
-            <Link href="/verify/rx/RX-1001" target="_blank">
-              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
-                <FileText className="h-3.5 w-3.5" /> Verify Prescription Digital Signature (QR)
+    <RoleGuard allowedRoles={["admin", "doctor", "lab_staff"]}>
+      <div className="min-h-screen bg-slate-50/50 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto pb-24">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex items-center gap-3">
+            <Link href="/pharmacy">
+              <Button variant="ghost" size="sm" className="rounded-xl">
+                <ArrowLeft className="h-4 w-4 mr-1" /> Pharmacy Portal
               </Button>
             </Link>
-          </CardContent>
-        </Card>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-emerald-600" /> Pharmacist Prescription Intake Queue
+              </h1>
+              <p className="text-xs text-slate-500">Review, validate & process incoming digital prescriptions from Phase 7</p>
+            </div>
+          </div>
 
-        <EmptyState
-          icon={<ClipboardList className="h-6 w-6 text-emerald-600" />}
-          title="Prescription Dispensing Intake Desk"
-          description="Digital prescriptions chosen for pickup at this pharmacy counter will appear here with automatic inventory availability check."
-          phase="Phase 9 — Connected Pharmacy & Pickup"
-          actionHref="/pharmacy"
-          actionLabel="Return to Pharmacy Dashboard"
-        />
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => setSelectedFacilityId(e.target.value)}
+              className="text-xs h-9 rounded-xl border border-input px-3 bg-white font-semibold text-slate-800"
+            >
+              {facilities.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+            <Button size="sm" variant="ghost" onClick={refresh} className="rounded-xl">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+            {["ALL", "RECEIVED", "UNDER_REVIEW", "VALID", "REQUIRES_CLARIFICATION", "INVALID"].map((f) => (
+              <Button
+                key={f}
+                size="sm"
+                variant={filterStatus === f ? "default" : "ghost"}
+                onClick={() => setFilterStatus(f)}
+                className={`text-xs rounded-lg px-3 h-8 font-semibold ${filterStatus === f ? "bg-emerald-700 hover:bg-emerald-800 text-white" : "text-slate-600"}`}
+              >
+                {f.replace(/_/g, " ")}
+              </Button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search intake ID, RX ID, patient..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full text-xs h-9 pl-9 pr-3 rounded-xl border border-input bg-slate-50"
+            />
+          </div>
+        </div>
+
+        {/* Intake List */}
+        <div className="space-y-3">
+          {filteredIntakes.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-slate-500 text-xs">
+              No prescription intakes matching filter criteria for this pharmacy facility.
+            </div>
+          ) : (
+            filteredIntakes.map((item) => (
+              <Card key={item.id} className="bg-white rounded-2xl shadow-xs border-slate-200 hover:border-emerald-200 transition-colors">
+                <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-emerald-950 text-xs">{item.id}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono text-purple-900 border-purple-200 bg-purple-50">
+                        {item.prescription_id} V{item.prescription_version}
+                      </Badge>
+                      <StatusBadge status={item.status} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-0.5">
+                      <span>Patient: <strong className="text-slate-900">{item.patient_name}</strong> ({item.patient_id})</span>
+                      <span>•</span>
+                      <span>Prescriber: <strong className="text-slate-800">{item.prescriber_name}</strong></span>
+                      <span>•</span>
+                      <span>Received: {new Date(item.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+
+                  <Link href={`/pharmacy/prescriptions/${item.id}`}>
+                    <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs">
+                      Review & Validate <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </RoleGuard>
   );

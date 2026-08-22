@@ -1,3 +1,7 @@
+// ============================================================
+// MEDORA — PLATFORM CONSTANTS & CONFIGURATION
+// ============================================================
+
 export type UserRole =
   | "patient"
   | "doctor"
@@ -10,6 +14,7 @@ export type UserRole =
   | "insurance_staff"
   | "government_staff"
   | "ambulance_staff"
+  | "receptionist"
   | "staff"
   | "admin";
 
@@ -31,9 +36,9 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "patient@medora.health",
     role: "patient",
     identifier: "PAT-1001",
-    organization: "Registered Patient A (Bhubaneswar)",
+    organization: "Sovereign Patient Account (Bhubaneswar)",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    description: "Patient A — Outpatient consultations, verified digital prescriptions, and lab history.",
+    description: "Patient A — Mobile health journey, ABHA linked passport, verified e-prescriptions, and diagnostic records.",
   },
   {
     id: "pat-1002",
@@ -41,19 +46,9 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "priya@medora.health",
     role: "patient",
     identifier: "PAT-1002",
-    organization: "Registered Patient B (Cuttack)",
+    organization: "Sovereign Patient Account (Cuttack)",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    description: "Patient B — Independent medical identity with zero cross-account data leakage.",
-  },
-  {
-    id: "pat-1003",
-    name: "Amit Das",
-    email: "amit@medora.health",
-    role: "patient",
-    identifier: "PAT-1003",
-    organization: "Registered Patient C (Puri)",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    description: "Patient C — Isolated health records and chronic care profile.",
+    description: "Patient B — Independent medical profile with 100% cross-account zero data leakage isolation.",
   },
   {
     id: "doc-1001",
@@ -61,19 +56,29 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "doctor@medora.health",
     role: "doctor",
     identifier: "DOC-1001",
-    organization: "City Hospital & Green Care Hospital (Cardiologist)",
+    organization: "City Hospital & Green Care Clinic (Cardiology)",
     avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-    description: "Doctor A — Practicing across multiple hospitals & clinics under one unified doctor identity.",
+    description: "Multi-Facility Doctor — Practicing across 3 hospitals and outpatient clinics with instant context switching.",
+  },
+  {
+    id: "staff-1002",
+    name: "Anita Patel",
+    email: "anita@cityhospital.org",
+    role: "receptionist",
+    identifier: "STAFF-1002",
+    organization: "City Hospital & Green Care Clinic (Front Desk)",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    description: "Reception Desk — Patient check-in, token issuance, OPD registration, and queue management.",
   },
   {
     id: "hosp-1001",
     name: "City Hospital",
-    email: "hospital@medora.health",
+    email: "admin@cityhospital.org",
     role: "hospital_admin",
     identifier: "HSP-1001",
-    organization: "City Hospital Command Center",
+    organization: "Multispeciality Hospital Operations Hub",
     avatar: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=150&auto=format&fit=crop&q=80",
-    description: "Hospital — Multispeciality hospital facility & clinical operations hub.",
+    description: "Hospital Command — Operations command center, bed admissions, departments, and medical staff roster.",
   },
   {
     id: "cln-1001",
@@ -81,9 +86,9 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "clinic@medora.health",
     role: "hospital_admin",
     identifier: "CLN-1001",
-    organization: "Green Care Outpatient Clinic",
+    organization: "Day-Care Outpatient Specialist Clinic",
     avatar: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=150&auto=format&fit=crop&q=80",
-    description: "Clinic — Outpatient specialist clinic with visiting doctor privileges.",
+    description: "Outpatient Clinic — Day-care consultations, OPD token queue, visiting physicians, and clinic receipts.",
   },
   {
     id: "lab-1001",
@@ -91,9 +96,9 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "lab@medora.health",
     role: "lab_staff",
     identifier: "LAB-1001",
-    organization: "ABC Diagnostics & Pathology Lab",
+    organization: "Central Pathology & Diagnostic Lab",
     avatar: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=150&auto=format&fit=crop&q=80",
-    description: "Laboratory — Diagnostic testing, sample intake, and verified digital lab reports.",
+    description: "Laboratory — Diagnostic test work queue, barcode sample intake, and pathologist-certified reports.",
   },
   {
     id: "pharm-1001",
@@ -101,9 +106,9 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "pharmacy@medora.health",
     role: "pharmacy_staff",
     identifier: "PHA-1001",
-    organization: "ABC Pharmacy & Dispensing Desk",
+    organization: "Connected Dispensing & Medication Desk",
     avatar: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=150&auto=format&fit=crop&q=80",
-    description: "Pharmacy — Prescription verification & medication pickup fulfillment.",
+    description: "Pharmacy Desk — Digital prescription verification, order preparation, patient pickup, and dispensing.",
   },
   {
     id: "blc-1001",
@@ -111,69 +116,19 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "bloodbank@medora.health",
     role: "blood_staff",
     identifier: "BLC-1001",
-    organization: "City Blood Centre & Donor Network",
+    organization: "Emergency Blood Logistics & Donor Hub",
     avatar: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=150&auto=format&fit=crop&q=80",
-    description: "Blood Centre — Emergency cross-matching, donor coordination, and inventory.",
-  },
-  {
-    id: "ins-1001",
-    name: "ABC Insurance",
-    email: "insurance@medora.health",
-    role: "insurance_staff",
-    identifier: "INS-1001",
-    organization: "ABC Health Insurance Corporation",
-    avatar: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=150&auto=format&fit=crop&q=80",
-    description: "Insurance — Policy verification, pre-authorization, and transparent claims settlement.",
-  },
-  {
-    id: "fin-1001",
-    name: "Healthcare Finance Partner",
-    email: "finance@medora.health",
-    role: "finance_staff",
-    identifier: "FIN-1001",
-    organization: "CarePay Healthcare Financing",
-    avatar: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=150&auto=format&fit=crop&q=80",
-    description: "Financing Partner — Patient treatment micro-financing and transparent cost splitting.",
-  },
-  {
-    id: "gov-1001",
-    name: "Government Assistance Org",
-    email: "government@medora.health",
-    role: "government_staff",
-    identifier: "GOV-1001",
-    organization: "Swasthya Assistance Directorate",
-    avatar: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=150&auto=format&fit=crop&q=80",
-    description: "Government — State & National healthcare scheme subsidy coordination.",
-  },
-  {
-    id: "amb-1001",
-    name: "ABC Ambulance Services",
-    email: "ambulance@medora.health",
-    role: "ambulance_staff",
-    identifier: "AMB-1001",
-    organization: "FastTrack Emergency Transit",
-    avatar: "https://images.unsplash.com/photo-1587745416684-47953f16f02f?w=150&auto=format&fit=crop&q=80",
-    description: "Ambulance Provider — Emergency patient transport and hospital pre-alert.",
-  },
-  {
-    id: "staff-1001",
-    name: "Healthcare Staff Member",
-    email: "staff@medora.health",
-    role: "staff",
-    identifier: "STAFF-1001",
-    organization: "City Hospital (Head Nurse / Clinical Staff)",
-    avatar: "https://images.unsplash.com/photo-1594824813589-389f41dfd164?w=150&auto=format&fit=crop&q=80",
-    description: "Staff — Healthcare clinical staff with organization membership.",
+    description: "Blood Coordination — Real-time blood unit inventory, donor registry, cross-matching, and dispatch.",
   },
   {
     id: "admin-1001",
-    name: "Medora Admin",
+    name: "Medora Platform Admin",
     email: "admin@medora.health",
     role: "admin",
     identifier: "ADM-1001",
-    organization: "MEDORA National Healthcare Registry",
+    organization: "Medora Ecosystem Governance Desk",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-    description: "Platform Admin — Ecosystem governance, facility verification, and immutable audit stream.",
+    description: "Platform Admin — Ecosystem governance, facility verification, role security, and immutable audit ledger.",
   },
 ];
 
@@ -189,6 +144,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   insurance_staff: "Insurance Claims & Pre-Auth",
   government_staff: "Government Assistance Desk",
   ambulance_staff: "Emergency Dispatch Console",
+  receptionist: "Front Desk & Reception Workspace",
   staff: "Healthcare Staff Duty Desk",
   admin: "Medora Platform Governance",
 };
@@ -199,12 +155,13 @@ export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
   hospital_admin: "/hospital",
   lab_staff: "/lab",
   pharmacy_staff: "/pharmacy",
-  emergency_staff: "/ambulance",
+  emergency_staff: "/emergency",
   blood_staff: "/blood-bank",
   finance_staff: "/finance",
   insurance_staff: "/insurance",
   government_staff: "/government",
   ambulance_staff: "/ambulance",
+  receptionist: "/reception",
   staff: "/staff",
   admin: "/admin",
 };

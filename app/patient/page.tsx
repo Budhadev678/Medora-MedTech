@@ -34,6 +34,12 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { AppointmentCard } from "@/components/patient/appointment-card";
 import { RecordCard } from "@/components/patient/record-card";
 import { findIdentityById, calculateProfileCompleteness, StoredIdentity } from "@/lib/data/identity-store";
+import { getPatientEncounters } from "@/lib/data/encounter-store";
+import { getPatientMedicalDocuments } from "@/lib/data/medical-document-store";
+import { AppointmentStore } from "@/lib/data/appointment-store";
+import { QueueStore } from "@/lib/data/queue-store";
+import { LiveQueueCard } from "@/components/patient/live-queue-card";
+import { Appointment, QueueEntry } from "@/types/database.types";
 
 export default function PatientHomePage() {
   const { user } = useAuth();
@@ -41,6 +47,15 @@ export default function PatientHomePage() {
     return user ? findIdentityById(user.identifier) || user : null;
   });
   const [completeness, setCompleteness] = React.useState(() => calculateProfileCompleteness(livePatient));
+  const [recentEncounters, setRecentEncounters] = React.useState(() => {
+    return user ? getPatientEncounters(user.identifier || user.id) : [];
+  });
+  const [appointments, setAppointments] = React.useState<Appointment[]>(() => {
+    return user ? AppointmentStore.getAppointmentsForPatient(user.identifier || user.id).filter(a => a.status === "CONFIRMED" || a.status === "CHECKED_IN") : [];
+  });
+  const [activeQueue, setActiveQueue] = React.useState<QueueEntry | null>(() => {
+    return user ? QueueStore.getPatientActiveQueueEntry(user.identifier || user.id) : null;
+  });
 
   React.useEffect(() => {
     const refresh = () => {
@@ -48,14 +63,21 @@ export default function PatientHomePage() {
         const live = findIdentityById(user.identifier) || user;
         setLivePatient(live);
         setCompleteness(calculateProfileCompleteness(live));
+        setRecentEncounters(getPatientEncounters(user.identifier || user.id));
+        setAppointments(AppointmentStore.getAppointmentsForPatient(user.identifier || user.id).filter(a => a.status === "CONFIRMED" || a.status === "CHECKED_IN"));
+        setActiveQueue(QueueStore.getPatientActiveQueueEntry(user.identifier || user.id));
       }
     };
     refresh();
     window.addEventListener("medora-identity-updated", refresh);
-    return () => window.removeEventListener("medora-identity-updated", refresh);
+    window.addEventListener("medora-encounters-updated", refresh);
+    window.addEventListener("medora-queue-updated", refresh);
+    return () => {
+      window.removeEventListener("medora-identity-updated", refresh);
+      window.removeEventListener("medora-encounters-updated", refresh);
+      window.removeEventListener("medora-queue-updated", refresh);
+    };
   }, [user]);
-
-  const isRahul = livePatient?.identifier === "PAT-1001";
 
   return (
     <RoleGuard allowedRoles={["patient", "admin"]}>
@@ -77,6 +99,13 @@ export default function PatientHomePage() {
             </button>
           </Link>
         </div>
+
+        {/* Live Queue Banner if Checked-In Today */}
+        {activeQueue && (
+          <section aria-label="Live Queue Status">
+            <LiveQueueCard queueEntry={activeQueue} />
+          </section>
+        )}
 
         {/* 2. Digital MEDORA ID Passport Card */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-700 via-teal-800 to-teal-950 p-5 text-white shadow-md">
@@ -143,24 +172,16 @@ export default function PatientHomePage() {
             </Link>
           </div>
 
-          {isRahul ? (
+          {appointments.length > 0 ? (
             <AppointmentCard
-              id="APT-1001"
-              doctorName="Dr. Ananya Sharma"
-              specialization="Consultant Cardiologist"
-              hospitalName="City Hospital (Bhubaneswar)"
-              departmentName="Cardiology OPD"
-              date="Today, 20 Aug 2026"
-              time="10:30 AM"
-              tokenNumber="02"
-              opdRoom="Room 102"
-              status="confirmed"
+              appointment={appointments[0]}
+              onRefresh={() => {}}
             />
           ) : (
-            <Card className="bg-white border-dashed border-slate-200 text-center p-4">
+            <Card className="bg-white border-dashed border-slate-200 text-center p-4 rounded-2xl">
               <span className="text-xs text-slate-500 block">No upcoming appointments scheduled.</span>
-              <Link href="/patient/appointments" className="text-xs font-bold text-teal-700 hover:underline mt-1 inline-block">
-                View appointment schedule →
+              <Link href="/patient/appointments/book" className="text-xs font-bold text-teal-700 hover:underline mt-1 inline-block">
+                Book a doctor consultation →
               </Link>
             </Card>
           )}
@@ -185,33 +206,33 @@ export default function PatientHomePage() {
             </Link>
 
             <Link 
-              href="/patient/records" 
-              className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all active:scale-95 text-center group"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700 group-hover:scale-105 transition-transform mb-1.5">
-                <FileText className="h-4 w-4" />
-              </div>
-              <span className="text-[11px] font-bold text-slate-800">Records</span>
-            </Link>
-
-            <Link 
-              href="/patient/prescriptions" 
+              href="/patient/pharmacy" 
               className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/30 transition-all active:scale-95 text-center group"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:scale-105 transition-transform mb-1.5">
                 <Pill className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-bold text-slate-800">Prescriptions</span>
+              <span className="text-[11px] font-bold text-slate-800">Pharmacy</span>
             </Link>
 
             <Link 
-              href="/patient/reports" 
+              href="/patient/lab" 
               className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50/30 transition-all active:scale-95 text-center group"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700 group-hover:scale-105 transition-transform mb-1.5">
                 <FlaskConical className="h-4 w-4" />
               </div>
               <span className="text-[11px] font-bold text-slate-800">Lab Reports</span>
+            </Link>
+
+            <Link 
+              href="/patient/billing" 
+              className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:border-purple-400 hover:bg-purple-50/30 transition-all active:scale-95 text-center group"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-700 group-hover:scale-105 transition-transform mb-1.5">
+                <Receipt className="h-4 w-4" />
+              </div>
+              <span className="text-[11px] font-bold text-slate-800">Billing</span>
             </Link>
           </div>
         </section>
@@ -227,28 +248,25 @@ export default function PatientHomePage() {
             </Link>
           </div>
 
-          {isRahul ? (
+          {recentEncounters.length > 0 ? (
             <div className="space-y-2.5">
-              <RecordCard
-                id="ENC-1001"
-                category="consultation"
-                title="Cardiology Consultation with Dr. Ananya Sharma"
-                facilityName="City Hospital"
-                date="20 Aug 2026"
-                summary="Hypertension checkup and medication regimen prescribed."
-                actionHref="/patient/prescriptions"
-                actionLabel="View Prescription"
-              />
-              <RecordCard
-                id="RPT-1024"
-                category="report"
-                title="Complete Blood Count (CBC) Panel"
-                facilityName="ABC Diagnostics"
-                date="20 Aug 2026"
-                summary="All parameters within normal limits. Verified by Dr. B. Mohapatra."
-                actionHref="/verify/lab/LAB-1024"
-                actionLabel="View Certified Report"
-              />
+              {recentEncounters.slice(0, 3).map((enc) => (
+                <RecordCard
+                  key={enc.id}
+                  id={enc.id}
+                  category="consultation"
+                  title={`${enc.encounter_type.replace(/_/g, " ")} — ${enc.department_name}`}
+                  facilityName={enc.organization_name}
+                  date={new Date(enc.started_at).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                  summary={enc.reason_for_visit ? `Reason: ${enc.reason_for_visit}` : `Clinical visit attended by ${enc.provider_name}.`}
+                  actionHref="/patient/records"
+                  actionLabel="View Details"
+                />
+              ))}
             </div>
           ) : (
             <Card className="bg-white border-slate-200 text-center p-4">

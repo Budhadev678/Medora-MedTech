@@ -53,17 +53,20 @@ const SEEDED_AUDIT_EVENTS: StoredAuditEvent[] = [
   },
 ];
 
+let inMemoryAuditEvents: StoredAuditEvent[] = [...SEEDED_AUDIT_EVENTS];
+
 export function getAuditLedger(): StoredAuditEvent[] {
-  if (typeof window === "undefined") return SEEDED_AUDIT_EVENTS;
+  if (typeof window === "undefined") return inMemoryAuditEvents;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEEDED_AUDIT_EVENTS));
-      return SEEDED_AUDIT_EVENTS;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryAuditEvents));
+      return inMemoryAuditEvents;
     }
-    return JSON.parse(raw) as StoredAuditEvent[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : inMemoryAuditEvents;
   } catch (e) {
-    return SEEDED_AUDIT_EVENTS;
+    return inMemoryAuditEvents;
   }
 }
 
@@ -133,26 +136,40 @@ export function logAuditEvent(params: {
 }
 
 /**
- * Convenience helper to append an audit event with positional arguments.
+ * Convenience helper to append an audit event with object or positional arguments.
  */
 export function appendAuditEvent(
-  event_type: AuditEventType,
-  actor_id: string,
-  actor_name: string,
-  actor_role: string,
-  summary: string,
+  event_type_or_params: AuditEventType | {
+    event_type: AuditEventType;
+    actor_id: string;
+    actor_name: string;
+    actor_role: string;
+    patient_id?: string;
+    organization_id?: string;
+    organization_name?: string;
+    summary: string;
+    reference_id?: string;
+    metadata?: Record<string, string | number | boolean | null>;
+  },
+  actor_id?: string,
+  actor_name?: string,
+  actor_role?: string,
+  summary?: string,
   patient_id?: string,
   organization_id?: string,
   organization_name?: string,
   reference_id?: string,
   metadata?: Record<string, string | number | boolean | null>
 ): StoredAuditEvent {
+  if (typeof event_type_or_params === "object") {
+    return logAuditEvent(event_type_or_params);
+  }
   return logAuditEvent({
-    event_type,
-    actor_id,
-    actor_name,
-    actor_role,
-    summary,
+    event_type: event_type_or_params,
+    actor_id: actor_id || "SYSTEM",
+    actor_name: actor_name || "System",
+    actor_role: actor_role || "system",
+    summary: summary || "",
     patient_id,
     organization_id,
     organization_name,
@@ -169,3 +186,36 @@ export function getPatientAuditTimeline(patientId: string): StoredAuditEvent[] {
   const ledger = getAuditLedger();
   return ledger.filter((e) => e.patient_id === patientId);
 }
+
+export const AuditLedger = {
+  recordEvent(event: {
+    actor_id: string;
+    actor_name?: string;
+    action: string;
+    resource_type?: string;
+    resource_id?: string;
+    details?: Record<string, any>;
+  }) {
+    return appendAuditEvent(
+      (event.action as any) || "DATA_VIEWED",
+      event.actor_id,
+      event.actor_name || "Authorized User",
+      "system",
+      `Audit Action: ${event.action} on ${event.resource_type || "RESOURCE"}:${event.resource_id || ""}`,
+      undefined,
+      undefined,
+      undefined,
+      event.resource_id,
+      event.details as any
+    );
+  },
+  getEvents(filter?: { resourceId?: string; patientId?: string }): StoredAuditEvent[] {
+    const ledger = getAuditLedger();
+    if (!filter) return ledger;
+    return ledger.filter((e) => {
+      if (filter.resourceId && e.reference_id !== filter.resourceId) return false;
+      if (filter.patientId && e.patient_id !== filter.patientId) return false;
+      return true;
+    });
+  },
+};

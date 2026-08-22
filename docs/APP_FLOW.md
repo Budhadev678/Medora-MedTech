@@ -73,31 +73,41 @@
 
 ---
 
-## 3. Real-World Workspace Resolution Flow (Phase 2.4 Correction)
+## 3. Real-World Workspace Resolution Flow (Phase A.4 Correction)
 
 ```
-APPLICATION START
+AUTHENTICATED USER
         ↓
-Check authentication session (Supabase Auth / Session Provider)
+IDENTITY RESOLUTION
         ↓
-Resolve authenticated MEDORA identity (PAT-1001, DOC-1001, HSP-1001, CLN-1001, LAB-1001, PHA-1001, GOV-1001, AMB-1001, etc.)
+ORGANIZATION MEMBERSHIPS LOOKUP
         ↓
-Workspace Resolver (resolveWorkspace(user, role)):
-        ├── PATIENT → Patient Mobile App (/patient)
-        ├── DOCTOR → Doctor Clinical Workspace (/doctor)
+ACTIVE CONTEXT SELECTION (Default: Primary Active Membership / Context Switcher)
+        ↓
+CONTEXTUAL ROLE RESOLUTION
+        ↓
+ROLE-TO-PERMISSION EVALUATION (AuthorizationEngine)
+        ↓
+WORKSPACE ASSIGNMENT (resolveWorkspace(user, activeMembership, role)):
+        ├── PATIENT (Sovereign) → Patient Mobile App (/patient)
+        │       ├── Bottom Navigation: Home, Appointments, Health, More
+        │       └── Welfare & Financial Services: /patient/insurance, /patient/government, /patient/finance
+        ├── DOCTOR (Clinician) → Doctor Clinical Workspace (/doctor)
+        │       └── Header Context: Active Hospital/Clinic Switcher
+        ├── RECEPTIONIST (Front Desk) → Reception Workspace (/reception)
+        │       └── Queue Dispatch & Patient Check-in Desk
+        ├── NURSE (Clinical Care) → Nursing Care Workspace (/nurse)
+        │       └── Inpatient Ward Vitals & Task Monitoring
         ├── HOSPITAL ADMIN (Hospital) → Hospital Command Center (/hospital)
-        ├── HOSPITAL ADMIN (Clinic) → Outpatient Clinic Operations (/clinic)
-        ├── LAB STAFF → Laboratory Diagnostic Workbench (/lab)
-        ├── PHARMACY STAFF → Pharmacy Dispensing Desk (/pharmacy)
-        ├── INSURANCE STAFF → Insurance Claims & Pre-Auth Desk (/insurance)
-        ├── GOVERNMENT STAFF → Government Assistance Desk (/government)
-        ├── FINANCE STAFF → Healthcare Financing Workspace (/finance)
-        ├── AMBULANCE STAFF → Emergency Dispatch Console (/ambulance)
-        ├── BLOOD STAFF → Blood Coordination Desk (/blood-bank)
-        ├── HEALTHCARE STAFF → Staff Shift Workspace (/staff)
-        └── PLATFORM ADMIN → Platform Governance Overview (/admin)
+        ├── CLINIC ADMIN (Clinic) → Outpatient Clinic Operations (/clinic)
+        ├── LAB STAFF (Diagnostics) → Laboratory Diagnostic Workbench (/lab)
+        ├── PHARMACY STAFF (Dispensing) → Pharmacy Dispensing Desk (/pharmacy)
+        ├── BLOOD STAFF (Emergency) → Blood Coordination Desk (/blood-bank)
+        └── PLATFORM ADMIN (Governance) → Medora Platform Governance (/admin)
         ↓
-Strict RoleGuard Route Protection (Zero fallbacks to Doctor Workspace)
+SCOPED DATA LOADING (Zero cross-facility or cross-patient leakage)
+        ↓
+Strict RoleGuard Route Protection & Access Restricted Interception
 ```
 
 ---
@@ -207,5 +217,96 @@ PATIENT ONBOARDING / LOGIN
    ├── Connected Healthcare Facilities (Active / Ended care relationships)
    ├── Identity Correction Tracker (Status: Pending / Under Review)
    └── Security & Privacy Audit Ledger (Append-only timeline)
-```
 
+4. Unified Patient Health Journey & Continuity (/patient/health)
+   ├── View Mode 1: Chronological Care Stream
+   │   ├── Upcoming Care & Appointments Section (Future-dated events)
+   │   ├── Today's Healthcare Activity Section (Live consultation, tests, prescriptions)
+   │   └── Historical Care Trajectory Section (Grouped by date)
+   ├── View Mode 2: Encounter Clinical Bundles
+   │   ├── Consultation Visit Header (Doctor, Facility, Department, Timestamp)
+   │   ├── Clinical Assessment & Diagnoses (Doctor authored)
+   │   ├── Prescribed Regimen (Medicine names, dosages, instructions)
+   │   ├── Diagnostic Lab Orders & Certified Released Reports
+   │   └── Care Orders & Recommendations (Imaging, Referrals, Follow-ups)
+   ├── Top Structured Health Facts Ribbon (Active Regimen, Allergies, Recent Reports, Upcoming Care)
+   ├── Multi-Dimensional Filtering & Search (Category pills, Date range, Facility, Full-text search)
+   └── Secure Document Vault Integration (/patient/documents)
+
+5. Doctor Consultation Continuity Workspace (/doctor/consultations/[id])
+   ├── Current Consultation Encounter Badge (ENC-xxxx, ACTIVE/IN_CONSULTATION)
+   ├── Patient Profile & Known Allergies Safety Banner
+   ├── Clinical Documentation Form (Chief complaint, Symptoms, Vitals, Assessment, Diagnoses, Treatment plan)
+   ├── Order Composers (Prescriptions, Diagnostic Labs, Imaging, Specialty Referrals)
+   ├── Clinical Continuity Sidebar (Previous consultations, active prescriptions, recent released lab reports)
+   └── Full Patient Timeline Drawer (Modal stream with search and category filters without losing unsaved draft)
+
+6. Healthcare Organization & Facility Governance Workflows
+   ├── Organization Entity Registry (/admin/organizations)
+   │   ├── Organization Listing (Legal name, identifier, type, location, status)
+   │   ├── Register Organization Modal (Form validation, license, contact, address)
+   │   ├── Direct drilldown to connected facility campuses (?orgId=xxxx)
+   │   └── Safe Administrative Deactivation (Soft status update with audit logging)
+   ├── Multi-Branch Facilities & Campuses Desk (/admin/facilities)
+   │   ├── Facility Listing (Campus name, code, parent org, city, status)
+   │   ├── Register Facility Branch Modal (Parent organization picker, operating hours, coordinates)
+   │   └── Dynamic Department, Doctor & Service Aggregations
+   ├── Clinical Department Management Desk (/hospital/departments)
+   │   ├── Department Grid (Active/Inactive units, codes, head of department)
+   │   ├── Add/Edit Department Modal (Name, code, description, head doctor)
+   │   └── Live Doctor & Service counts per unit
+   ├── Healthcare Services Catalog & Assignments (/hospital/services)
+   │   ├── Services Catalog (Consultations, Diagnostics, Imaging, Procedures, Emergency)
+   │   ├── Add Service Modal (Department link or facility-wide, base fee, duration)
+   │   └── Assign Doctor to Service Modal (Link affiliated practitioner to service offering)
+   ├── Medical Staff Roster & Affiliation Management (/hospital/doctors)
+   │   ├── Pending Doctor Affiliation Requests Queue (Approve / Reject)
+   │   ├── Active Verified Medical Practitioners (Specialization, department, room, fee)
+   │   ├── Connect / Invite Doctor Modal (Role designation, fee, room, department)
+   │   └── End Doctor Affiliation (Preserves all historical encounters and orders)
+   ├── Operational Staff Personnel Workspace (/hospital/staff)
+   │   ├── Staff Personnel Roster (Receptionists, Nurses, Lab techs, Pharmacists, Admins)
+   │   └── Register Staff Member Modal (Role category, department link, phone, email)
+   └── Outpatient Clinic Operations Workspace (/clinic)
+       ├── Connected Facility Overview (Green Care Clinic FAC-2001)
+       ├── Live OPD Doctor and Service counts
+       └── Quick navigation to Clinic Doctors, Services, and Departments
+
+7. Appointment Discovery, Doctor-First Booking & Queue Operations (Phase 6.1 & 6.2)
+   ├── Patient Booking Wizard (/patient/appointments/book)
+   │   ├── Mode 1: Doctor-First Discovery
+   │   │   ├── Search clinician by name or specialty across network
+   │   │   ├── Discovers clinician's multi-facility footprint under ONE identity (e.g. City Hospital @ ₹500, Green Care @ ₹600)
+   │   │   ├── Doctor Preference Mode Toggle: "Same doctor only" vs "Prefer this doctor"
+   │   │   └── View 7-day session availability with configured capacity
+   │   ├── Mode 2: Facility-First Discovery
+   │   │   ├── Select hospital campus or clinic branch
+   │   │   ├── Filter by clinical department and catalog service
+   │   │   └── Browse available practicing specialists and session times
+   │   ├── Mode 3: Service-First Discovery
+   │   │   ├── Search medical catalog (e.g. Cardiology Consultation, ECG, Ultrasound)
+   │   │   ├── Locate all facilities offering the selected service
+   │   │   └── Select affiliated clinician and working session
+   │   ├── Session Capacity Validation & Overbooking Protection
+   │   ├── 5-Tier Explainable Alternative Recommendations when session is full
+   │   └── Waitlist Registration & Explicit Slot Offer Acceptance (2-Hour Window)
+   │
+   ├── Patient Appointment & Active Token View (/patient/appointments)
+   │   ├── Confirmed Upcoming Bookings (Date, Session, Doctor, Facility, Room)
+   │   ├── Self-Service Mobile Check-in (Enabled on appointment date)
+   │   ├── Live Token Card (Token #C-01, Status: WAITING/CALLED/IN_CONSULTATION)
+   │   └── Dynamic Waiting Time Range (e.g. "Estimated: 20–35 min")
+   │
+   ├── Hospital Reception Check-in Desk (/reception)
+   │   ├── Daily Scheduled Appointments Queue
+   │   ├── Front-Desk Check-in Action (Generates sequential token)
+   │   ├── Direct Walk-in Registration (Assigns token & enters queue)
+   │   └── Real-time Session Capacity & Waiting Roster
+   │
+   └── Doctor Active Queue Management (/doctor/consultations)
+       ├── Session-Scoped Patient Queue (Sorted by sequential token)
+       ├── "Call Next Patient" Action (Transitions patient to CALLED)
+       ├── "Start Consultation" Action (Transitions to IN_CONSULTATION; enforces max 1 active per doctor)
+       ├── "Complete Consultation" Action (Transitions to COMPLETED + C.1 Clinical Encounter handoff)
+       ├── Missing Patient "Skip" Action (Transitions to SKIPPED with documented reason)
+       └── "Recall Patient" Action (Reinstates patient to CALLED when returned)

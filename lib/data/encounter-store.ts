@@ -115,6 +115,8 @@ export const SEEDED_ENCOUNTERS: HealthcareEncounter[] = [
 
 const STORAGE_KEY = "medora_encounters_store_v1";
 
+let inMemoryEncounters: HealthcareEncounter[] = [...SEEDED_ENCOUNTERS];
+
 // Cache for rapid double-click debounce
 const recentCreationSubmissions = new Map<string, number>();
 
@@ -123,25 +125,27 @@ const recentCreationSubmissions = new Map<string, number>();
  */
 export function getAllEncounters(): HealthcareEncounter[] {
   if (typeof window === "undefined") {
-    return SEEDED_ENCOUNTERS;
+    return inMemoryEncounters;
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEEDED_ENCOUNTERS));
-      return SEEDED_ENCOUNTERS;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryEncounters));
+      return inMemoryEncounters;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEEDED_ENCOUNTERS;
+    inMemoryEncounters = Array.isArray(parsed) && parsed.length > 0 ? parsed : inMemoryEncounters;
+    return inMemoryEncounters;
   } catch {
-    return SEEDED_ENCOUNTERS;
+    return inMemoryEncounters;
   }
 }
 
 /**
  * Persist encounter list to localStorage and dispatch custom event.
  */
-function saveEncounters(encounters: HealthcareEncounter[]): void {
+export function saveEncounters(encounters: HealthcareEncounter[]): void {
+  inMemoryEncounters = [...encounters];
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(encounters));
@@ -152,13 +156,29 @@ function saveEncounters(encounters: HealthcareEncounter[]): void {
 }
 
 /**
+ * Save or update a single encounter in store.
+ */
+export function saveEncounter(encounter: HealthcareEncounter): HealthcareEncounter {
+  const all = getAllEncounters();
+  const idx = all.findIndex((e) => e.id === encounter.id);
+  if (idx >= 0) {
+    all[idx] = encounter;
+  } else {
+    all.unshift(encounter);
+  }
+  saveEncounters(all);
+  return encounter;
+}
+
+/**
  * Retrieve encounters strictly for a specific patient (Strict Patient Isolation).
  */
 export function getPatientEncounters(patientIdOrIdentifier: string): HealthcareEncounter[] {
+  if (!patientIdOrIdentifier) return [];
   const all = getAllEncounters();
-  const targetId = patientIdOrIdentifier.trim();
+  const targetId = patientIdOrIdentifier.trim().toLowerCase();
   return all
-    .filter((e) => e.patient_id === targetId || e.patient_id.toLowerCase() === targetId.toLowerCase())
+    .filter((e) => e.patient_id.toLowerCase() === targetId)
     .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
 }
 
@@ -170,6 +190,7 @@ export function getDoctorEncounters(
   organizationId?: string,
   statusFilter?: EncounterStatus
 ): HealthcareEncounter[] {
+  if (!doctorIdOrIdentifier) return [];
   const all = getAllEncounters();
   const docId = doctorIdOrIdentifier.trim();
 
@@ -199,6 +220,7 @@ export function getOrganizationEncounters(
   organizationId: string,
   statusFilter?: EncounterStatus
 ): HealthcareEncounter[] {
+  if (!organizationId) return [];
   const all = getAllEncounters();
   const orgId = organizationId.trim();
 
@@ -215,8 +237,9 @@ export function getOrganizationEncounters(
  * Retrieve a single encounter by ID.
  */
 export function getEncounterById(encounterId: string): HealthcareEncounter | null {
+  if (!encounterId) return null;
   const all = getAllEncounters();
-  const cleanId = encounterId.trim();
+  const cleanId = String(encounterId).trim();
   return all.find((e) => e.id === cleanId || e.encounter_reference === cleanId) || null;
 }
 
@@ -404,16 +427,20 @@ export function completeEncounter(
   }
 
   const encounter = all[index];
-  if (encounter.status === "COMPLETED") {
-    return { success: false, error: `Encounter ${encounterId} is already marked as COMPLETED.` };
+  if (encounter.status === "COMPLETED" || encounter.status === "FINALIZED") {
+    return { success: false, error: `Encounter ${encounterId} is already marked as ${encounter.status}.` };
   }
   if (encounter.status === "CANCELLED") {
     return { success: false, error: `Encounter ${encounterId} was CANCELLED and cannot be completed.` };
   }
 
   const nowIso = new Date().toISOString();
-  encounter.status = "COMPLETED";
-  encounter.ended_at = nowIso;
+  encounter.status = "FINALIZED";
+  encounter.ended_at = encounter.ended_at || nowIso;
+  encounter.completed_at = nowIso;
+  encounter.finalized_at = nowIso;
+  encounter.finalized_by = actorId;
+  encounter.finalized_by_name = actorName;
   encounter.updated_at = nowIso;
 
   all[index] = encounter;
@@ -421,25 +448,37 @@ export function completeEncounter(
 
   // Append Audit Event
   appendAuditEvent(
-    "ENCOUNTER_COMPLETED",
+    "ENCOUNTER_FINALIZED",
     actorId,
     actorName,
     actorRole,
-    `Completed encounter ${encounter.id} for patient ${encounter.patient_name}`,
+    `Finalized encounter ${encounter.id} for patient ${encounter.patient_name}`,
     encounter.patient_id,
     encounter.organization_id,
     encounter.organization_name,
     encounter.id,
     {
       startedAt: encounter.started_at,
-      endedAt: encounter.ended_at,
+      finalizedAt: encounter.finalized_at,
       totalDurationMinutes: Math.round(
-        (new Date(encounter.ended_at).getTime() - new Date(encounter.started_at).getTime()) / 60000
+        (new Date(nowIso).getTime() - new Date(encounter.started_at).getTime()) / 60000
       ),
     }
   );
 
   return { success: true, encounter };
+}
+
+/**
+ * Explicitly finalize an encounter (Phase 7.1 Clinical Finalization).
+ */
+export function finalizeEncounter(
+  encounterId: string,
+  actorId: string,
+  actorName: string,
+  actorRole: string
+): { success: boolean; encounter?: HealthcareEncounter; error?: string } {
+  return completeEncounter(encounterId, actorId, actorName, actorRole);
 }
 
 /**

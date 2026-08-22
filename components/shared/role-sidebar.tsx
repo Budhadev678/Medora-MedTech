@@ -50,41 +50,48 @@ export function RoleSidebar({ role, className }: RoleSidebarProps) {
       case "doctor":
         return [
           { label: "Today's Overview", href: "/doctor", icon: <Stethoscope className="h-4 w-4" /> },
-          { label: "Clinical Queue", href: "/doctor#queue", icon: <Users className="h-4 w-4" />, badge: "4 Active" },
-          { label: "Consultation Suite", href: "/doctor/consult", icon: <Layers className="h-4 w-4" /> },
+          { label: "Clinical Queue", href: "/doctor/appointments", icon: <Users className="h-4 w-4" />, badge: "4 Active" },
+          { label: "Consultation Suite", href: "/doctor/consultations", icon: <Layers className="h-4 w-4" /> },
           { label: "Prescriptions", href: "/doctor/prescriptions", icon: <Pill className="h-4 w-4" /> },
           { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: <FlaskConical className="h-4 w-4" /> },
-          { label: "Schedule & On-Call", href: "/doctor/availability", icon: <Clock className="h-4 w-4" /> },
+          { label: "Schedule & Appointments", href: "/doctor/schedule", icon: <Clock className="h-4 w-4" /> },
+          { label: "My Patients", href: "/doctor/patients", icon: <Users className="h-4 w-4" /> },
         ];
 
       case "hospital_admin":
         return [
           { label: "Command Center", href: "/hospital", icon: <Building2 className="h-4 w-4" /> },
+          { label: "Appointments Desk", href: "/hospital/appointments", icon: <Clock className="h-4 w-4" /> },
+          { label: "Billing & Charges", href: "/hospital/billing", icon: <Receipt className="h-4 w-4" /> },
+          { label: "Cashier & Payments", href: "/hospital/billing/payments", icon: <Receipt className="h-4 w-4" /> },
           { label: "Departments", href: "/hospital/departments", icon: <Layers className="h-4 w-4" /> },
-          { label: "Doctor Roster", href: "/hospital/doctors", icon: <Users className="h-4 w-4" /> },
+          { label: "Doctor & Staff Roster", href: "/hospital/doctors", icon: <Users className="h-4 w-4" /> },
           { label: "Bed & Admissions", href: "/hospital/admissions", icon: <Building2 className="h-4 w-4" /> },
-          { label: "Hospital Audit Logs", href: "/hospital/audit", icon: <ShieldCheck className="h-4 w-4" /> },
+          { label: "Hospital Audit Logs", href: "/admin/audit", icon: <ShieldCheck className="h-4 w-4" /> },
         ];
 
       case "lab_staff":
         return [
-          { label: "Test Orders Queue", href: "/lab", icon: <FlaskConical className="h-4 w-4" />, badge: "2 New" },
-          { label: "Sample Intake", href: "/lab/samples", icon: <Layers className="h-4 w-4" /> },
-          { label: "Diagnostic Testing", href: "/lab/testing", icon: <Clock className="h-4 w-4" /> },
-          { label: "Report Approvals", href: "/lab/reports", icon: <ShieldCheck className="h-4 w-4" /> },
+          { label: "Test Orders Queue", href: "/lab/orders", icon: <FlaskConical className="h-4 w-4" />, badge: "2 New" },
+          { label: "Sample Custody Desk", href: "/lab/samples", icon: <Layers className="h-4 w-4" /> },
+          { label: "Diagnostic Testing Desk", href: "/lab/testing", icon: <Clock className="h-4 w-4" /> },
+          { label: "Report Verification", href: "/lab/verification", icon: <ShieldCheck className="h-4 w-4" /> },
+          { label: "Released Reports", href: "/lab/reports", icon: <FlaskConical className="h-4 w-4" /> },
         ];
 
       case "pharmacy_staff":
         return [
-          { label: "Prescription Queue", href: "/pharmacy", icon: <Pill className="h-4 w-4" />, badge: "3 Ready" },
-          { label: "Dispense Desk", href: "/pharmacy/dispense", icon: <Users className="h-4 w-4" /> },
-          { label: "Dispense History", href: "/pharmacy/history", icon: <Clock className="h-4 w-4" /> },
+          { label: "Prescription Intakes", href: "/pharmacy/prescriptions", icon: <Pill className="h-4 w-4" />, badge: "3 Ready" },
+          { label: "Order Preparation", href: "/pharmacy/preparation", icon: <Clock className="h-4 w-4" /> },
+          { label: "Ready for Pickup", href: "/pharmacy/pickup", icon: <Users className="h-4 w-4" /> },
+          { label: "Dispensing Desk", href: "/pharmacy/dispensing", icon: <ShieldCheck className="h-4 w-4" /> },
+          { label: "Inventory & FEFO Batches", href: "/pharmacy/inventory", icon: <Layers className="h-4 w-4" /> },
         ];
 
       case "emergency_staff":
         return [
           { label: "Triage Command Board", href: "/emergency", icon: <AlertTriangle className="h-4 w-4" />, badge: "1 Critical" },
-          { label: "Staff Availability", href: "/emergency/escalation", icon: <Users className="h-4 w-4" /> },
+          { label: "Staff Availability", href: "/doctor/schedule", icon: <Users className="h-4 w-4" /> },
           { label: "Blood Coordinator Link", href: "/blood-bank", icon: <Droplet className="h-4 w-4" /> },
         ];
 
@@ -96,15 +103,19 @@ export function RoleSidebar({ role, className }: RoleSidebarProps) {
 
       case "finance_staff":
         return [
-          { label: "Hospital Invoices", href: "/finance", icon: <Receipt className="h-4 w-4" /> },
-          { label: "Insurance & Scheme Split", href: "/finance/claims", icon: <Receipt className="h-4 w-4" /> },
-          { label: "Bill Disputes", href: "/finance/disputes", icon: <AlertTriangle className="h-4 w-4" /> },
+          { label: "Hospital Billing Console", href: "/hospital/billing", icon: <Receipt className="h-4 w-4" /> },
+          { label: "Cashier & Payments", href: "/hospital/billing/payments", icon: <Receipt className="h-4 w-4" /> },
+          { label: "3-Way Reconciliation", href: "/hospital/finance/reconciliation", icon: <Layers className="h-4 w-4" /> },
+          { label: "Financial Disputes & Evidence", href: "/hospital/finance/disputes", icon: <AlertTriangle className="h-4 w-4" /> },
         ];
 
       case "admin":
         return [
           { label: "System Overview", href: "/admin", icon: <Building2 className="h-4 w-4" /> },
-          { label: "User Roles Matrix", href: "/admin/roles", icon: <Users className="h-4 w-4" /> },
+          { label: "Organizations", href: "/admin/organizations", icon: <Building2 className="h-4 w-4" /> },
+          { label: "Facilities Network", href: "/admin/facilities", icon: <Building2 className="h-4 w-4" /> },
+          { label: "User Identity Registry", href: "/admin/users", icon: <Users className="h-4 w-4" /> },
+          { label: "Staff Verification", href: "/admin/verification", icon: <ShieldCheck className="h-4 w-4" /> },
           { label: "Immutable Audit Log", href: "/admin/audit", icon: <ShieldCheck className="h-4 w-4" /> },
         ];
 

@@ -1,9 +1,20 @@
 // ============================================================
 // MEDORA — PERSISTENT IDENTITY & RELATIONSHIP STORE
-// PHASE 1: COMPLETE ECOSYSTEM IDENTITY & MULTI-ORGANIZATION BASE
+// PHASE A.2: NORMALIZED IDENTITY & ORGANIZATION MEMBERSHIP STORE
 // ============================================================
 
-import type { UserRole, AccountStatus, VerificationStatus, OrganizationType } from "@/types/database.types";
+import type { 
+  UserRole, 
+  AccountStatus, 
+  VerificationStatus, 
+  OrganizationType,
+  OrganizationEntity,
+  OrganizationMembership,
+  OrganizationMembershipStatus,
+  PersonProfile,
+  ProfessionalProfile,
+  UserAccount
+} from "@/types/database.types";
 
 export type AffiliationStatus = "active" | "pending" | "rejected" | "suspended" | "ended";
 
@@ -104,6 +115,7 @@ export interface StoredIdentity {
   phone?: string;
   accountStatus: AccountStatus;
   verificationStatus: VerificationStatus;
+  organizationId?: string;
   organizationName?: string;
   organizationType?: OrganizationType;
   createdAt: string;
@@ -113,6 +125,340 @@ export interface StoredIdentity {
   doctorData?: StoredDoctorData;
   staffData?: StoredStaffMembership[];
 }
+
+export const SEEDED_ORGANIZATIONS: OrganizationEntity[] = [
+  {
+    id: "11111111-1111-1111-1111-111111111101",
+    medora_id: "HSP-1001",
+    name: "City Hospital",
+    type: "hospital",
+    license_no: "HSP-OD-2018-092",
+    address: "MG Road, Central District",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550100",
+    emergency_phone: "112",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-08-10T10:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111102",
+    medora_id: "HSP-1002",
+    name: "Green Care Hospital",
+    type: "hospital",
+    license_no: "HSP-OD-2020-144",
+    address: "Ring Road, Cantonment",
+    city: "Cuttack",
+    phone: "+91 671 2440200",
+    emergency_phone: "112",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-08-15T10:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111103",
+    medora_id: "CLN-1001",
+    name: "Green Care Clinic",
+    type: "clinic",
+    license_no: "CLN-OD-2021-055",
+    address: "Cantonment Road",
+    city: "Cuttack",
+    phone: "+91 671 2440250",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-12T10:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111104",
+    medora_id: "LAB-1001",
+    name: "ABC Diagnostics",
+    type: "diagnostic_lab",
+    license_no: "LAB-OD-2019-112",
+    address: "Janpath Road",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550108",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111105",
+    medora_id: "PHA-1001",
+    name: "ABC Pharmacy",
+    type: "pharmacy",
+    license_no: "PHA-OD-2019-883",
+    address: "Janpath Commercial Complex",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550105",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111106",
+    medora_id: "BLC-1001",
+    name: "City Blood Centre",
+    type: "blood_bank",
+    license_no: "BLC-OD-2017-023",
+    address: "Medical Enclave, Unit 4",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550199",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111107",
+    medora_id: "INS-1001",
+    name: "ABC Insurance",
+    type: "insurance",
+    license_no: "IRDAI-OD-2015-44",
+    address: "Financial District",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550188",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111108",
+    medora_id: "FIN-1001",
+    name: "Healthcare Finance Partner",
+    type: "financing_partner",
+    license_no: "NBFC-OD-2022-77",
+    address: "Finance Tower",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550177",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111109",
+    medora_id: "GOV-1001",
+    name: "Government Assistance Org",
+    type: "government_assistance",
+    license_no: "GOV-OD-2021-01",
+    address: "Secretariat Road",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550166",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  {
+    id: "11111111-1111-1111-1111-111111111110",
+    medora_id: "AMB-1001",
+    name: "ABC Ambulance Services",
+    type: "ambulance_provider",
+    license_no: "AMB-OD-2020-99",
+    address: "Traffic HQ Enclave",
+    city: "Bhubaneswar",
+    phone: "+91 674 2550108",
+    emergency_phone: "108",
+    status: "active",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+];
+
+export const SEEDED_MEMBERSHIPS: OrganizationMembership[] = [
+  // 1. Dr. Ananya Sharma @ City Hospital (HSP-1001)
+  {
+    id: "MEM-1001",
+    person_id: "PER-DOC-1001",
+    user_id: "b0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "Department of Cardiology",
+    role_title: "Consultant Cardiologist",
+    member_role: "doctor",
+    employment_type: "consultant",
+    consultation_fee: 500,
+    opd_room: "OPD Room 102",
+    schedule_notes: "Mon, Wed, Fri (09:00 AM - 01:00 PM)",
+    start_date: "2025-01-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2025-01-01T09:00:00Z",
+  },
+  // 2. Dr. Ananya Sharma @ Green Care Hospital (HSP-1002)
+  {
+    id: "MEM-1002",
+    person_id: "PER-DOC-1001",
+    user_id: "b0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111102",
+    organization_identifier: "HSP-1002",
+    organization_name: "Green Care Hospital",
+    organization_type: "hospital",
+    department_name: "Cardiovascular Outpatient Suite",
+    role_title: "Visiting Specialist",
+    member_role: "doctor",
+    employment_type: "visiting",
+    consultation_fee: 600,
+    opd_room: "Visiting OPD 2",
+    schedule_notes: "Tue, Thu (02:00 PM - 05:00 PM)",
+    start_date: "2025-06-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2025-06-01T09:00:00Z",
+  },
+  // 3. Dr. Ananya Sharma @ Green Care Clinic (CLN-1001)
+  {
+    id: "MEM-1003",
+    person_id: "PER-DOC-1001",
+    user_id: "b0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111103",
+    organization_identifier: "CLN-1001",
+    organization_name: "Green Care Clinic",
+    organization_type: "clinic",
+    department_name: "Specialist Clinic",
+    role_title: "Consultant",
+    member_role: "doctor",
+    employment_type: "consultant",
+    consultation_fee: 400,
+    opd_room: "Clinic Suite 1",
+    schedule_notes: "Sat (10:00 AM - 02:00 PM)",
+    start_date: "2025-09-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2025-09-01T09:00:00Z",
+  },
+  // 4. Dr. Rajesh Sharma @ City Hospital (HSP-1001)
+  {
+    id: "MEM-2001",
+    person_id: "PER-DOC-1002",
+    user_id: "b0000001-0000-0000-0000-000000000002",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "General Medicine & OPD",
+    role_title: "Senior Consultant",
+    member_role: "doctor",
+    employment_type: "full_time",
+    consultation_fee: 500,
+    opd_room: "OPD Room 101",
+    schedule_notes: "Mon - Sat (08:00 AM - 02:00 PM)",
+    start_date: "2024-01-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2024-01-01T08:00:00Z",
+  },
+  // 5. Dr. Priya Das @ City Hospital (HSP-1001 - Pending Request)
+  {
+    id: "MEM-3001",
+    person_id: "PER-DOC-1003",
+    user_id: "b0000001-0000-0000-0000-000000000003",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "Department of General Surgery",
+    role_title: "Visiting Surgeon",
+    member_role: "doctor",
+    employment_type: "visiting",
+    consultation_fee: 700,
+    opd_room: "Surgical OPD 3",
+    schedule_notes: "Wed, Sat (03:00 PM - 06:00 PM)",
+    start_date: "2026-08-20",
+    status: "PENDING",
+    verification_status: "pending",
+    created_at: "2026-08-20T08:00:00Z",
+  },
+  // 6. Sunita Mohanty (STAFF-1001) @ City Hospital (HSP-1001)
+  {
+    id: "MEM-4001",
+    person_id: "PER-STAFF-1001",
+    user_id: "k0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "Patient Admissions & Records",
+    role_title: "Admissions Officer",
+    member_role: "staff",
+    employment_type: "full_time",
+    start_date: "2025-10-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2025-10-01T09:00:00Z",
+  },
+  // 7. Anita (STAFF-1002 - Multi-org receptionist) @ City Hospital (HSP-1001)
+  {
+    id: "MEM-5001",
+    person_id: "PER-STAFF-1002",
+    user_id: "k0000001-0000-0000-0000-000000000002",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "Reception & Admissions",
+    role_title: "Receptionist",
+    member_role: "staff",
+    employment_type: "part_time",
+    start_date: "2026-01-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2026-01-01T09:00:00Z",
+  },
+  // 8. Anita (STAFF-1002 - Multi-org receptionist) @ Green Care Clinic (CLN-1001)
+  {
+    id: "MEM-5002",
+    person_id: "PER-STAFF-1002",
+    user_id: "k0000001-0000-0000-0000-000000000002",
+    organization_id: "11111111-1111-1111-1111-111111111103",
+    organization_identifier: "CLN-1001",
+    organization_name: "Green Care Clinic",
+    organization_type: "clinic",
+    department_name: "Front Desk & Billing",
+    role_title: "Receptionist",
+    member_role: "staff",
+    employment_type: "part_time",
+    start_date: "2026-02-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2026-02-01T09:00:00Z",
+  },
+  // 9. Rahul Multi-Role @ City Hospital (Doctor)
+  {
+    id: "MEM-6001",
+    person_id: "PER-MULTI-1001",
+    user_id: "m0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111101",
+    organization_identifier: "HSP-1001",
+    organization_name: "City Hospital",
+    organization_type: "hospital",
+    department_name: "Department of Cardiology",
+    role_title: "Junior Resident",
+    member_role: "doctor",
+    employment_type: "full_time",
+    start_date: "2026-03-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2026-03-01T09:00:00Z",
+  },
+  // 10. Rahul Multi-Role @ Green Care Clinic (Administrator)
+  {
+    id: "MEM-6002",
+    person_id: "PER-MULTI-1001",
+    user_id: "m0000001-0000-0000-0000-000000000001",
+    organization_id: "11111111-1111-1111-1111-111111111103",
+    organization_identifier: "CLN-1001",
+    organization_name: "Green Care Clinic",
+    organization_type: "clinic",
+    department_name: "Administration",
+    role_title: "Clinic Administrator",
+    member_role: "hospital_admin",
+    employment_type: "part_time",
+    start_date: "2026-04-01",
+    status: "ACTIVE",
+    verification_status: "verified",
+    created_at: "2026-04-01T09:00:00Z",
+  },
+];
 
 export const SEEDED_FACILITIES: StoredFacility[] = [
   {
@@ -604,14 +950,73 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
         organizationId: "11111111-1111-1111-1111-111111111101",
         organizationIdentifier: "HSP-1001",
         organizationName: "City Hospital",
-        departmentName: "Cardiology Inpatient Ward",
-        roleTitle: "Head Nurse",
+        departmentName: "Patient Admissions & Records",
+        roleTitle: "Admissions Officer",
         status: "active",
         verificationStatus: "verified",
       },
     ],
   },
-  // 18. Admin: Medora Platform Admin (ADM-1001)
+  // 18. Staff: Anita Patel (STAFF-1002 - Multi-org Receptionist)
+  {
+    id: "k0000001-0000-0000-0000-000000000002",
+    email: "anita@cityhospital.org",
+    passwordHash: "Password@123",
+    fullName: "Anita Patel",
+    role: "staff",
+    identifier: "STAFF-1002",
+    phone: "+91 98765 22334",
+    accountStatus: "active",
+    verificationStatus: "verified",
+    organizationName: "City Hospital",
+    createdAt: "2026-01-01T09:00:00Z",
+    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    staffData: [
+      {
+        organizationId: "11111111-1111-1111-1111-111111111101",
+        organizationIdentifier: "HSP-1001",
+        organizationName: "City Hospital",
+        departmentName: "Reception & Admissions",
+        roleTitle: "Receptionist",
+        status: "active",
+        verificationStatus: "verified",
+      },
+    ],
+  },
+  // 19. Multi-Role: Rahul (Doctor at City Hospital, Admin at Green Care Clinic)
+  {
+    id: "m0000001-0000-0000-0000-000000000001",
+    email: "multirole@medora.health",
+    passwordHash: "Password@123",
+    fullName: "Rahul Multi-Role",
+    role: "doctor",
+    identifier: "MULTI-1001",
+    phone: "+91 98765 33445",
+    accountStatus: "active",
+    verificationStatus: "verified",
+    organizationName: "City Hospital",
+    createdAt: "2026-03-01T09:00:00Z",
+    avatarUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+    doctorData: {
+      medicalRegNo: "MCI-2018-77123",
+      medicalCouncil: "Odisha Medical Council",
+      specialization: "Cardiology",
+      qualifications: "MBBS, MD",
+      experienceYears: 4,
+      affiliations: [
+        {
+          organizationId: "11111111-1111-1111-1111-111111111101",
+          organizationName: "City Hospital",
+          departmentName: "Department of Cardiology",
+          roleTitle: "Junior Resident",
+          consultationFee: 500,
+          status: "active",
+          verificationStatus: "verified",
+        }
+      ]
+    }
+  },
+  // 20. Admin: Medora Platform Admin (ADM-1001)
   {
     id: "z0000001-0000-0000-0000-000000000001",
     email: "admin@medora.health",
@@ -629,45 +1034,368 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
 ];
 
 const STORAGE_KEY = "medora_identities_store_v2";
+const ORGANIZATIONS_STORAGE_KEY = "medora_organizations_store_v1";
+const MEMBERSHIPS_STORAGE_KEY = "medora_memberships_store_v1";
+
+let inMemoryIdentities: StoredIdentity[] = [...SEEDED_IDENTITIES];
+let inMemoryOrganizations: OrganizationEntity[] = [...SEEDED_ORGANIZATIONS];
+let inMemoryMemberships: OrganizationMembership[] = [...SEEDED_MEMBERSHIPS];
+
+// ============================================================
+// PHASE A.2: NORMALIZED ORGANIZATIONS STORE
+// ============================================================
+
+export function getAllOrganizations(): OrganizationEntity[] {
+  if (typeof window === "undefined") {
+    return inMemoryOrganizations;
+  }
+  try {
+    const raw = localStorage.getItem(ORGANIZATIONS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(ORGANIZATIONS_STORAGE_KEY, JSON.stringify(inMemoryOrganizations));
+      return inMemoryOrganizations;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : inMemoryOrganizations;
+  } catch {
+    return inMemoryOrganizations;
+  }
+}
+
+export function saveOrganization(org: OrganizationEntity): void {
+  const index = inMemoryOrganizations.findIndex(
+    (o) => o.id === org.id || o.medora_id.toUpperCase() === org.medora_id.toUpperCase()
+  );
+  if (index >= 0) {
+    inMemoryOrganizations[index] = org;
+  } else {
+    inMemoryOrganizations.push(org);
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(ORGANIZATIONS_STORAGE_KEY, JSON.stringify(inMemoryOrganizations));
+      window.dispatchEvent(new Event("medora-organization-updated"));
+    } catch (e) {}
+  }
+}
+
+export function getOrganizationById(idOrMedoraId: string): OrganizationEntity | null {
+  const all = getAllOrganizations();
+  const search = idOrMedoraId.trim().toUpperCase();
+  return all.find((o) => o.id === idOrMedoraId || o.medora_id.toUpperCase() === search) || null;
+}
+
+export function createOrganization(data: {
+  medora_id: string;
+  name: string;
+  type: OrganizationType;
+  license_no: string;
+  address: string;
+  city: string;
+  phone: string;
+  emergency_phone?: string;
+}): { success: boolean; organization?: OrganizationEntity; error?: string } {
+  if (!data.medora_id.trim() || !data.name.trim()) {
+    return { success: false, error: "Organization medora_id and name are required." };
+  }
+
+  const existing = getOrganizationById(data.medora_id);
+  if (existing) {
+    return { success: false, error: `An organization with ID ${data.medora_id} already exists.` };
+  }
+
+  const newOrg: OrganizationEntity = {
+    id: `org-uuid-${Date.now()}`,
+    medora_id: data.medora_id.trim().toUpperCase(),
+    name: data.name.trim(),
+    type: data.type,
+    license_no: data.license_no.trim() || `LIC-${Date.now()}`,
+    address: data.address.trim(),
+    city: data.city.trim(),
+    phone: data.phone.trim(),
+    emergency_phone: data.emergency_phone?.trim(),
+    status: "active",
+    verification_status: "verified",
+    created_at: new Date().toISOString(),
+  };
+
+  saveOrganization(newOrg);
+  return { success: true, organization: newOrg };
+}
+
+// ============================================================
+// PHASE A.2: NORMALIZED ORGANIZATION MEMBERSHIPS STORE
+// ============================================================
+
+export function getAllMemberships(): OrganizationMembership[] {
+  if (typeof window === "undefined") {
+    return inMemoryMemberships;
+  }
+  try {
+    const raw = localStorage.getItem(MEMBERSHIPS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(MEMBERSHIPS_STORAGE_KEY, JSON.stringify(inMemoryMemberships));
+      return inMemoryMemberships;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : inMemoryMemberships;
+  } catch {
+    return inMemoryMemberships;
+  }
+}
+
+export function saveMembership(membership: OrganizationMembership): void {
+  const index = inMemoryMemberships.findIndex((m) => m.id === membership.id);
+  if (index >= 0) {
+    inMemoryMemberships[index] = { ...membership, updated_at: new Date().toISOString() };
+  } else {
+    inMemoryMemberships.push(membership);
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEMBERSHIPS_STORAGE_KEY, JSON.stringify(inMemoryMemberships));
+      window.dispatchEvent(new Event("medora-membership-updated"));
+    } catch (e) {}
+  }
+}
+
+export function getMembershipById(membershipId: string): OrganizationMembership | null {
+  const all = getAllMemberships();
+  return all.find((m) => m.id === membershipId) || null;
+}
+
+export function getPersonMemberships(personIdOrUserId: string): OrganizationMembership[] {
+  const all = getAllMemberships();
+  return all.filter(
+    (m) => m.person_id === personIdOrUserId || m.user_id === personIdOrUserId
+  );
+}
+
+export function getOrganizationMemberships(orgIdOrMedoraId: string): OrganizationMembership[] {
+  const all = getAllMemberships();
+  const search = orgIdOrMedoraId.trim().toUpperCase();
+  return all.filter(
+    (m) => m.organization_id === orgIdOrMedoraId || m.organization_identifier.toUpperCase() === search
+  );
+}
+
+/**
+ * Creates or invites a member to an organization.
+ * CRITICAL RULE: Uses existing user_id and person_id without creating a new auth user account.
+ */
+export function createMembership(params: {
+  personId: string;
+  userId: string;
+  organizationId: string;
+  organizationIdentifier?: string;
+  organizationName?: string;
+  organizationType?: OrganizationType;
+  facilityId?: string;
+  facilityName?: string;
+  departmentName?: string;
+  roleTitle: string;
+  memberRole: UserRole | string;
+  employmentType?: "full_time" | "part_time" | "consultant" | "visiting" | "contract";
+  consultationFee?: number;
+  opdRoom?: string;
+  scheduleNotes?: string;
+  status?: OrganizationMembershipStatus;
+  startDate?: string;
+}): { success: boolean; membership?: OrganizationMembership; error?: string } {
+  const org = getOrganizationById(params.organizationId) || 
+    getOrganizationById(params.organizationIdentifier || "");
+
+  const orgId = org?.id || params.organizationId;
+  const orgIdent = org?.medora_id || params.organizationIdentifier || "HSP-1001";
+  const orgName = org?.name || params.organizationName || "Healthcare Facility";
+  const orgType = org?.type || params.organizationType || "hospital";
+
+  // Check unique constraint: Same person cannot have multiple ACTIVE memberships in the same organization
+  const existingActive = getAllMemberships().find(
+    (m) => (m.person_id === params.personId || m.user_id === params.userId) &&
+           (m.organization_id === orgId || m.organization_identifier === orgIdent) &&
+           m.status === "ACTIVE"
+  );
+
+  if (existingActive) {
+    return {
+      success: false,
+      error: `This person already has an active membership (${existingActive.id}) at ${orgName}.`,
+    };
+  }
+
+  const membershipId = `MEM-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
+  const now = new Date().toISOString();
+
+  const newMembership: OrganizationMembership = {
+    id: membershipId,
+    person_id: params.personId,
+    user_id: params.userId,
+    organization_id: orgId,
+    organization_identifier: orgIdent,
+    organization_name: orgName,
+    organization_type: orgType,
+    facility_id: params.facilityId,
+    facility_name: params.facilityName,
+    department_name: params.departmentName || "General Department",
+    role_title: params.roleTitle,
+    member_role: params.memberRole,
+    employment_type: params.employmentType || "consultant",
+    consultation_fee: params.consultationFee,
+    opd_room: params.opdRoom,
+    schedule_notes: params.scheduleNotes,
+    status: params.status || "ACTIVE",
+    verification_status: "verified",
+    start_date: params.startDate || now.split("T")[0],
+    created_at: now,
+  };
+
+  saveMembership(newMembership);
+  return { success: true, membership: newMembership };
+}
+
+export function inviteUserToOrganization(params: {
+  personId: string;
+  userId: string;
+  organizationId: string;
+  roleTitle: string;
+  memberRole: UserRole | string;
+  departmentName?: string;
+  consultationFee?: number;
+}): { success: boolean; membership?: OrganizationMembership; error?: string } {
+  return createMembership({
+    ...params,
+    status: "INVITED",
+  });
+}
+
+export function acceptMembership(membershipId: string): { success: boolean; membership?: OrganizationMembership; error?: string } {
+  const membership = getMembershipById(membershipId);
+  if (!membership) {
+    return { success: false, error: "Membership record not found." };
+  }
+  if (membership.status !== "INVITED" && membership.status !== "PENDING") {
+    return { success: false, error: `Cannot accept membership with status: ${membership.status}` };
+  }
+
+  membership.status = "ACTIVE";
+  membership.verification_status = "verified";
+  membership.start_date = new Date().toISOString().split("T")[0];
+  membership.updated_at = new Date().toISOString();
+
+  saveMembership(membership);
+  return { success: true, membership };
+}
+
+export function revokeMembership(
+  membershipId: string, 
+  reason = "Membership ended by organization or practitioner"
+): { success: boolean; membership?: OrganizationMembership; error?: string } {
+  const membership = getMembershipById(membershipId);
+  if (!membership) {
+    return { success: false, error: "Membership record not found." };
+  }
+
+  membership.status = "REVOKED";
+  membership.end_date = new Date().toISOString().split("T")[0];
+  membership.revocation_reason = reason;
+  membership.revoked_at = new Date().toISOString();
+  membership.updated_at = new Date().toISOString();
+
+  saveMembership(membership);
+  return { success: true, membership };
+}
+
+export function suspendMembership(
+  membershipId: string, 
+  reason = "Membership temporarily suspended"
+): { success: boolean; membership?: OrganizationMembership; error?: string } {
+  const membership = getMembershipById(membershipId);
+  if (!membership) {
+    return { success: false, error: "Membership record not found." };
+  }
+
+  membership.status = "SUSPENDED";
+  membership.revocation_reason = reason;
+  membership.updated_at = new Date().toISOString();
+
+  saveMembership(membership);
+  return { success: true, membership };
+}
+
+// ============================================================
+// AUTHORITATIVE USER IDENTITY STORE
+// ============================================================
 
 export function getAllIdentities(): StoredIdentity[] {
   if (typeof window === "undefined") {
-    return SEEDED_IDENTITIES;
+    return inMemoryIdentities;
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEEDED_IDENTITIES));
-      return SEEDED_IDENTITIES;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryIdentities));
+      return inMemoryIdentities;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEEDED_IDENTITIES;
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : inMemoryIdentities;
   } catch {
-    return SEEDED_IDENTITIES;
+    return inMemoryIdentities;
   }
 }
 
 export function saveIdentity(identity: StoredIdentity): void {
-  if (typeof window === "undefined") return;
-  const current = getAllIdentities();
-  const index = current.findIndex(
+  const index = inMemoryIdentities.findIndex(
     (u) => u.id === identity.id || u.email.toLowerCase() === identity.email.toLowerCase()
   );
   if (index >= 0) {
-    current[index] = identity;
+    inMemoryIdentities[index] = identity;
   } else {
-    current.push(identity);
+    inMemoryIdentities.push(identity);
   }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-    window.dispatchEvent(new Event("medora-identity-updated"));
-  } catch (e) {}
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryIdentities));
+      window.dispatchEvent(new Event("medora-identity-updated"));
+    } catch (e) {}
+  }
 }
 
 export function findIdentityByEmail(email: string): StoredIdentity | null {
   const all = getAllIdentities();
   const normalized = email.trim().toLowerCase();
-  return all.find((u) => u.email.toLowerCase() === normalized) || null;
+  
+  // 1. Direct match by email
+  const direct = all.find((u) => u.email.toLowerCase() === normalized);
+  if (direct) return direct;
+
+  // 2. Direct match by identifier (e.g. "HSP-1001", "DOC-1001", "PAT-1001", "ADM-1001")
+  const byIdentifier = all.find((u) => u.identifier.toLowerCase() === normalized);
+  if (byIdentifier) return byIdentifier;
+
+  // 3. Known aliases for test accounts and institutional emails
+  const EMAIL_ALIASES: Record<string, string> = {
+    "admin@cityhospital.org": "hospital@medora.health",
+    "admin@cityhospital.com": "hospital@medora.health",
+    "cityhospital@medora.health": "hospital@medora.health",
+    "admin@greencare.org": "greencare@medora.health",
+    "admin@greencareclinic.org": "clinic@medora.health",
+    "reception@cityhospital.org": "anita@cityhospital.org",
+    "anita@medora.health": "anita@cityhospital.org",
+    "rahul@medora.health": "patient@medora.health",
+    "ananya@medora.health": "doctor@medora.health",
+    "admin@medora.org": "admin@medora.health",
+  };
+
+  const aliased = EMAIL_ALIASES[normalized];
+  if (aliased) {
+    return all.find((u) => u.email.toLowerCase() === aliased.toLowerCase()) || null;
+  }
+
+  return null;
 }
 
 export function findIdentityById(idOrIdentifier: string): StoredIdentity | null {

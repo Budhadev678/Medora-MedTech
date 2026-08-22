@@ -682,7 +682,7 @@ export default function DoctorConsultationsPage() {
                           {attachedLabs.length > 0 && (
                             <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-800 border-blue-200">
                               <FlaskConical className="h-3 w-3 mr-1 inline" />
-                              {attachedLabs.length} Lab Orders ({attachedLabs.map(l => l.order_reference).join(", ")})
+                              {attachedLabs.length} Lab Orders ({attachedLabs.map((l: any) => l.order_reference).join(", ")})
                             </Badge>
                           )}
                         </div>

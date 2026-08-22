@@ -8,15 +8,34 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Cached high-performance Intl formatters (prevents costly re-instantiation per invocation)
+const currencyFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+const dateOnlyFormatter = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
 /**
  * Currency formatter for Indian Rupee (INR)
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount);
+  if (typeof amount !== "number" || isNaN(amount)) return "₹0";
+  return currencyFormatter.format(amount);
 }
 
 /**
@@ -24,23 +43,10 @@ export function formatCurrency(amount: number): string {
  */
 export function formatDate(dateString: string | Date, includeTime = false): string {
   if (!dateString) return "";
-  const date = new Date(dateString);
+  const date = typeof dateString === "string" ? new Date(dateString) : dateString;
   if (isNaN(date.getTime())) return String(dateString);
 
-  const options: Intl.DateTimeFormatOptions = {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    ...(includeTime
-      ? {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }
-      : {}),
-  };
-
-  return new Intl.DateTimeFormat("en-IN", options).format(date);
+  return includeTime ? dateTimeFormatter.format(date) : dateOnlyFormatter.format(date);
 }
 
 /**

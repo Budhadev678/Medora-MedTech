@@ -8,7 +8,7 @@ import {
   type DemoPersona, 
   type UserRole 
 } from "@/lib/constants";
-import type { Profile, DoctorAffiliation } from "@/types/database.types";
+import type { Profile, DoctorAffiliation, OrganizationMembership } from "@/types/database.types";
 import { createClient } from "@/lib/supabase/client";
 import { 
   StoredIdentity, 
@@ -19,6 +19,8 @@ import {
   findIdentityByEmail, 
   findIdentityById, 
   authenticateCredentials,
+  getPersonMemberships,
+  getAllMemberships,
   SEEDED_IDENTITIES 
 } from "@/lib/data/identity-store";
 
@@ -83,6 +85,9 @@ interface AuthContextType {
   role: UserRole | null;
   affiliations: StoredDoctorAffiliation[];
   staffMemberships: StoredStaffMembership[];
+  memberships: OrganizationMembership[];
+  activeMembership: OrganizationMembership | null;
+  setActiveMembershipId: (membershipId: string) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password?: string) => Promise<AuthResponse>;
@@ -454,6 +459,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const currentPersona = currentIdentity ? buildPersona(currentIdentity) : null;
   const currentAffiliations = currentIdentity?.doctorData?.affiliations || [];
   const currentStaffMemberships = currentIdentity?.staffData || [];
+  const currentMemberships = currentIdentity 
+    ? getPersonMemberships(currentIdentity.id)
+    : [];
+
+  const [activeMembershipId, setActiveMembershipId] = useState<string | null>(null);
+
+  const activeMembership = currentMemberships.find(m => m.id === activeMembershipId) 
+    || currentMemberships.find(m => m.status === "ACTIVE") 
+    || null;
 
   return (
     <AuthContext.Provider
@@ -464,6 +478,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: currentIdentity?.role || null,
         affiliations: currentAffiliations,
         staffMemberships: currentStaffMemberships,
+        memberships: currentMemberships,
+        activeMembership,
+        setActiveMembershipId,
         isAuthenticated: !!currentIdentity,
         isLoading,
         signIn,

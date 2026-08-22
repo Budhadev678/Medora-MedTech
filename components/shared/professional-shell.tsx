@@ -32,11 +32,11 @@ interface ProfessionalShellProps {
 
 export function ProfessionalShell({ children }: ProfessionalShellProps) {
   const pathname = usePathname();
-  const { user, role, logout } = useAuth();
+  const { user, role, activeMembership, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const workspace: WorkspaceDefinition | null = resolveWorkspace(user, role);
+  const workspace: WorkspaceDefinition | null = resolveWorkspace(user, activeMembership, role);
 
   // If no valid workspace could be resolved, show a safe account configuration screen
   if (!workspace) {

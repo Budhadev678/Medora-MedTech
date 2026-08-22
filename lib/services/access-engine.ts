@@ -3,7 +3,7 @@
 // Multi-Factor Authorization: Actor + Org + Role + Relationship + Consent + Scope
 // ============================================================
 
-import { StoredIdentity } from "@/lib/data/identity-store";
+import { StoredIdentity, getPersonMemberships } from "@/lib/data/identity-store";
 import { getPatientConsents } from "@/lib/data/consent-store";
 import { getPatientOrganizationRelationships } from "@/lib/data/relationship-store";
 import { AccessCheckResult, AccessDecisionType, ConsentPurpose, ConsentDataScope } from "@/types/database.types";
@@ -75,12 +75,19 @@ export class AccessEngine {
     }
 
     // 5a. Verify Organization Membership & Active Status
-    if (actor.role === "doctor" && actor.doctorData) {
-      const activeAffiliation = actor.doctorData.affiliations.find(
+    if (actor.role === "doctor") {
+      const memberships = getPersonMemberships(actor.id);
+      const activeMembership = memberships.find(
+        (m) => (m.organization_id === organizationId || m.organization_identifier.toUpperCase() === organizationId.toUpperCase()) &&
+               m.status === "ACTIVE"
+      );
+
+      const legacyAffiliation = actor.doctorData?.affiliations.find(
         (a) => (a.organizationId === organizationId || a.organizationIdentifier === organizationId) &&
                a.status === "active"
       );
-      if (!activeAffiliation) {
+
+      if (!activeMembership && !legacyAffiliation) {
         return {
           decision: "NOT_AUTHORIZED",
           allowed: false,

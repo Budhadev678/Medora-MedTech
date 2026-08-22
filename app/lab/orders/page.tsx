@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/auth-context";
-import { HealthcareLabOrder, getAssignedLabOrders } from "@/lib/data/lab-order-store";
+import type { HealthcareLabOrder, LabOrderItem } from "@/types/database.types";
+import { getAssignedLabOrders } from "@/lib/data/lab-order-store";
 
 export default function LabOrdersPage() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export default function LabOrdersPage() {
       const q = searchQuery.toLowerCase();
       const matchPatient = o.patient_name.toLowerCase().includes(q) || o.patient_id.toLowerCase().includes(q);
       const matchRef = o.order_reference.toLowerCase().includes(q);
-      const matchTest = o.items.some(i => i.test_name.toLowerCase().includes(q));
+      const matchTest = o.items.some((i: LabOrderItem) => i.test_name.toLowerCase().includes(q));
       if (!matchPatient && !matchRef && !matchTest) return false;
     }
     return true;
@@ -126,7 +127,7 @@ export default function LabOrdersPage() {
                     Requested Tests ({order.items.length})
                   </span>
                   <div className="space-y-1">
-                    {order.items.map((item, idx) => (
+                    {order.items.map((item: LabOrderItem, idx: number) => (
                       <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
                         <span className="font-bold text-slate-800">{item.test_name}</span>
                         {item.specimen_type && (

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   Receipt, 
   CreditCard, 
@@ -10,7 +11,8 @@ import {
   FileText,
   Search,
   CheckCircle2,
-  Info
+  Layers,
+  ArrowRight
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,113 +21,139 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { RoleGuard } from "@/components/shared/role-guard";
+import { getAllBills } from "@/lib/data/billing-store";
+import { FinancialCoverageService } from "@/lib/services/financial-coverage-service";
+import { HealthcareBill } from "@/types/database.types";
 
 export default function FinanceWorkspacePage() {
-  const [selectedBill, setSelectedBill] = useState<string | null>("BILL-1001");
+  const [bills, setBills] = useState<HealthcareBill[]>([]);
+  const [selectedBillId, setSelectedBillId] = useState<string>("BILL-1001");
 
-  const bills = [
-    { billNo: "BILL-1001", patient: "Rahul Verma", patientId: "MED-PAT-1001", total: 1550, insSplit: "₹0 (Self-Pay)", status: "generated", items: "Consultation + CBC + 2 Meds" },
-    { billNo: "BILL-1002", patient: "Ananya Mishra", patientId: "MED-PAT-1002", total: 850, insSplit: "₹0 (Self-Pay)", status: "paid", items: "Consultation + Electrolytes" },
-    { billNo: "BILL-1003", patient: "Trauma Victim #4", patientId: "MED-EMERG-1001", total: 45000, insSplit: "₹35,000 Govt Ayushman", status: "generated", items: "ER Surgery + ICU Bed + Blood" },
-  ];
+  useEffect(() => {
+    setBills(getAllBills());
+  }, []);
+
+  const selectedBill = bills.find((b) => b.id === selectedBillId) || bills[0];
+  const waterfall = selectedBill ? FinancialCoverageService.calculateFinancialWaterfall(selectedBill.id) : null;
 
   return (
-    <RoleGuard allowedRoles={["finance_staff", "admin"]}>
-      <div className="space-y-6 animate-in fade-in-50 duration-200">
+    <RoleGuard allowedRoles={["finance_staff", "admin", "hospital_admin"]}>
+      <div className="space-y-6 max-w-7xl mx-auto pb-24 p-4 sm:p-6">
         {/* Finance Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">
-                Billing & Financial Traceability Command
+                Healthcare Financial & Billing Governance Hub
               </h1>
-              <Badge variant="teal" className="text-xs">
-                MED-FIN-1001
+              <Badge variant="teal" className="text-xs font-mono">
+                PHASE 10 CONNECTED
               </Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Itemized Invoice Aggregation • Insurance & Scheme Split • Medical-to-Financial Traceability
+              Authoritative Healthcare Billing • Financial Waterfall • Multi-Channel Coverage • 3-Way Reconciliation
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="text-xs h-8">
-              <ShieldCheck className="h-3.5 w-3.5 mr-1 text-teal-600" /> Bill Version Audit
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/hospital/billing">
+              <Button size="sm" className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl">
+                Billing Console <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </Link>
+            <Link href="/hospital/billing/payments">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl font-bold">
+                Cashier & Payments
+              </Button>
+            </Link>
+            <Link href="/hospital/finance/reconciliation">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl font-bold">
+                3-Way Reconciliation
+              </Button>
+            </Link>
+            <Link href="/hospital/finance/disputes">
+              <Button variant="outline" size="sm" className="text-xs rounded-xl font-bold">
+                Disputes & Evidence
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Finance Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Total Invoices Today</span>
-            <span className="text-xl font-bold text-slate-900 mt-1 block">₹47,400</span>
-            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">3 Active Accounts</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Gross Invoiced Charges</span>
+            <span className="text-xl font-mono font-extrabold text-slate-900 mt-1 block">
+              ₹{bills.reduce((sum, b) => sum + b.gross_total, 0).toFixed(2)}
+            </span>
+            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">{bills.length} Healthcare Bills</span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Govt / Ayushman Split</span>
-            <span className="text-xl font-bold text-blue-600 mt-1 block">₹35,000</span>
-            <span className="text-[11px] text-blue-600 block mt-0.5">ER Trauma Case</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Insurance & Scheme Coverage</span>
+            <span className="text-xl font-mono font-extrabold text-blue-600 mt-1 block">₹10,000.00</span>
+            <span className="text-[11px] text-blue-600 font-bold block mt-0.5">Approved Ayushman / Insurance</span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Patient Out-of-Pocket</span>
-            <span className="text-xl font-bold text-emerald-600 mt-1 block">₹12,400</span>
-            <span className="text-[11px] text-emerald-600 block mt-0.5">₹850 Settled</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Confirmed Patient Obligation</span>
+            <span className="text-xl font-mono font-extrabold text-emerald-600 mt-1 block">
+              ₹{bills.reduce((sum, b) => sum + b.patient_responsibility, 0).toFixed(2)}
+            </span>
+            <span className="text-[11px] text-emerald-700 font-bold block mt-0.5">Net Billable Balance</span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Lineage Integrity</span>
-            <span className="text-xl font-bold text-teal-700 mt-1 block">100% Traceable</span>
-            <span className="text-[11px] text-teal-700 block mt-0.5">Zero unlinked charges</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Lineage Integrity</span>
+            <span className="text-xl font-bold text-teal-700 mt-1 block">100% Provenance</span>
+            <span className="text-[11px] text-teal-700 font-bold block mt-0.5">Zero unlinked charges</span>
           </div>
         </div>
 
-        {/* Itemized Invoices Table & Lineage Card */}
+        {/* Itemized Invoices Table & Waterfall Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card className="bg-white">
-              <CardHeader className="p-5 pb-3">
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Patient Invoices & Settlement
+            <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
+              <CardHeader className="p-4 pb-2 border-b border-slate-100">
+                <CardTitle className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Healthcare Bills & Itemized Charges
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Every bill item must point to a verified consultation, lab test, or pharmacy dispense event.
-                </CardDescription>
               </CardHeader>
 
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Bill No</TableHead>
+                    <TableRow className="text-xs">
+                      <TableHead>Bill Number</TableHead>
                       <TableHead>Patient Details</TableHead>
-                      <TableHead>Included Items</TableHead>
-                      <TableHead>Total Amount</TableHead>
+                      <TableHead>Gross Charges</TableHead>
+                      <TableHead>Patient Responsibility</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {bills.map((bill) => (
-                      <TableRow key={bill.billNo} className={selectedBill === bill.billNo ? "bg-teal-50/30" : ""}>
-                        <TableCell className="font-mono font-bold text-slate-900 text-xs">{bill.billNo}</TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-slate-900 block text-xs">{bill.patient}</span>
-                          <span className="font-mono text-[10px] text-slate-500">{bill.patientId}</span>
+                      <TableRow key={bill.id} className={selectedBillId === bill.id ? "bg-teal-50/40" : ""}>
+                        <TableCell className="font-mono font-bold text-slate-900 text-xs">
+                          {bill.bill_number}
+                          <span className="text-[10px] text-slate-400 block font-mono">v{bill.current_version}</span>
                         </TableCell>
-                        <TableCell className="text-xs text-slate-600">{bill.items}</TableCell>
-                        <TableCell className="font-mono font-bold text-xs text-slate-900">{formatCurrency(bill.total)}</TableCell>
                         <TableCell>
-                          <StatusBadge status={bill.status} size="sm" />
+                          <span className="font-semibold text-slate-900 block text-xs">{bill.patient_name}</span>
+                          <span className="font-mono text-[10px] text-slate-500">{bill.patient_id}</span>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-xs text-slate-900">₹{bill.gross_total.toFixed(2)}</TableCell>
+                        <TableCell className="font-mono font-bold text-xs text-emerald-800">₹{bill.patient_responsibility.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={bill.status} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            size="sm" 
-                            variant={selectedBill === bill.billNo ? "default" : "outline"}
-                            onClick={() => setSelectedBill(bill.billNo)}
-                            className="text-xs h-8"
-                          >
-                            Inspect Lineage
-                          </Button>
+                          <Link href={`/hospital/billing/${bill.id}`}>
+                            <Button size="sm" variant="outline" className="text-xs rounded-xl font-bold">
+                              Inspect Bill
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -135,55 +163,41 @@ export default function FinanceWorkspacePage() {
             </Card>
           </div>
 
-          {/* Lineage & 'Why was I charged?' Breakdown */}
+          {/* Lineage & Waterfall Card */}
           <div className="space-y-4">
-            <Card className="bg-white border-teal-200">
-              <CardHeader className="p-4 pb-2 border-b border-slate-100">
-                <CardTitle className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-teal-600" />
-                  Lineage Trace: BILL-1001
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-3 text-xs">
-                <div className="space-y-2">
-                  <div className="p-2 rounded bg-slate-50 border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-900">
-                      <span>Cardiology OPD Consultation</span>
-                      <span>₹500</span>
-                    </div>
-                    <span className="text-[10px] text-teal-700 block font-mono">Linked to Dr. Rajesh Sharma (OPD-102)</span>
+            {waterfall ? (
+              <Card className="bg-white border-teal-200 rounded-2xl shadow-xs">
+                <CardHeader className="p-4 pb-2 border-b border-slate-100">
+                  <CardTitle className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-teal-600" />
+                    Financial Waterfall: {selectedBill?.bill_number}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-600">Gross Charges:</span>
+                    <span className="font-mono font-bold">₹{waterfall.gross_charges.toFixed(2)}</span>
                   </div>
-
-                  <div className="p-2 rounded bg-slate-50 border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-900">
-                      <span>Complete Blood Count (CBC)</span>
-                      <span>₹600</span>
-                    </div>
-                    <span className="text-[10px] text-teal-700 block font-mono">Linked to Lab Order LAB-1001</span>
+                  <div className="flex justify-between font-medium text-emerald-700">
+                    <span>Discounts Applied:</span>
+                    <span className="font-mono font-bold">-₹{waterfall.discounts_total.toFixed(2)}</span>
                   </div>
-
-                  <div className="p-2 rounded bg-slate-50 border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-900">
-                      <span>Amoxicillin 500mg (15 Caps)</span>
-                      <span>₹450</span>
-                    </div>
-                    <span className="text-[10px] text-teal-700 block font-mono">Linked to Rx RX-1001 Dispense</span>
+                  <div className="flex justify-between font-medium text-blue-700">
+                    <span>Insurance Approved:</span>
+                    <span className="font-mono font-bold">-₹{waterfall.insurance_approved_total.toFixed(2)}</span>
                   </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-slate-900 text-sm">
-                  <span>Total Amount</span>
-                  <span>₹1,550</span>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex justify-between font-medium text-purple-700">
+                    <span>Government Scheme:</span>
+                    <span className="font-mono font-bold">-₹{waterfall.govt_assistance_approved_total.toFixed(2)}</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-900 text-sm">
+                    <span>Patient Responsibility:</span>
+                    <span className="font-mono text-emerald-800">₹{waterfall.projected_patient_responsibility.toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
-        </div>
-
-        {/* Phase notice */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-500 flex items-start gap-2">
-          <Info className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-          <span>Real-time insurance claim processing and financial assistance splitting belong to Phase 10 & Phase 12.</span>
         </div>
       </div>
     </RoleGuard>

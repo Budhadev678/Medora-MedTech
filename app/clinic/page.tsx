@@ -1,30 +1,40 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { 
-  Building2, 
-  Users, 
-  Stethoscope, 
-  Calendar, 
-  Receipt, 
-  Clock, 
-  ArrowRight, 
-  CheckCircle2, 
+import {
+  Building2,
+  Users,
+  Stethoscope,
+  Calendar,
+  Receipt,
+  Clock,
+  ArrowRight,
+  CheckCircle2,
   Layers,
-  Settings
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/professional/workspace-header";
 import { MetricCard } from "@/components/professional/metric-card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getFacilityById } from "@/lib/data/facility-store";
+import { getDepartmentsForFacility } from "@/lib/data/department-store";
+import { getFacilityDoctors } from "@/lib/data/affiliation-store";
+import { getServicesForFacility } from "@/lib/data/service-store";
 
 export default function ClinicDashboardPage() {
   const { user } = useAuth();
+  const facilityCode = user?.identifier || user?.organizationId || "FAC-2001";
+  const facility = getFacilityById(facilityCode) || getFacilityById("FAC-2001");
+
+  const [departments] = useState(() => getDepartmentsForFacility(facility?.facility_code || "FAC-2001"));
+  const [doctors] = useState(() => getFacilityDoctors(facility?.facility_code || "FAC-2001"));
+  const [services] = useState(() => getServicesForFacility(facility?.facility_code || "FAC-2001"));
 
   return (
     <RoleGuard allowedRoles={["hospital_admin", "doctor", "staff", "admin"]}>
@@ -32,12 +42,12 @@ export default function ClinicDashboardPage() {
         <WorkspaceHeader
           title="Outpatient Clinic Operations"
           description="General medicine, pediatric outpatient consults, day clinic appointment scheduling, and patient intake."
-          facilityContext={user?.organizationName || "Green Care Clinic (CLN-1001)"}
+          facilityContext={facility ? `${facility.name} (${facility.facility_code})` : "Green Care Clinic (FAC-2001)"}
           badgeText="OPD Active"
           actions={
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-semibold text-slate-500">
-                {user?.identifier || "CLN-1001"}
+              <span className="font-mono text-xs font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-100">
+                {facility?.facility_code || "FAC-2001"}
               </span>
             </div>
           }
@@ -46,29 +56,29 @@ export default function ClinicDashboardPage() {
         {/* Operational Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard
-            label="Today's OPD Queue"
-            value="12 Tokens"
-            subtext="Consultation Room 1 Active"
-            badge="Live"
-            icon={<Clock className="h-4 w-4 text-teal-600" />}
+            label="Clinical Units"
+            value={`${departments.length} Units`}
+            subtext="Primary care & pediatrics"
+            badge="Configured"
+            icon={<Layers className="h-4 w-4 text-teal-600" />}
           />
           <MetricCard
             label="Consulting Doctors"
-            value="3 Active"
-            subtext="Dr. Ananya Sharma on duty"
+            value={`${doctors.length} Doctors`}
+            subtext={doctors[0]?.doctor_name || "Specialists on duty"}
             icon={<Stethoscope className="h-4 w-4 text-blue-600" />}
           />
           <MetricCard
-            label="Appointments (Today)"
-            value="18 Booked"
-            subtext="9 Checked-in"
-            icon={<Calendar className="h-4 w-4 text-emerald-600" />}
+            label="Clinical Services"
+            value={`${services.length} Services`}
+            subtext="Consultations & screenings"
+            icon={<Activity className="h-4 w-4 text-emerald-600" />}
           />
           <MetricCard
-            label="Day Clinic Receipts"
-            value="₹9,400"
-            subtext="14 Encounters settled"
-            icon={<Receipt className="h-4 w-4 text-purple-600" />}
+            label="Facility Status"
+            value={facility?.status || "ACTIVE"}
+            subtext={facility?.city || "Cuttack"}
+            icon={<Building2 className="h-4 w-4 text-purple-600" />}
           />
         </div>
 
@@ -81,7 +91,7 @@ export default function ClinicDashboardPage() {
                   <div className="h-8 w-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
                     <Stethoscope className="h-4 w-4" />
                   </div>
-                  <Badge variant="teal" className="text-[10px]">3 Specialists</Badge>
+                  <Badge variant="teal" className="text-[10px]">{doctors.length} Doctors</Badge>
                 </div>
                 <CardTitle className="text-sm font-bold text-slate-900 mt-2 group-hover:text-teal-700 transition-colors">
                   Consulting Physicians
@@ -93,54 +103,80 @@ export default function ClinicDashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/hospital/appointments" className="group">
+          <Link href="/hospital/services" className="group">
             <Card className="bg-white hover:border-blue-400 transition-colors h-full">
               <CardHeader className="p-4 pb-2">
                 <div className="flex items-center justify-between">
                   <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-                    <Calendar className="h-4 w-4" />
+                    <Activity className="h-4 w-4" />
                   </div>
-                  <Badge variant="outline" className="text-[10px]">OPD Tokens</Badge>
+                  <Badge variant="outline" className="text-[10px]">{services.length} Services</Badge>
                 </div>
                 <CardTitle className="text-sm font-bold text-slate-900 mt-2 group-hover:text-blue-700 transition-colors">
-                  Clinic Appointments & Queue
+                  Clinic Services & Procedures
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-500">
-                  Day clinic appointment slots, walk-in tokens, and room allocation.
+                  Outpatient consults, immunizations, and clinical packages offered here.
                 </CardDescription>
               </CardHeader>
             </Card>
           </Link>
 
-          <Link href="/hospital/billing" className="group">
+          <Link href="/hospital/departments" className="group">
             <Card className="bg-white hover:border-purple-400 transition-colors h-full">
               <CardHeader className="p-4 pb-2">
                 <div className="flex items-center justify-between">
                   <div className="h-8 w-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
-                    <Receipt className="h-4 w-4" />
+                    <Layers className="h-4 w-4" />
                   </div>
-                  <Badge variant="teal" className="text-[10px]">Transparent</Badge>
+                  <Badge variant="teal" className="text-[10px]">{departments.length} Units</Badge>
                 </div>
                 <CardTitle className="text-sm font-bold text-slate-900 mt-2 group-hover:text-purple-700 transition-colors">
-                  OPD Invoicing & Receipts
+                  Outpatient Departments
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-500">
-                  Itemized OPD consultation bills with digital payment settlement.
+                  General medicine, pediatrics, and preventive cardiology suites.
                 </CardDescription>
               </CardHeader>
             </Card>
           </Link>
         </div>
 
-        {/* Empty State placeholder for Phase 5 Clinic Service Customizer */}
-        <EmptyState
-          icon={<Building2 className="h-6 w-6 text-teal-600" />}
-          title="Outpatient Clinic Management Desk"
-          description="Clinic specialty offerings (General Medicine, Pediatrics, Dental), visiting doctor hours, and local pharmacy fulfillment will be fully configurable in Phase 5."
-          phase="Phase 5 — Hospital, Department & Facility Setup"
-          actionHref="/doctor"
-          actionLabel="Go to Doctor Clinical Workspace"
-        />
+        {/* Configured Services at this Clinic */}
+        <Card className="bg-white border-slate-200">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-teal-600" />
+                Clinic Offerings & Outpatient Packages ({services.length})
+              </CardTitle>
+              <Link href="/hospital/services">
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-teal-700">
+                  Manage Services →
+                </Button>
+              </Link>
+            </div>
+            <CardDescription className="text-xs text-slate-500">
+              Services actively available for patient booking and intake at {facility?.name}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {services.map((srv) => (
+                <div key={srv.id} className="p-3 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-xs text-slate-900">{srv.name}</span>
+                    <Badge variant="outline" className="text-[10px] bg-white">
+                      ₹{srv.base_price}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-slate-500">{srv.department_name || "Outpatient General"}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{srv.code} • {srv.duration_minutes} mins</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </RoleGuard>
   );

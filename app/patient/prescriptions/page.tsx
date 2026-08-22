@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// MEDORA — PATIENT DIGITAL PRESCRIPTIONS
+// MODIFICATION PHASE C.2 (STRUCTURED MEDICATIONS & OPEN PHARMACY FREEDOM)
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
@@ -15,7 +20,10 @@ import {
   Sparkles,
   ChevronRight,
   Store,
-  QrCode
+  QrCode,
+  AlertCircle,
+  AlertTriangle,
+  Info
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -48,8 +56,8 @@ export default function PatientPrescriptionsPage() {
     return () => window.removeEventListener("medora-prescriptions-updated", handleUpdate);
   }, [user]);
 
-  const activePrescriptions = prescriptions.filter(p => p.status === "ISSUED");
-  const pastPrescriptions = prescriptions.filter(p => p.status === "COMPLETED" || p.status === "CANCELLED" || p.status === "EXPIRED");
+  const activePrescriptions = prescriptions.filter(p => p.status === "ISSUED" || p.status === "FINALIZED");
+  const pastPrescriptions = prescriptions.filter(p => p.status === "COMPLETED" || p.status === "CANCELLED" || p.status === "EXPIRED" || p.status === "VOIDED" || p.status === "SUPERSEDED");
 
   const displayedPrescriptions = activeTab === "active" ? activePrescriptions : pastPrescriptions;
 
@@ -116,6 +124,11 @@ export default function PatientPrescriptionsPage() {
                     >
                       {rx.status}
                     </Badge>
+                    {rx.version && rx.version > 1 && (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-[9px] font-bold">
+                        v{rx.version} (Amended)
+                      </Badge>
+                    )}
                   </div>
                   <span className="text-[11px] text-slate-500 flex items-center gap-1">
                     <Calendar className="h-3 w-3 text-slate-400" />
@@ -127,13 +140,23 @@ export default function PatientPrescriptionsPage() {
                   </span>
                 </div>
 
+                {/* Cancellation Banner if Cancelled */}
+                {rx.status === "CANCELLED" && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                    <span>
+                      <strong>Cancelled by Doctor:</strong> {rx.cancellation_reason || "Discontinued"}
+                    </span>
+                  </div>
+                )}
+
                 {/* Doctor & Facility */}
                 <div className="text-xs space-y-0.5">
                   <span className="font-bold text-slate-900 block text-sm">
                     {rx.prescriber_name}
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    {rx.prescriber_role} • {rx.organization_name}
+                    {rx.prescriber_role} • {rx.facility_name || rx.organization_name}
                   </span>
                 </div>
 
@@ -144,18 +167,24 @@ export default function PatientPrescriptionsPage() {
                   </span>
                   <div className="space-y-2">
                     {rx.items.map((item, idx) => (
-                      <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 space-y-1">
+                      <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-slate-900 text-xs">
                             {item.medicine_name} {item.strength && `(${item.strength})`}
                           </span>
-                          <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-                            {item.route}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {item.is_prn && (
+                              <Badge className="bg-purple-100 text-purple-800 text-[9px]">AS NEEDED (PRN)</Badge>
+                            )}
+                            <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                              {item.route}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px] text-slate-600">
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
                           <span><strong>Dosage:</strong> {item.dosage}</span>
                           <span><strong>Frequency:</strong> {item.frequency}</span>
+                          {item.timing && <span><strong>Timing:</strong> {item.timing.replace(/_/g, " ")}</span>}
                           <span><strong>Duration:</strong> {item.duration}</span>
                         </div>
                         {item.instructions && (
@@ -178,12 +207,12 @@ export default function PatientPrescriptionsPage() {
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>Digitally Certified</span>
+                    <span>Digitally Certified by Doctor</span>
                   </div>
-                  <Link href={`/verify/rx/${rx.id}`} target="_blank">
+                  <Link href={`/verify/prescription/${rx.verification_token || rx.id}`} target="_blank">
                     <Button variant="outline" size="sm" className="text-xs font-bold text-teal-700 border-teal-200 hover:bg-teal-50 h-7 gap-1">
                       <QrCode className="h-3 w-3" />
-                      <span>View QR Slip</span>
+                      <span>Verify Authenticity</span>
                     </Button>
                   </Link>
                 </div>
@@ -195,7 +224,7 @@ export default function PatientPrescriptionsPage() {
             icon={<Pill className="h-6 w-6 text-teal-600" />}
             title={activeTab === "active" ? "No Active Prescriptions" : "No Past Prescriptions"}
             description="Prescriptions authored by your doctors during consultations will automatically appear here with verifiable QR slips."
-            phase="Phase 4.3 — Prescription & Lab Order Foundation"
+            phase="Phase C.2 — Prescription & Medical Order Engine"
             actionHref="/patient"
             actionLabel="Return to Patient Home"
           />

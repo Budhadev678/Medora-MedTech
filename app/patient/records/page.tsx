@@ -31,82 +31,102 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getPatientEncounters, HealthcareEncounter } from "@/lib/data/encounter-store";
 import { getClinicalRecordByEncounterId, ClinicalRecord } from "@/lib/data/clinical-record-store";
+import { getPatientPrescriptions } from "@/lib/data/prescription-store";
+import { getPatientMedicalDocuments } from "@/lib/data/medical-document-store";
 
 export default function PatientRecordsPage() {
   const { user } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [encounters, setEncounters] = useState<HealthcareEncounter[]>([]);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [selectedEncounterDetail, setSelectedEncounterDetail] = useState<HealthcareEncounter | null>(null);
 
-  const refreshEncounters = () => {
+  const refreshAllRecords = () => {
     if (!user) return;
-    const data = getPatientEncounters(user.identifier || user.id);
-    setEncounters(data);
+    const patientId = user.identifier || user.id;
+    setEncounters(getPatientEncounters(patientId));
+    setPrescriptions(getPatientPrescriptions(patientId));
+    setDocuments(getPatientMedicalDocuments(patientId));
   };
 
   useEffect(() => {
-    refreshEncounters();
-    const handleUpdate = () => refreshEncounters();
+    refreshAllRecords();
+    const handleUpdate = () => refreshAllRecords();
     window.addEventListener("medora-encounters-updated", handleUpdate);
     window.addEventListener("medora-clinical-records-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    window.addEventListener("medora-medical-documents-updated", handleUpdate);
     return () => {
       window.removeEventListener("medora-encounters-updated", handleUpdate);
       window.removeEventListener("medora-clinical-records-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+      window.removeEventListener("medora-medical-documents-updated", handleUpdate);
     };
   }, [user]);
 
-  const isRahul = user?.identifier === "PAT-1001";
+  // Map dynamic encounters to RecordCard format (Only finalized/completed encounters released to patient)
+  const dynamicEncounterRecords: PatientRecordProps[] = encounters
+    .filter((enc) => enc.status === "COMPLETED")
+    .map((enc) => {
+      const clinicalRec = getClinicalRecordByEncounterId(enc.id);
+      const diagnosisSummary = clinicalRec?.diagnoses?.length 
+        ? ` • Diagnosis: ${clinicalRec.diagnoses.map((d: any) => d.name).join(", ")}` 
+        : "";
 
-  // Static/Auxiliary Certified Records for PAT-1001
-  const auxiliaryRecords: PatientRecordProps[] = isRahul ? [
-    {
-      id: "RPT-1024",
-      category: "report",
-      title: "Complete Blood Count (CBC) with Differential",
-      facilityName: "ABC Diagnostics (LAB-1001)",
-      date: "20 Aug 2026",
-      summary: "Hemoglobin 14.2 g/dL, Platelets 245,000 /uL, Total WBC 7,800 /uL. All parameters within normal physiological reference ranges.",
-      actionHref: "/verify/lab/LAB-1024",
-      actionLabel: "View Certified Report",
-    },
-    {
-      id: "RX-1001",
-      category: "prescription",
-      title: "Electronic Prescription — Telmisartan 40mg + Aspirin 75mg",
-      doctorName: "Dr. Ananya Sharma",
-      facilityName: "City Hospital OPD",
-      date: "20 Aug 2026",
-      summary: "Digitally signed e-prescription with verifiable cryptographic QR slip. Open pharmacy dispensing enabled.",
-      actionHref: "/verify/rx/RX-1001",
-      actionLabel: "View Slip (QR)",
-    },
-  ] : [];
+      return {
+        id: enc.id,
+        category: "consultation",
+        title: `${enc.encounter_type.replace(/_/g, " ")} — ${enc.department_name}`,
+        doctorName: enc.provider_name,
+        facilityName: `${enc.organization_name}${enc.location ? ` (${enc.location})` : ""}`,
+        date: new Date(enc.started_at).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        summary: `Chief Complaint: ${clinicalRec?.chief_complaint || enc.reason_for_visit}${diagnosisSummary}. Clinically documented by ${enc.provider_name}.`,
+        actionHref: `/patient/records#${enc.id}`,
+        actionLabel: clinicalRec ? "View Clinical Summary" : "View Visit Details",
+      };
+    });
 
-  // Map dynamic encounters to RecordCard format
-  const dynamicEncounterRecords: PatientRecordProps[] = encounters.map((enc) => {
-    const clinicalRec = getClinicalRecordByEncounterId(enc.id);
-    const diagnosisSummary = clinicalRec?.diagnoses?.length 
-      ? ` • Diagnosis: ${clinicalRec.diagnoses.map(d => d.name).join(", ")}` 
-      : "";
+  const dynamicPrescriptionRecords: PatientRecordProps[] = prescriptions.map((rx) => ({
+    id: rx.id,
+    category: "prescription",
+    title: `Electronic Prescription — ${rx.items.map((i: any) => i.medication_name).join(", ")}`,
+    doctorName: rx.doctor_name,
+    facilityName: rx.organization_name,
+    date: new Date(rx.created_at).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    summary: `Prescription with ${rx.items.length} prescribed medications. Open pharmacy dispensing enabled.`,
+    actionHref: "/patient/prescriptions",
+    actionLabel: "View Prescription",
+  }));
 
-    return {
-      id: enc.id,
-      category: "consultation",
-      title: `${enc.encounter_type.replace(/_/g, " ")} — ${enc.department_name}`,
-      doctorName: enc.provider_name,
-      facilityName: `${enc.organization_name}${enc.location ? ` (${enc.location})` : ""}`,
-      date: new Date(enc.started_at).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-      summary: `Chief Complaint: ${clinicalRec?.chief_complaint || enc.reason_for_visit}${diagnosisSummary}. Clinically documented by ${enc.provider_name}.`,
-      actionHref: `/patient/records#${enc.id}`,
-      actionLabel: clinicalRec ? "View Clinical Summary" : "View Visit Details",
-    };
-  });
+  const dynamicDocumentRecords: PatientRecordProps[] = documents.map((doc) => ({
+    id: doc.id,
+    category: "report",
+    title: doc.title,
+    facilityName: doc.source_organization_name,
+    date: new Date(doc.created_at).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    summary: `${doc.description || "Certified medical document"}. Verified: ${doc.verification_status}.`,
+    actionHref: "/patient/documents",
+    actionLabel: "View Certified Document",
+  }));
 
-  const allPatientRecords = [...dynamicEncounterRecords, ...auxiliaryRecords];
+  const allPatientRecords = [
+    ...dynamicEncounterRecords, 
+    ...dynamicPrescriptionRecords, 
+    ...dynamicDocumentRecords
+  ];
 
   const filteredRecords = selectedFilter === "all"
     ? allPatientRecords
@@ -115,8 +135,8 @@ export default function PatientRecordsPage() {
   const filters = [
     { key: "all", label: `All Records (${allPatientRecords.length})` },
     { key: "consultation", label: `Visits & Consultations (${dynamicEncounterRecords.length})` },
-    { key: "report", label: `Lab Reports (${auxiliaryRecords.filter(r => r.category === "report").length})` },
-    { key: "prescription", label: `Prescriptions (${auxiliaryRecords.filter(r => r.category === "prescription").length})` },
+    { key: "prescription", label: `Prescriptions (${dynamicPrescriptionRecords.length})` },
+    { key: "report", label: `Lab Reports & Documents (${dynamicDocumentRecords.length})` },
   ];
 
   // Active encounter's clinical record
@@ -288,7 +308,7 @@ export default function PatientRecordsPage() {
                       Documented Symptoms ({currentClinicalRecord.symptoms.length})
                     </span>
                     <div className="space-y-1.5">
-                      {currentClinicalRecord.symptoms.map((sym, i) => (
+                      {currentClinicalRecord.symptoms.map((sym: any, i: number) => (
                         <div key={i} className="flex items-center justify-between text-slate-800 bg-white p-2 rounded-lg border border-slate-200/60">
                           <span className="font-semibold">{sym.name}</span>
                           <div className="flex items-center gap-1.5">
@@ -360,7 +380,7 @@ export default function PatientRecordsPage() {
                       </span>
                     </div>
                     <div className="space-y-1.5">
-                      {currentClinicalRecord.diagnoses.map((dx, i) => (
+                      {currentClinicalRecord.diagnoses.map((dx: any, i: number) => (
                         <div key={i} className="p-2 rounded-lg bg-white border border-teal-200 flex items-center justify-between">
                           <div>
                             <span className="font-bold text-slate-900 block">{dx.name}</span>

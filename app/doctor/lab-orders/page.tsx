@@ -30,8 +30,11 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth/auth-context";
+import type { 
+  HealthcareLabOrder,
+  LabOrderItem,
+} from "@/types/database.types";
 import { 
-  HealthcareLabOrder, 
   getDoctorLabOrders, 
   cancelLabOrder 
 } from "@/lib/data/lab-order-store";
@@ -73,7 +76,7 @@ export default function DoctorLabOrdersPage() {
       const q = searchQuery.toLowerCase();
       const matchPatient = o.patient_name.toLowerCase().includes(q) || o.patient_id.toLowerCase().includes(q);
       const matchRef = o.order_reference.toLowerCase().includes(q);
-      const matchTest = o.items.some(i => i.test_name.toLowerCase().includes(q));
+      const matchTest = o.items.some((i: LabOrderItem) => i.test_name.toLowerCase().includes(q));
       if (!matchPatient && !matchRef && !matchTest) return false;
     }
     return true;
@@ -252,7 +255,7 @@ export default function DoctorLabOrdersPage() {
 
                   {/* Tests Preview */}
                   <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    {order.items.map((item, idx) => (
+                    {order.items.map((item: LabOrderItem, idx: number) => (
                       <span key={idx} className="text-xs font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                         {item.test_name} {item.specimen_type && `(${item.specimen_type})`}
                       </span>
@@ -357,7 +360,7 @@ export default function DoctorLabOrdersPage() {
                   <span className="font-bold text-slate-900 block uppercase tracking-wider text-[10px]">
                     Requested Diagnostic Tests ({selectedOrder.items.length})
                   </span>
-                  {selectedOrder.items.map((item, idx) => (
+                  {selectedOrder.items.map((item: LabOrderItem, idx: number) => (
                     <div key={idx} className="p-3 rounded-xl border border-slate-200 bg-white space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-900 text-sm">{item.test_name}</span>

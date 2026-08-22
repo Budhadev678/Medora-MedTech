@@ -12,14 +12,14 @@ export default function StaffTasksPage() {
       <div className="space-y-4">
         <PageHeader
           title="Clinical Handover & Duty Tasks"
-          description="Inpatient vitals capture, medication rounds, and nursing checklist."
+          description="Inpatient vitals verification, admissions coordination, and staff checklist."
           breadcrumbs={[{ label: "Staff Workspace", href: "/staff" }, { label: "My Tasks" }]}
         />
 
         <EmptyState
           icon={<ClipboardList className="h-6 w-6 text-teal-600" />}
-          title="Nursing & Clinical Shift Tasks"
-          description="Assigned patient medication schedules and ward round tasks will operate here in Phase 5."
+          title="Operational & Clinical Shift Tasks"
+          description="Assigned patient intake schedules and duty tasks will operate here in Phase 5."
           phase="Phase 5 — Hospital, Department & Facility Setup"
           actionHref="/staff"
           actionLabel="Return to Staff Workspace"

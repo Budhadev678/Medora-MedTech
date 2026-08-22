@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Users, 
@@ -21,7 +21,10 @@ import {
   ShieldCheck,
   MapPin,
   Clock3,
-  X
+  X,
+  Volume2,
+  RotateCcw,
+  Sparkles
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,14 +39,21 @@ import {
   requestDoctorAffiliation, 
   StoredDoctorAffiliation 
 } from "@/lib/data/identity-store";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
+import { QueueManagementService } from "@/lib/services/queue-management-service";
+import { WaitingTimeEstimationService } from "@/lib/services/waiting-time-service";
+import { DoctorQueueSummary, QueueEntry, DoctorOperationalQueueStatus } from "@/types/database.types";
 
 export default function DoctorWorkspacePage() {
-  const { user } = useAuth();
+  const { user, activeMembership } = useAuth();
   const [dutyStatus, setDutyStatus] = useState<"available" | "busy" | "on_call" | "emergency_occupied">("available");
   const [selectedTab, setSelectedTab] = useState<"queue" | "affiliations" | "schedule">("queue");
   const [isAffiliationModalOpen, setIsAffiliationModalOpen] = useState(false);
+
+  // Queue State
+  const [summaries, setSummaries] = useState<DoctorQueueSummary[]>([]);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Request Affiliation Form State
   const [targetFacilityId, setTargetFacilityId] = useState("HSP-1001");
@@ -54,9 +64,135 @@ export default function DoctorWorkspacePage() {
   const [scheduleNotes, setScheduleNotes] = useState("Tue, Thu (02:00 PM - 05:00 PM)");
   const [affiliationMessage, setAffiliationMessage] = useState<string | null>(null);
 
-  // Refresh affiliations from store
+  const doctorId = user?.identifier || "DOC-1001";
+  const orgIdentifier = activeMembership?.organization_identifier || "HSP-1001";
+  const todayStr = getTodayDateStr();
+
+  const [operationalStatuses, setOperationalStatuses] = useState<DoctorOperationalQueueStatus[]>([]);
+
+  const loadQueue = () => {
+    const list = QueueManagementService.getDoctorQueueSummary(doctorId, orgIdentifier, todayStr);
+    setSummaries(list);
+    const ops = WaitingTimeEstimationService.getDoctorOperationalQueueStatus(doctorId, orgIdentifier, todayStr);
+    setOperationalStatuses(ops);
+  };
+
+  useEffect(() => {
+    loadQueue();
+    const handleUpdate = () => loadQueue();
+    window.addEventListener("medora-queue-updated", handleUpdate);
+    return () => window.removeEventListener("medora-queue-updated", handleUpdate);
+  }, [user, activeMembership]);
+
+  const currentOpStatus = operationalStatuses[0];
+
   const currentDoctor = user ? findIdentityById(user.id) || user : null;
   const affiliations: StoredDoctorAffiliation[] = currentDoctor?.doctorData?.affiliations || [];
+
+  const currentSessionSummary = summaries[0];
+  const currentPatient = currentSessionSummary?.current_patient;
+  const nextPatient = currentSessionSummary?.next_patient;
+  const waitingList = currentSessionSummary?.waiting_list || [];
+  const skippedList = currentSessionSummary?.skipped_list || [];
+
+  // Action Handlers
+  const handleCallNext = async () => {
+    if (!currentSessionSummary || !user) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      const res = await QueueManagementService.callNextPatient(
+        { doctor_id: doctorId, session_id: currentSessionSummary.session_id, date: todayStr },
+        user
+      );
+      if (res.success) {
+        setActionMessage(res.message);
+        loadQueue();
+      } else {
+        setActionMessage(res.message);
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || "Failed to call next patient.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleStartConsultation = async (entry: QueueEntry) => {
+    if (!user) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      const res = await QueueManagementService.startConsultation(entry.id, user);
+      if (res.success) {
+        setActionMessage(res.message);
+        loadQueue();
+      } else {
+        setActionMessage(res.message);
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || "Failed to start consultation.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCompleteConsultation = async (entry: QueueEntry) => {
+    if (!user) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      const res = await QueueManagementService.completeConsultation(entry.id, user);
+      if (res.success) {
+        setActionMessage(res.message);
+        loadQueue();
+      } else {
+        setActionMessage(res.message);
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || "Failed to complete consultation.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSkipPatient = async (entry: QueueEntry) => {
+    if (!user) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      const res = await QueueManagementService.skipPatient(entry.id, user, "Patient not present when token called");
+      if (res.success) {
+        setActionMessage(res.message);
+        loadQueue();
+      } else {
+        setActionMessage(res.message);
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || "Failed to skip patient.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRecallPatient = async (entry: QueueEntry) => {
+    if (!user) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      const res = await QueueManagementService.recallPatient(entry.id, user);
+      if (res.success) {
+        setActionMessage(res.message);
+        loadQueue();
+      } else {
+        setActionMessage(res.message);
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || "Failed to recall patient.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleAffiliationRequest = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,46 +218,34 @@ export default function DoctorWorkspacePage() {
     }
   };
 
-  const queuePatients = [
-    { token: "#01", name: "Ananya Mishra", id: "PAT-1002", age: 34, reason: "Chest tightness / Follow-up", status: "completed" },
-    { token: "#02", name: "Rahul Verma", id: "PAT-1001", age: 29, reason: "Routine Checkup & Blood Pressure", status: "in_consultation" },
-    { token: "#03", name: "Amit Das", id: "PAT-1003", age: 62, reason: "ECG Review / Chronic Care", status: "waiting" },
-    { token: "#04", name: "Pooja Das", id: "PAT-1004", age: 45, reason: "Palpitations / New Consultation", status: "waiting" },
-  ];
-
   return (
     <RoleGuard allowedRoles={["doctor", "admin"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200">
         {/* Doctor Header & Duty Status Controller */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-xl font-black text-slate-900">
                 {user?.fullName || "Dr. Ananya Sharma"}
               </h1>
-              <Badge variant="outline" className="text-xs text-teal-700 border-teal-300 font-mono">
-                {user?.identifier || "DOC-1001"}
-              </Badge>
-              <Badge variant="teal" className="text-[10px]">
-                {user?.doctorData?.specialization || "Cardiology"}
+              <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                {doctorId}
+              </span>
+              <Badge variant="outline" className="text-xs text-slate-600 bg-slate-50">
+                {activeMembership?.organization_name || "City Hospital"}
               </Badge>
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-              <span>MCI: <strong className="text-slate-700 font-mono">{user?.doctorData?.medicalRegNo || "MCI-2014-99214"}</strong></span>
-              <span>•</span>
-              <span>
-                Active Affiliations: <strong className="text-teal-800">{affiliations.filter(a => a.status === 'active').length} Facilities</strong>
-              </span>
+            <p className="text-xs text-slate-500 mt-1">
+              Active Context: <strong>{activeMembership?.organization_name || "City Hospital"}</strong> • Cardiology OPD ({currentSessionSummary?.room_number || "Room 102"})
             </p>
           </div>
 
-          {/* Live Duty Status Controller */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1.5 self-start sm:self-auto">
+          <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-slate-700 pl-1">Duty Status:</span>
             <select
               value={dutyStatus}
               onChange={(e) => setDutyStatus(e.target.value as any)}
-              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800 focus:outline-teal-600 cursor-pointer"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-teal-600 cursor-pointer shadow-2xs"
             >
               <option value="available">🟢 Available (Accepting Patients)</option>
               <option value="busy">🟡 In Consultation (Busy)</option>
@@ -131,52 +255,78 @@ export default function DoctorWorkspacePage() {
           </div>
         </div>
 
+        {/* Action / Notification Banner */}
+        {actionMessage && (
+          <div className="rounded-2xl bg-teal-50 border border-teal-200 p-3.5 text-xs text-teal-900 font-medium flex items-center justify-between shadow-2xs animate-in fade-in-50">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-teal-600 flex-shrink-0" />
+              <span>{actionMessage}</span>
+            </div>
+            <button onClick={() => setActionMessage(null)} className="text-teal-700 hover:text-teal-900 text-xs font-bold">✕</button>
+          </div>
+        )}
+
         {/* Clinical Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Today's Appointments</span>
-            <span className="text-xl font-bold text-slate-900 mt-1 block">12 Scheduled</span>
-            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">Room 102 Active</span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Session Capacity</span>
+            <span className="text-xl font-black text-slate-900 mt-1 block">
+              {currentSessionSummary?.booked_count || 0} / {currentSessionSummary?.total_capacity || 12}
+            </span>
+            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">
+              {currentSessionSummary?.session_time || "08:00 AM - 10:00 AM"}
+            </span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Waiting in Queue</span>
-            <span className="text-xl font-bold text-amber-600 mt-1 block">2 Patients</span>
-            <span className="text-[11px] text-slate-500 block mt-0.5">Est. wait: 15 mins</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Waiting in Queue</span>
+            <span className="text-xl font-black text-amber-600 mt-1 block">
+              {waitingList.length} Patients
+            </span>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              {currentSessionSummary?.checked_in_count || 0} Total Checked In
+            </span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Connected Hospitals</span>
-            <span className="text-xl font-bold text-emerald-600 mt-1 block">{affiliations.length} Facilities</span>
-            <span className="text-[11px] text-emerald-600 block mt-0.5">Multi-Practice Active</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Completed Today</span>
+            <span className="text-xl font-black text-emerald-600 mt-1 block">
+              {currentSessionSummary?.completed_count || 0} Consultations
+            </span>
+            <span className="text-[11px] text-emerald-700 block mt-0.5">Clinical Notes Finalized</span>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-xs text-slate-500 block">Pending Lab Reviews</span>
-            <span className="text-xl font-bold text-blue-600 mt-1 block">3 Reports</span>
-            <span className="text-[11px] text-blue-600 block mt-0.5">1 Abnormal Flag</span>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skipped / Missed</span>
+            <span className="text-xl font-black text-slate-700 mt-1 block">
+              {skippedList.length} Recalls
+            </span>
+            <span className="text-[11px] text-slate-400 block mt-0.5">Available for Re-Call</span>
           </div>
         </div>
 
         {/* Operational View Switcher Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2">
-          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold max-w-md">
+          <div className="flex rounded-2xl bg-slate-100 p-1 text-xs font-semibold max-w-md">
             <button
               onClick={() => setSelectedTab("queue")}
-              className={`flex-1 py-1.5 px-4 rounded-lg transition-all ${
+              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
                 selectedTab === "queue" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              OPD Patient Queue (4)
+              OPD Live Queue ({waitingList.length + (currentPatient ? 1 : 0)})
             </button>
             <button
               onClick={() => setSelectedTab("affiliations")}
-              className={`flex-1 py-1.5 px-4 rounded-lg transition-all ${
+              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
                 selectedTab === "affiliations" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              My Hospital Affiliations ({affiliations.length})
+              My Affiliations ({affiliations.length})
             </button>
             <button
               onClick={() => setSelectedTab("schedule")}
-              className={`flex-1 py-1.5 px-4 rounded-lg transition-all ${
+              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
                 selectedTab === "schedule" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -184,35 +334,64 @@ export default function DoctorWorkspacePage() {
             </button>
           </div>
 
+          {selectedTab === "queue" && (
+            <Button 
+              onClick={handleCallNext}
+              disabled={isProcessing || waitingList.length === 0}
+              className="rounded-2xl h-10 px-5 text-xs font-bold bg-teal-700 hover:bg-teal-800 shadow-xs gap-1.5"
+            >
+              <Volume2 className="h-4 w-4" />
+              <span>Call Next Patient</span>
+            </Button>
+          )}
+
           {selectedTab === "affiliations" && (
             <Button 
               size="sm" 
               onClick={() => setIsAffiliationModalOpen(true)}
-              className="gap-1.5 text-xs font-semibold"
+              className="gap-1.5 text-xs font-semibold rounded-2xl"
             >
               <Plus className="h-3.5 w-3.5" /> Request New Affiliation
             </Button>
           )}
         </div>
 
-        {/* TAB 1: OPD LIVE QUEUE */}
+        {/* TAB 1: OPD LIVE QUEUE CONSOLE */}
         {selectedTab === "queue" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <Card className="bg-white">
-                <CardHeader className="p-4 pb-3">
+              <Card className="bg-white border-slate-200 rounded-3xl shadow-xs">
+                <CardHeader className="p-5 pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-sm font-bold text-slate-900">
-                        Current OPD Session Queue
-                      </CardTitle>
-                      <CardDescription className="text-xs text-slate-500">
-                        Room 102 • City Hospital Main OPD • Live Token Dispenser
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold text-slate-900">
+                          Current OPD Session Queue
+                        </CardTitle>
+                        {currentOpStatus && (
+                          <Badge variant={currentOpStatus.delay_status === "DELAYED" ? "warning" : "secondary"} className="text-[10px]">
+                            {currentOpStatus.delay_status === "DELAYED" 
+                              ? `🟡 ${currentOpStatus.delay_notice || "Delay Detected"}`
+                              : `🟢 On Track • Median ${currentOpStatus.historical_median_minutes}m`}
+                          </Badge>
+                        )}
+                      </div>
+                      <CardDescription className="text-xs text-slate-500 mt-0.5">
+                        {currentSessionSummary?.department_name || "Cardiology OPD"} • {currentSessionSummary?.room_number || "Room 102"} • {currentSessionSummary?.session_time}
                       </CardDescription>
                     </div>
-                    <Badge variant="outline" className="text-xs text-teal-800 bg-teal-50 border-teal-200">
-                      Token #02 Active
-                    </Badge>
+                    {currentPatient && (
+                      <div className="text-right">
+                        <Badge variant="teal" className="text-xs font-bold font-mono">
+                          Token #{currentPatient.token_number} Active
+                        </Badge>
+                        {currentOpStatus?.active_patient && currentPatient.status === "IN_CONSULTATION" && (
+                          <span className="text-[10px] text-teal-800 font-mono block mt-0.5 font-semibold">
+                            ⏱️ {currentOpStatus.active_patient.elapsed_minutes}m elapsed
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -221,36 +400,147 @@ export default function DoctorWorkspacePage() {
                       <TableRow className="text-xs bg-slate-50">
                         <TableHead className="w-16">Token</TableHead>
                         <TableHead>Patient Details</TableHead>
-                        <TableHead>Chief Complaint</TableHead>
+                        <TableHead>Source</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {queuePatients.map((pt) => (
-                        <TableRow key={pt.token} className="text-xs hover:bg-slate-50/80">
-                          <TableCell className="font-mono font-bold text-slate-900">{pt.token}</TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-slate-900 block">{pt.name}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{pt.id} • {pt.age}y</span>
+                      {/* Current Patient Row */}
+                      {currentPatient && (
+                        <TableRow className="text-xs bg-teal-50/70 border-l-4 border-l-teal-600 font-medium">
+                          <TableCell className="font-mono font-black text-teal-900 text-sm">
+                            #{currentPatient.token_number}
                           </TableCell>
-                          <TableCell className="text-slate-600 max-w-[180px] truncate">{pt.reason}</TableCell>
                           <TableCell>
-                            <StatusBadge status={pt.status} size="sm" />
+                            <span className="font-bold text-slate-900 block">{currentPatient.patient_name}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{currentPatient.patient_id}</span>
                           </TableCell>
-                          <TableCell className="text-right">
-                            {pt.status === "in_consultation" ? (
-                              <Button size="sm" className="h-7 text-xs font-bold gap-1 bg-teal-700 hover:bg-teal-800">
-                                <Play className="h-3 w-3 fill-current" /> Consult
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px]">
+                              {currentPatient.source}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="teal" className="text-[10px]">
+                              ● {currentPatient.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right space-x-1">
+                            {currentPatient.status === "CALLED" ? (
+                              <Button
+                                size="sm"
+                                onClick={() => handleStartConsultation(currentPatient)}
+                                disabled={isProcessing}
+                                className="h-7 text-xs font-bold bg-teal-700 hover:bg-teal-800 rounded-xl"
+                              >
+                                <Play className="h-3 w-3 mr-1 fill-current" /> Start
                               </Button>
                             ) : (
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                View
-                              </Button>
+                              <div className="inline-flex items-center gap-1">
+                                <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs font-bold text-teal-700 border-teal-300 hover:bg-teal-50 rounded-xl"
+                                  >
+                                    <Stethoscope className="h-3 w-3 mr-1" /> Workspace
+                                  </Button>
+                                </Link>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCompleteConsultation(currentPatient)}
+                                  disabled={isProcessing}
+                                  className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white"
+                                >
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
+                                </Button>
+                              </div>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSkipPatient(currentPatient)}
+                              disabled={isProcessing}
+                              className="h-7 text-xs text-slate-500 rounded-xl"
+                            >
+                              Skip
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {/* Waiting Patients */}
+                      {waitingList.map((pt) => (
+                        <TableRow key={pt.id} className="text-xs hover:bg-slate-50/80">
+                          <TableCell className="font-mono font-bold text-slate-900">
+                            #{pt.token_number}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-semibold text-slate-900 block">{pt.patient_name}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{pt.patient_id}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-[11px] text-slate-500">{pt.source}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-[10px]">
+                              ● Waiting
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStartConsultation(pt)}
+                              disabled={isProcessing || Boolean(currentPatient && currentPatient.status === "IN_CONSULTATION")}
+                              className="h-7 text-xs rounded-xl"
+                            >
+                              Direct Start
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
+
+                      {/* Skipped Patients */}
+                      {skippedList.map((pt) => (
+                        <TableRow key={pt.id} className="text-xs bg-slate-50/60 opacity-80">
+                          <TableCell className="font-mono font-bold text-slate-500">
+                            #{pt.token_number}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium text-slate-700 block">{pt.patient_name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{pt.patient_id} (Skipped)</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-[11px] text-slate-400">{pt.source}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px] text-amber-700 bg-amber-50">
+                              ● Skipped
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRecallPatient(pt)}
+                              disabled={isProcessing}
+                              className="h-7 text-xs rounded-xl text-teal-700 border-teal-300"
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" /> Recall
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+
+                      {!currentPatient && waitingList.length === 0 && skippedList.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
+                            No checked-in patients in queue for this session.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -259,109 +549,97 @@ export default function DoctorWorkspacePage() {
 
             {/* Active Patient Snapshot Side Card */}
             <div className="space-y-4">
-              <Card className="bg-white border-teal-200 shadow-xs">
-                <CardHeader className="p-4 pb-2 bg-teal-50/50 rounded-t-xl border-b border-teal-100">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800">
-                      In Consultation Now
-                    </span>
-                    <Badge variant="teal" className="text-[10px]">Token #02</Badge>
-                  </div>
-                  <CardTitle className="text-sm font-extrabold text-slate-900 mt-1">
-                    Rahul Verma
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500 font-mono">
-                    PAT-1001 • 29 yrs • Male
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 space-y-3 text-xs">
-                  <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-slate-50 text-[11px]">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Blood Group</span>
-                      <span className="font-bold text-rose-700">O Positive</span>
+              {currentPatient ? (
+                <Card className="bg-white border-teal-300 shadow-sm rounded-3xl overflow-hidden">
+                  <CardHeader className="p-5 pb-3 bg-teal-50/80 border-b border-teal-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-900">
+                        {currentPatient.status === "IN_CONSULTATION" ? "In Consultation Now" : "Called Patient"}
+                      </span>
+                      <Badge variant="teal" className="text-xs font-mono font-bold">
+                        Token #{currentPatient.token_number}
+                      </Badge>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">BP Record</span>
-                      <span className="font-bold text-slate-900">138/88 mmHg</span>
+                    <CardTitle className="text-base font-black text-slate-900 mt-1">
+                      {currentPatient.patient_name}
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 font-mono">
+                      {currentPatient.patient_id} • {currentPatient.patient_phone || "+91 98765 00000"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-5 space-y-3 text-xs">
+                    <div className="rounded-2xl bg-slate-50 p-3 text-xs space-y-1.5 border border-slate-100">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Appointment Ref:</span>
+                        <span className="font-mono font-bold text-slate-800">{currentPatient.appointment_id || "Walk-In"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Consultation Room:</span>
+                        <span className="font-bold text-teal-800">{currentPatient.room_number || "Room 102"}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Reported Allergies
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-red-700 bg-red-50 border-red-200">
-                      Penicillin, Peanuts
-                    </Badge>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100">
-                    <Link href="/verify/rx/RX-1001" target="_blank">
-                      <Button variant="outline" size="sm" className="w-full text-xs gap-1.5">
-                        <FileText className="h-3.5 w-3.5 text-teal-600" /> View Previous Rx (RX-1001)
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="pt-2">
+                      <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
+                        <Button className="w-full h-10 text-xs font-bold rounded-2xl bg-teal-700 hover:bg-teal-800 gap-1.5">
+                          <Stethoscope className="h-4 w-4" /> Open Full Clinical Consultation Workspace
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-white border-dashed border-slate-200 rounded-3xl p-6 text-center space-y-2">
+                  <Users className="h-8 w-8 mx-auto text-slate-300" />
+                  <h3 className="text-xs font-bold text-slate-700">No Patient in Consultation</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Click "Call Next Patient" above to announce the next waiting token.
+                  </p>
+                </Card>
+              )}
             </div>
           </div>
         )}
 
-        {/* TAB 2: MY PROFESSIONAL AFFILIATIONS (DOCTOR MULTI-HOSPITAL FOUNDATION) */}
+        {/* TAB 2: MY PROFESSIONAL AFFILIATIONS */}
         {selectedTab === "affiliations" && (
           <div className="space-y-4 animate-in fade-in-50 duration-150">
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 flex items-start gap-3 text-xs text-blue-900">
+            <div className="rounded-3xl border border-blue-200 bg-blue-50/50 p-5 flex items-start gap-3 text-xs text-blue-900">
               <Building2 className="h-5 w-5 text-blue-700 flex-shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold block text-sm">Doctor Multi-Hospital Affiliation Architecture</span>
                 <p className="mt-0.5 text-blue-800 leading-relaxed">
-                  You are registered under one primary MEDORA Doctor Identity (<strong>{user?.identifier || "DOC-1001"}</strong>). You can practice across multiple hospitals, diagnostic centers, and clinics with independent consultation rates, OPD rooms, and schedule allocations.
+                  You are registered under one primary MEDORA Doctor Identity (<strong>{doctorId}</strong>). You can practice across multiple hospitals, diagnostic centers, and clinics with independent consultation rates, OPD rooms, and schedule allocations.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {affiliations.map((aff, index) => (
-                <Card key={aff.id || index} className="bg-white border-slate-200 hover:border-teal-300 transition-all shadow-xs">
-                  <CardHeader className="p-4 pb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {affiliations.map((aff) => (
+                <Card key={aff.id} className="bg-white border-slate-200 rounded-3xl shadow-xs">
+                  <CardHeader className="p-5 pb-2">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-[10px] font-mono font-semibold text-teal-800 bg-teal-50">
-                        {aff.organizationIdentifier || `ORG-${index + 1}`}
-                      </Badge>
-                      <Badge 
-                        variant={aff.status === "active" ? "success" : aff.status === "pending" ? "warning" : "secondary"}
-                        className="text-[10px] capitalize"
-                      >
-                        ● {aff.status}
+                      <CardTitle className="text-sm font-bold text-slate-900">{aff.organizationName}</CardTitle>
+                      <Badge variant={aff.status === "active" ? "teal" : "warning"} className="text-[10px]">
+                        ● {aff.status.toUpperCase()}
                       </Badge>
                     </div>
-                    <CardTitle className="text-sm font-bold text-slate-900 mt-2">
-                      {aff.organizationName}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-slate-500">
-                      {aff.departmentName || "Department of Cardiology"}
+                    <CardDescription className="text-xs text-slate-500 font-mono">
+                      {aff.organizationIdentifier || aff.organizationId} • {aff.roleTitle}
                     </CardDescription>
                   </CardHeader>
-
-                  <CardContent className="p-4 pt-1 space-y-2.5 text-xs text-slate-600">
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Designation / Role:</span>
-                      <span className="font-semibold text-slate-900">{aff.roleTitle}</span>
+                  <CardContent className="p-5 pt-2 text-xs space-y-2 text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span>Department:</span>
+                      <span className="font-semibold text-slate-900">{aff.departmentName}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Consultation Fee:</span>
-                      <span className="font-bold text-slate-900">₹{aff.consultationFee}</span>
+                    <div className="flex items-center justify-between">
+                      <span>OPD Room:</span>
+                      <span className="font-semibold text-slate-900">{aff.opdRoom || "Room 102"}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Assigned OPD Room:</span>
-                      <span className="font-medium text-slate-900">{aff.opdRoom || "OPD 101"}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-500">Verification:</span>
-                      <span className="font-semibold text-emerald-700 flex items-center gap-1">
-                        <ShieldCheck className="h-3.5 w-3.5" /> {aff.verificationStatus || "Verified"}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <span>Consultation Fee:</span>
+                      <span className="font-bold text-teal-800">₹{aff.consultationFee}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -372,157 +650,12 @@ export default function DoctorWorkspacePage() {
 
         {/* TAB 3: WEEKLY SCHEDULE */}
         {selectedTab === "schedule" && (
-          <Card className="bg-white">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold text-slate-900">
-                Multi-Hospital Practice Schedule
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Weekly OPD allocation across all affiliated healthcare facilities.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-2">
-              <div className="divide-y divide-slate-100 text-xs">
-                <div className="py-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-900 block">City Hospital (HSP-1001)</span>
-                    <span className="text-slate-500">Mon, Wed, Fri • 09:00 AM - 01:00 PM • Room 102</span>
-                  </div>
-                  <Badge variant="teal" className="text-xs">Consultant</Badge>
-                </div>
-                <div className="py-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-900 block">Green Care Hospital (HSP-1002)</span>
-                    <span className="text-slate-500">Tue, Thu • 02:00 PM - 05:00 PM • Visiting Suite 2</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">Visiting Specialist</Badge>
-                </div>
-                <div className="py-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-900 block">Green Care Clinic (CLN-1001)</span>
-                    <span className="text-slate-500">Sat • 10:00 AM - 02:00 PM • Clinic Suite 1</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">Consultant</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* REQUEST NEW AFFILIATION MODAL */}
-        {isAffiliationModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in-50 duration-150">
-            <Card className="w-full max-w-md bg-white shadow-2xl border-slate-200">
-              <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">
-                    Request Healthcare Facility Affiliation
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
-                    Apply to practice at another verified hospital or clinic.
-                  </CardDescription>
-                </div>
-                <button
-                  onClick={() => setIsAffiliationModalOpen(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </CardHeader>
-
-              <form onSubmit={handleAffiliationRequest}>
-                <CardContent className="p-5 pt-0 space-y-3.5 text-xs">
-                  {affiliationMessage && (
-                    <div className="p-2.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-900 font-semibold text-xs">
-                      {affiliationMessage}
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Target Healthcare Facility</Label>
-                    <select
-                      value={targetFacilityId}
-                      onChange={(e) => setTargetFacilityId(e.target.value)}
-                      className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800"
-                      required
-                    >
-                      <option value="HSP-1001">City Hospital (HSP-1001) — Bhubaneswar</option>
-                      <option value="HSP-1002">Green Care Hospital (HSP-1002) — Cuttack</option>
-                      <option value="CLN-1001">Green Care Clinic (CLN-1001) — Cuttack</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Requested Role Title</Label>
-                      <Input
-                        value={roleTitle}
-                        onChange={(e) => setRoleTitle(e.target.value)}
-                        placeholder="e.g. Visiting Specialist"
-                        className="text-xs"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Consultation Fee (₹)</Label>
-                      <Input
-                        type="number"
-                        value={consultationFee}
-                        onChange={(e) => setConsultationFee(Number(e.target.value))}
-                        className="text-xs"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Department Name</Label>
-                    <Input
-                      value={departmentName}
-                      onChange={(e) => setDepartmentName(e.target.value)}
-                      placeholder="e.g. Department of Cardiology"
-                      className="text-xs"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">OPD Room / Chamber</Label>
-                      <Input
-                        value={opdRoom}
-                        onChange={(e) => setOpdRoom(e.target.value)}
-                        placeholder="e.g. OPD Room 204"
-                        className="text-xs"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Proposed Timings</Label>
-                      <Input
-                        value={scheduleNotes}
-                        onChange={(e) => setScheduleNotes(e.target.value)}
-                        placeholder="e.g. Tue, Thu 2-5 PM"
-                        className="text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setIsAffiliationModalOpen(false)}
-                      className="flex-1 text-xs"
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="flex-1 text-xs font-bold">
-                      Submit Affiliation Request
-                    </Button>
-                  </div>
-                </CardContent>
-              </form>
-            </Card>
+          <div className="space-y-4">
+            <Link href="/doctor/schedule">
+              <Button className="rounded-2xl h-10 px-5 text-xs font-bold bg-teal-700 hover:bg-teal-800">
+                <span>Manage Working Sessions & Capacity →</span>
+              </Button>
+            </Link>
           </div>
         )}
       </div>
