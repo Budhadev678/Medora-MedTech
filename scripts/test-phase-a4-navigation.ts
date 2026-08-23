@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // MEDORA â€” MODIFICATION PHASE A.4 AUTOMATED TEST SUITE
 // DASHBOARD, WORKSPACE & NAVIGATION ARCHITECTURE (TEST MATRIX)
 // ============================================================
@@ -80,11 +80,11 @@ console.log("--- TEST 1: PATIENT MOBILE WORKSPACE & NAVIGATION ---");
 const patWs = resolveWorkspace(patientA, null, "patient");
 assert(patWs?.id === "patient_mobile", "Patient A resolves patient_mobile workspace");
 assert(patWs?.landingRoute === "/patient", "Patient landing route is /patient");
-assert(PATIENT_PRIMARY_NAV.length === 3, "Patient primary bottom navigation has 3 core items (Home, Appointments, Health)");
-const hasMoreDocuments = PATIENT_MORE_NAV.some(i => i.href === "/patient/documents");
-const hasMoreInsurance = PATIENT_MORE_NAV.some(i => i.href === "/patient/insurance");
-const hasMoreGovt = PATIENT_MORE_NAV.some(i => i.href === "/patient/government");
-const hasMoreFinance = PATIENT_MORE_NAV.some(i => i.href === "/patient/finance");
+assert(PATIENT_PRIMARY_NAV.length === 5, "Patient primary bottom navigation has 5 core items");
+const hasMoreDocuments = PATIENT_MORE_NAV.some((i: any) => i.href === "/patient/documents");
+const hasMoreInsurance = PATIENT_MORE_NAV.some((i: any) => i.href === "/patient/insurance");
+const hasMoreGovt = PATIENT_MORE_NAV.some((i: any) => i.href === "/patient/government");
+const hasMoreFinance = PATIENT_MORE_NAV.some((i: any) => i.href === "/patient/finance");
 assert(hasMoreDocuments && hasMoreInsurance && hasMoreGovt && hasMoreFinance, "Patient More drawer contains certified Documents, Insurance, Govt Schemes, and Financing");
 
 // ------------------------------------------------------------

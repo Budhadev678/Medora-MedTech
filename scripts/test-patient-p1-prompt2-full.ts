@@ -1,4 +1,4 @@
-﻿import { PATIENT_PRIMARY_NAV, PATIENT_MORE_NAV } from "../lib/navigation";
+import { PATIENT_PRIMARY_NAV, PATIENT_MORE_NAV } from "../lib/navigation";
 import { findIdentityById } from "../lib/data/identity-store";
 import { AppointmentStore } from "../lib/data/appointment-store";
 import { getPatientEncounters } from "../lib/data/encounter-store";
@@ -35,12 +35,12 @@ async function runPrompt2Suite() {
   assert(PATIENT_PRIMARY_NAV.length === 5, "1.1 Exactly 5 canonical workspaces in primary navigation");
   
   const expectedHrefs = ["/patient", "/patient/appointments", "/patient/health", "/patient/billing", "/patient/profile"];
-  const actualHrefs = PATIENT_PRIMARY_NAV.map((n) => n.href);
+  const actualHrefs = PATIENT_PRIMARY_NAV.map((n: any) => n.href);
   assert(expectedHrefs.every((h) => actualHrefs.includes(h)), "1.2 Primary navigation covers Home, Appointments, My Health, Bills & Payments, and Profile");
 
   // 2. Secondary Navigation Cleanliness
   console.log("\nTEST GROUP 2: Secondary Utilities (No Major Workflows Buried in More)");
-  const moreHrefs = PATIENT_MORE_NAV.map((n) => n.href);
+  const moreHrefs = PATIENT_MORE_NAV.map((n: any) => n.href);
   assert(!moreHrefs.includes("/patient/appointments"), "2.1 Appointments NOT buried in More menu");
   assert(!moreHrefs.includes("/patient/health"), "2.2 My Health NOT buried in More menu");
   assert(!moreHrefs.includes("/patient/billing"), "2.3 Bills & Payments NOT buried in More menu");

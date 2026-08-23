@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // MEDORA â€” PATIENT INFORMATION ARCHITECTURE & NAVIGATION TEST SUITE
 // P1 PROMPT 1 ACCEPTANCE VERIFICATION
 // ============================================================
@@ -133,7 +133,7 @@ async function runPatientP1Suite() {
   // ------------------------------------------------------------
   console.log("\nTEST GROUP 5: Secondary Utilities & 'More' Menu Scope");
 
-  const secondaryHrefs = PATIENT_MORE_NAV.map((n) => n.href);
+  const secondaryHrefs = PATIENT_MORE_NAV.map((n: any) => n.href);
   assert(
     !secondaryHrefs.includes("/patient/prescriptions") &&
     !secondaryHrefs.includes("/patient/bills") &&

@@ -96,7 +96,7 @@ async function runDoctorStep1Suite() {
   // Attempt to switch Doctor A to an unauthorized facility (e.g. HSP-9999)
   const invalidSwitch = setActiveDoctorAffiliation("DOC-1001", "aff-9999");
   assert(invalidSwitch.success === false, "5.1 Unauthorized facility switch is rejected");
-  assert(Boolean(invalidSwitch.error?.includes("UNAUTHORIZED_FACILITY")), "5.2 Error code indicates UNAUTHORIZED_FACILITY");
+  assert(Boolean(invalidSwitch.error && invalidSwitch.error.includes("UNAUTHORIZED_FACILITY")), "5.2 Error code indicates UNAUTHORIZED_FACILITY");
 
   // Doctor B only has HSP-1001, attempts to access CLN-1001
   assert(isDoctorAuthorizedForFacility("DOC-1002", "HSP-1001") === true, "5.3 Doctor B is authorized for HSP-1001");

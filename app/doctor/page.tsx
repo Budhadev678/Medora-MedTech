@@ -6,658 +6,876 @@ import {
   Users, 
   Stethoscope, 
   FileText, 
-  FlaskConical, 
   Clock, 
   CheckCircle2, 
   AlertTriangle,
   Play,
+  Pause,
+  StopCircle,
   ArrowRight,
-  Calendar,
-  Layers,
-  Info,
-  ChevronRight,
-  Building2,
-  Plus,
-  ShieldCheck,
-  MapPin,
-  Clock3,
   X,
   Volume2,
   RotateCcw,
-  Sparkles
+  UserCheck,
+  UserX,
+  AlertOctagon,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
 import { 
-  getAllIdentities, 
-  findIdentityById, 
-  requestDoctorAffiliation, 
-  StoredDoctorAffiliation 
-} from "@/lib/data/identity-store";
+  getDoctorContext, 
+  setDoctorSessionStatus, 
+  setDoctorDutyStatus,
+  DoctorActiveContext,
+  DoctorSessionStatus
+} from "@/lib/data/doctor-context-store";
 import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
 import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { WaitingTimeEstimationService } from "@/lib/services/waiting-time-service";
+import { getEmergenciesForFacility, PatientEmergencyCase } from "@/lib/data/emergency-store";
 import { DoctorQueueSummary, QueueEntry, DoctorOperationalQueueStatus } from "@/types/database.types";
 
 export default function DoctorWorkspacePage() {
-  const { user, activeMembership } = useAuth();
-  const [dutyStatus, setDutyStatus] = useState<"available" | "busy" | "on_call" | "emergency_occupied">("available");
-  const [selectedTab, setSelectedTab] = useState<"queue" | "affiliations" | "schedule">("queue");
-  const [isAffiliationModalOpen, setIsAffiliationModalOpen] = useState(false);
-
-  // Queue State
+  const { user } = useAuth();
+  const doctorId = user?.identifier || user?.id || "DOC-1001";
+  
+  const [context, setContext] = useState<DoctorActiveContext | null>(null);
   const [summaries, setSummaries] = useState<DoctorQueueSummary[]>([]);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [emergencies, setEmergencies] = useState<PatientEmergencyCase[]>([]);
+  const [operationalStatuses, setOperationalStatuses] = useState<DoctorOperationalQueueStatus[]>([]);
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "WAITING" | "CURRENT" | "SKIPPED" | "COMPLETED">("ALL");
+  
+  // Action & Modal States
   const [isProcessing, setIsProcessing] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  
+  const [skipModalEntry, setSkipModalEntry] = useState<QueueEntry | null>(null);
+  const [skipReason, setSkipReason] = useState("Patient stepped out of waiting lobby");
+  const [noShowModalEntry, setNoShowModalEntry] = useState<QueueEntry | null>(null);
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
 
-  // Request Affiliation Form State
-  const [targetFacilityId, setTargetFacilityId] = useState("HSP-1001");
-  const [roleTitle, setRoleTitle] = useState("Visiting Specialist");
-  const [departmentName, setDepartmentName] = useState("Cardiology Outpatient Clinic");
-  const [consultationFee, setConsultationFee] = useState(500);
-  const [opdRoom, setOpdRoom] = useState("OPD Room 204");
-  const [scheduleNotes, setScheduleNotes] = useState("Tue, Thu (02:00 PM - 05:00 PM)");
-  const [affiliationMessage, setAffiliationMessage] = useState<string | null>(null);
-
-  const doctorId = user?.identifier || "DOC-1001";
-  const orgIdentifier = activeMembership?.organization_identifier || "HSP-1001";
   const todayStr = getTodayDateStr();
 
-  const [operationalStatuses, setOperationalStatuses] = useState<DoctorOperationalQueueStatus[]>([]);
+  const loadData = () => {
+    const ctx = getDoctorContext(doctorId);
+    setContext(ctx);
 
-  const loadQueue = () => {
-    const list = QueueManagementService.getDoctorQueueSummary(doctorId, orgIdentifier, todayStr);
-    setSummaries(list);
-    const ops = WaitingTimeEstimationService.getDoctorOperationalQueueStatus(doctorId, orgIdentifier, todayStr);
+    const facilityId = ctx?.facilityId || "HSP-1001";
+    const queueList = QueueManagementService.getDoctorQueueSummary(doctorId, facilityId, todayStr);
+    setSummaries(queueList);
+
+    const ops = WaitingTimeEstimationService.getDoctorOperationalQueueStatus(doctorId, facilityId, todayStr);
     setOperationalStatuses(ops);
+
+    const emrList = getEmergenciesForFacility("FAC-1001").filter(
+      (e) => e.status !== "COMPLETED" && e.status !== "CANCELLED"
+    );
+    setEmergencies(emrList);
   };
 
   useEffect(() => {
-    loadQueue();
-    const handleUpdate = () => loadQueue();
-    window.addEventListener("medora-queue-updated", handleUpdate);
-    return () => window.removeEventListener("medora-queue-updated", handleUpdate);
-  }, [user, activeMembership]);
+    loadData();
 
-  const currentOpStatus = operationalStatuses[0];
+    const handleContextChange = () => loadData();
+    const handleQueueUpdate = () => loadData();
 
-  const currentDoctor = user ? findIdentityById(user.id) || user : null;
-  const affiliations: StoredDoctorAffiliation[] = currentDoctor?.doctorData?.affiliations || [];
+    window.addEventListener("medora-doctor-context-changed", handleContextChange);
+    window.addEventListener("medora-queue-updated", handleQueueUpdate);
 
-  const currentSessionSummary = summaries[0];
-  const currentPatient = currentSessionSummary?.current_patient;
-  const nextPatient = currentSessionSummary?.next_patient;
-  const waitingList = currentSessionSummary?.waiting_list || [];
-  const skippedList = currentSessionSummary?.skipped_list || [];
+    return () => {
+      window.removeEventListener("medora-doctor-context-changed", handleContextChange);
+      window.removeEventListener("medora-queue-updated", handleQueueUpdate);
+    };
+  }, [doctorId]);
 
-  // Action Handlers
+  const currentSummary = summaries[0];
+  const currentPatient = currentSummary?.current_patient;
+  const nextPatient = currentSummary?.next_patient;
+  const waitingList = currentSummary?.waiting_list || [];
+  const skippedList = currentSummary?.skipped_list || [];
+  const completedCount = currentSummary?.completed_count || 0;
+  const totalBooked = currentSummary?.booked_count || 0;
+  const totalCapacity = currentSummary?.total_capacity || 12;
+  const sessionStatus: DoctorSessionStatus = context?.sessionStatus || "ACTIVE";
+
+  // Action: Call Next Patient
   const handleCallNext = async () => {
-    if (!currentSessionSummary || !user) return;
+    if (!currentSummary || !user || sessionStatus === "PAUSED" || isProcessing) return;
     setIsProcessing(true);
     setActionMessage(null);
     try {
       const res = await QueueManagementService.callNextPatient(
-        { doctor_id: doctorId, session_id: currentSessionSummary.session_id, date: todayStr },
+        { doctor_id: doctorId, session_id: currentSummary.session_id, date: todayStr },
         user
       );
       if (res.success) {
-        setActionMessage(res.message);
-        loadQueue();
+        setActionMessage({ type: "success", text: res.message });
+        loadData();
       } else {
-        setActionMessage(res.message);
+        setActionMessage({ type: "error", text: res.message });
       }
     } catch (err: any) {
-      setActionMessage(err.message || "Failed to call next patient.");
+      setActionMessage({ type: "error", text: err.message || "Failed to call next patient." });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleStartConsultation = async (entry: QueueEntry) => {
-    if (!user) return;
+  // Action: Call Specific Patient
+  const handleCallSpecific = async (entry: QueueEntry) => {
+    if (!user || sessionStatus === "PAUSED" || isProcessing) return;
     setIsProcessing(true);
     setActionMessage(null);
     try {
-      const res = await QueueManagementService.startConsultation(entry.id, user);
+      const res = await QueueManagementService.callPatient(entry.id, user);
       if (res.success) {
-        setActionMessage(res.message);
-        loadQueue();
+        setActionMessage({ type: "success", text: res.message });
+        loadData();
       } else {
-        setActionMessage(res.message);
+        setActionMessage({ type: "error", text: res.message });
       }
     } catch (err: any) {
-      setActionMessage(err.message || "Failed to start consultation.");
+      setActionMessage({ type: "error", text: err.message || "Failed to call patient." });
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // Action: Complete Consultation
   const handleCompleteConsultation = async (entry: QueueEntry) => {
-    if (!user) return;
+    if (!user || isProcessing) return;
     setIsProcessing(true);
     setActionMessage(null);
     try {
       const res = await QueueManagementService.completeConsultation(entry.id, user);
       if (res.success) {
-        setActionMessage(res.message);
-        loadQueue();
+        setActionMessage({ type: "success", text: `Consultation completed for Token #${entry.token_number} (${entry.patient_name}).` });
+        loadData();
       } else {
-        setActionMessage(res.message);
+        setActionMessage({ type: "error", text: res.message });
       }
     } catch (err: any) {
-      setActionMessage(err.message || "Failed to complete consultation.");
+      setActionMessage({ type: "error", text: err.message || "Failed to complete consultation." });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleSkipPatient = async (entry: QueueEntry) => {
-    if (!user) return;
+  // Action: Skip Patient
+  const handleConfirmSkip = async () => {
+    if (!skipModalEntry || !user || isProcessing) return;
     setIsProcessing(true);
-    setActionMessage(null);
     try {
-      const res = await QueueManagementService.skipPatient(entry.id, user, "Patient not present when token called");
+      const res = await QueueManagementService.skipPatient(skipModalEntry.id, user, skipReason);
       if (res.success) {
-        setActionMessage(res.message);
-        loadQueue();
+        setActionMessage({ type: "success", text: `Patient Token #${skipModalEntry.token_number} moved to skipped list.` });
+        setSkipModalEntry(null);
+        loadData();
       } else {
-        setActionMessage(res.message);
+        setActionMessage({ type: "error", text: res.message });
       }
     } catch (err: any) {
-      setActionMessage(err.message || "Failed to skip patient.");
+      setActionMessage({ type: "error", text: err.message || "Failed to skip patient." });
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // Action: Recall Patient
   const handleRecallPatient = async (entry: QueueEntry) => {
-    if (!user) return;
+    if (!user || isProcessing) return;
     setIsProcessing(true);
-    setActionMessage(null);
     try {
       const res = await QueueManagementService.recallPatient(entry.id, user);
       if (res.success) {
-        setActionMessage(res.message);
-        loadQueue();
+        setActionMessage({ type: "success", text: `Recalled Token #${entry.token_number} back to waiting queue.` });
+        loadData();
       } else {
-        setActionMessage(res.message);
+        setActionMessage({ type: "error", text: res.message });
       }
     } catch (err: any) {
-      setActionMessage(err.message || "Failed to recall patient.");
+      setActionMessage({ type: "error", text: err.message || "Failed to recall patient." });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleAffiliationRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    
-    const result = requestDoctorAffiliation(user.id, {
-      organizationIdOrIdentifier: targetFacilityId,
-      roleTitle,
-      departmentName,
-      consultationFee,
-      opdRoom,
-      scheduleNotes,
-    });
-
-    if (result.success) {
-      setAffiliationMessage("Affiliation request submitted successfully! Awaiting hospital review.");
-      setTimeout(() => {
-        setIsAffiliationModalOpen(false);
-        setAffiliationMessage(null);
-      }, 1500);
-    } else {
-      setAffiliationMessage(result.error || "Failed to submit affiliation request.");
+  // Action: No-Show
+  const handleConfirmNoShow = async () => {
+    if (!noShowModalEntry || !user || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const res = await QueueManagementService.markNoShow(noShowModalEntry.id, user, "Patient did not attend after multiple calls");
+      if (res.success) {
+        setActionMessage({ type: "success", text: `Marked Token #${noShowModalEntry.token_number} as No-Show.` });
+        setNoShowModalEntry(null);
+        loadData();
+      } else {
+        setActionMessage({ type: "error", text: res.message });
+      }
+    } catch (err: any) {
+      setActionMessage({ type: "error", text: err.message || "Failed to mark no-show." });
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  // Action: Session State Toggle (Pause / Resume / End)
+  const handleToggleSessionPause = () => {
+    const nextState: DoctorSessionStatus = sessionStatus === "PAUSED" ? "ACTIVE" : "PAUSED";
+    setDoctorSessionStatus(doctorId, nextState);
+    loadData();
+  };
+
+  const handleEndSession = () => {
+    setDoctorSessionStatus(doctorId, "ENDED");
+    setDoctorDutyStatus(doctorId, "OFF_DUTY");
+    setShowEndSessionModal(false);
+    loadData();
   };
 
   return (
     <RoleGuard allowedRoles={["doctor", "admin"]}>
-      <div className="space-y-6 animate-in fade-in-50 duration-200">
-        {/* Doctor Header & Duty Status Controller */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-black text-slate-900">
-                {user?.fullName || "Dr. Ananya Sharma"}
-              </h1>
-              <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                {doctorId}
-              </span>
-              <Badge variant="outline" className="text-xs text-slate-600 bg-slate-50">
-                {activeMembership?.organization_name || "City Hospital"}
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Active Context: <strong>{activeMembership?.organization_name || "City Hospital"}</strong> • Cardiology OPD ({currentSessionSummary?.room_number || "Room 102"})
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-700 pl-1">Duty Status:</span>
-            <select
-              value={dutyStatus}
-              onChange={(e) => setDutyStatus(e.target.value as any)}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-teal-600 cursor-pointer shadow-2xs"
-            >
-              <option value="available">🟢 Available (Accepting Patients)</option>
-              <option value="busy">🟡 In Consultation (Busy)</option>
-              <option value="on_call">🔵 On Call</option>
-              <option value="emergency_occupied">🔴 Emergency Occupied</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Action / Notification Banner */}
-        {actionMessage && (
-          <div className="rounded-2xl bg-teal-50 border border-teal-200 p-3.5 text-xs text-teal-900 font-medium flex items-center justify-between shadow-2xs animate-in fade-in-50">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-teal-600 flex-shrink-0" />
-              <span>{actionMessage}</span>
-            </div>
-            <button onClick={() => setActionMessage(null)} className="text-teal-700 hover:text-teal-900 text-xs font-bold">✕</button>
-          </div>
-        )}
-
-        {/* Clinical Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Session Capacity</span>
-            <span className="text-xl font-black text-slate-900 mt-1 block">
-              {currentSessionSummary?.booked_count || 0} / {currentSessionSummary?.total_capacity || 12}
-            </span>
-            <span className="text-[11px] text-teal-700 font-medium block mt-0.5">
-              {currentSessionSummary?.session_time || "08:00 AM - 10:00 AM"}
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Waiting in Queue</span>
-            <span className="text-xl font-black text-amber-600 mt-1 block">
-              {waitingList.length} Patients
-            </span>
-            <span className="text-[11px] text-slate-500 block mt-0.5">
-              {currentSessionSummary?.checked_in_count || 0} Total Checked In
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Completed Today</span>
-            <span className="text-xl font-black text-emerald-600 mt-1 block">
-              {currentSessionSummary?.completed_count || 0} Consultations
-            </span>
-            <span className="text-[11px] text-emerald-700 block mt-0.5">Clinical Notes Finalized</span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skipped / Missed</span>
-            <span className="text-xl font-black text-slate-700 mt-1 block">
-              {skippedList.length} Recalls
-            </span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">Available for Re-Call</span>
-          </div>
-        </div>
-
-        {/* Operational View Switcher Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2">
-          <div className="flex rounded-2xl bg-slate-100 p-1 text-xs font-semibold max-w-md">
-            <button
-              onClick={() => setSelectedTab("queue")}
-              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
-                selectedTab === "queue" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              OPD Live Queue ({waitingList.length + (currentPatient ? 1 : 0)})
-            </button>
-            <button
-              onClick={() => setSelectedTab("affiliations")}
-              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
-                selectedTab === "affiliations" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              My Affiliations ({affiliations.length})
-            </button>
-            <button
-              onClick={() => setSelectedTab("schedule")}
-              className={`flex-1 py-2 px-4 rounded-xl transition-all ${
-                selectedTab === "schedule" ? "bg-white text-teal-900 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Weekly Schedule
-            </button>
-          </div>
-
-          {selectedTab === "queue" && (
-            <Button 
-              onClick={handleCallNext}
-              disabled={isProcessing || waitingList.length === 0}
-              className="rounded-2xl h-10 px-5 text-xs font-bold bg-teal-700 hover:bg-teal-800 shadow-xs gap-1.5"
-            >
-              <Volume2 className="h-4 w-4" />
-              <span>Call Next Patient</span>
-            </Button>
-          )}
-
-          {selectedTab === "affiliations" && (
-            <Button 
-              size="sm" 
-              onClick={() => setIsAffiliationModalOpen(true)}
-              className="gap-1.5 text-xs font-semibold rounded-2xl"
-            >
-              <Plus className="h-3.5 w-3.5" /> Request New Affiliation
-            </Button>
-          )}
-        </div>
-
-        {/* TAB 1: OPD LIVE QUEUE CONSOLE */}
-        {selectedTab === "queue" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <Card className="bg-white border-slate-200 rounded-3xl shadow-xs">
-                <CardHeader className="p-5 pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-slate-900">
-                          Current OPD Session Queue
-                        </CardTitle>
-                        {currentOpStatus && (
-                          <Badge variant={currentOpStatus.delay_status === "DELAYED" ? "warning" : "secondary"} className="text-[10px]">
-                            {currentOpStatus.delay_status === "DELAYED" 
-                              ? `🟡 ${currentOpStatus.delay_notice || "Delay Detected"}`
-                              : `🟢 On Track • Median ${currentOpStatus.historical_median_minutes}m`}
-                          </Badge>
-                        )}
-                      </div>
-                      <CardDescription className="text-xs text-slate-500 mt-0.5">
-                        {currentSessionSummary?.department_name || "Cardiology OPD"} • {currentSessionSummary?.room_number || "Room 102"} • {currentSessionSummary?.session_time}
-                      </CardDescription>
-                    </div>
-                    {currentPatient && (
-                      <div className="text-right">
-                        <Badge variant="teal" className="text-xs font-bold font-mono">
-                          Token #{currentPatient.token_number} Active
-                        </Badge>
-                        {currentOpStatus?.active_patient && currentPatient.status === "IN_CONSULTATION" && (
-                          <span className="text-[10px] text-teal-800 font-mono block mt-0.5 font-semibold">
-                            ⏱️ {currentOpStatus.active_patient.elapsed_minutes}m elapsed
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="text-xs bg-slate-50">
-                        <TableHead className="w-16">Token</TableHead>
-                        <TableHead>Patient Details</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Current Patient Row */}
-                      {currentPatient && (
-                        <TableRow className="text-xs bg-teal-50/70 border-l-4 border-l-teal-600 font-medium">
-                          <TableCell className="font-mono font-black text-teal-900 text-sm">
-                            #{currentPatient.token_number}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-bold text-slate-900 block">{currentPatient.patient_name}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{currentPatient.patient_id}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-[10px]">
-                              {currentPatient.source}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="teal" className="text-[10px]">
-                              ● {currentPatient.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right space-x-1">
-                            {currentPatient.status === "CALLED" ? (
-                              <Button
-                                size="sm"
-                                onClick={() => handleStartConsultation(currentPatient)}
-                                disabled={isProcessing}
-                                className="h-7 text-xs font-bold bg-teal-700 hover:bg-teal-800 rounded-xl"
-                              >
-                                <Play className="h-3 w-3 mr-1 fill-current" /> Start
-                              </Button>
-                            ) : (
-                              <div className="inline-flex items-center gap-1">
-                                <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 text-xs font-bold text-teal-700 border-teal-300 hover:bg-teal-50 rounded-xl"
-                                  >
-                                    <Stethoscope className="h-3 w-3 mr-1" /> Workspace
-                                  </Button>
-                                </Link>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleCompleteConsultation(currentPatient)}
-                                  disabled={isProcessing}
-                                  className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white"
-                                >
-                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
-                                </Button>
-                              </div>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSkipPatient(currentPatient)}
-                              disabled={isProcessing}
-                              className="h-7 text-xs text-slate-500 rounded-xl"
-                            >
-                              Skip
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      )}
-
-                      {/* Waiting Patients */}
-                      {waitingList.map((pt) => (
-                        <TableRow key={pt.id} className="text-xs hover:bg-slate-50/80">
-                          <TableCell className="font-mono font-bold text-slate-900">
-                            #{pt.token_number}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-slate-900 block">{pt.patient_name}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{pt.patient_id}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-[11px] text-slate-500">{pt.source}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-[10px]">
-                              ● Waiting
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStartConsultation(pt)}
-                              disabled={isProcessing || Boolean(currentPatient && currentPatient.status === "IN_CONSULTATION")}
-                              className="h-7 text-xs rounded-xl"
-                            >
-                              Direct Start
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-
-                      {/* Skipped Patients */}
-                      {skippedList.map((pt) => (
-                        <TableRow key={pt.id} className="text-xs bg-slate-50/60 opacity-80">
-                          <TableCell className="font-mono font-bold text-slate-500">
-                            #{pt.token_number}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium text-slate-700 block">{pt.patient_name}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">{pt.patient_id} (Skipped)</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-[11px] text-slate-400">{pt.source}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-[10px] text-amber-700 bg-amber-50">
-                              ● Skipped
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRecallPatient(pt)}
-                              disabled={isProcessing}
-                              className="h-7 text-xs rounded-xl text-teal-700 border-teal-300"
-                            >
-                              <RotateCcw className="h-3 w-3 mr-1" /> Recall
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-
-                      {!currentPatient && waitingList.length === 0 && skippedList.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-xs">
-                            No checked-in patients in queue for this session.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Active Patient Snapshot Side Card */}
-            <div className="space-y-4">
-              {currentPatient ? (
-                <Card className="bg-white border-teal-300 shadow-sm rounded-3xl overflow-hidden">
-                  <CardHeader className="p-5 pb-3 bg-teal-50/80 border-b border-teal-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-900">
-                        {currentPatient.status === "IN_CONSULTATION" ? "In Consultation Now" : "Called Patient"}
-                      </span>
-                      <Badge variant="teal" className="text-xs font-mono font-bold">
-                        Token #{currentPatient.token_number}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-base font-black text-slate-900 mt-1">
-                      {currentPatient.patient_name}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-slate-500 font-mono">
-                      {currentPatient.patient_id} • {currentPatient.patient_phone || "+91 98765 00000"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-5 space-y-3 text-xs">
-                    <div className="rounded-2xl bg-slate-50 p-3 text-xs space-y-1.5 border border-slate-100">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Appointment Ref:</span>
-                        <span className="font-mono font-bold text-slate-800">{currentPatient.appointment_id || "Walk-In"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Consultation Room:</span>
-                        <span className="font-bold text-teal-800">{currentPatient.room_number || "Room 102"}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
-                        <Button className="w-full h-10 text-xs font-bold rounded-2xl bg-teal-700 hover:bg-teal-800 gap-1.5">
-                          <Stethoscope className="h-4 w-4" /> Open Full Clinical Consultation Workspace
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="bg-white border-dashed border-slate-200 rounded-3xl p-6 text-center space-y-2">
-                  <Users className="h-8 w-8 mx-auto text-slate-300" />
-                  <h3 className="text-xs font-bold text-slate-700">No Patient in Consultation</h3>
-                  <p className="text-[11px] text-slate-400">
-                    Click "Call Next Patient" above to announce the next waiting token.
-                  </p>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: MY PROFESSIONAL AFFILIATIONS */}
-        {selectedTab === "affiliations" && (
-          <div className="space-y-4 animate-in fade-in-50 duration-150">
-            <div className="rounded-3xl border border-blue-200 bg-blue-50/50 p-5 flex items-start gap-3 text-xs text-blue-900">
-              <Building2 className="h-5 w-5 text-blue-700 flex-shrink-0 mt-0.5" />
+      <div className="space-y-6 animate-in fade-in-50 duration-150">
+        
+        {/* Urgent Emergency Pre-Alert Banner */}
+        {emergencies.length > 0 && (
+          <div className="bg-red-50 border-2 border-red-300 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
+                <AlertOctagon className="h-6 w-6" />
+              </div>
               <div>
-                <span className="font-bold block text-sm">Doctor Multi-Hospital Affiliation Architecture</span>
-                <p className="mt-0.5 text-blue-800 leading-relaxed">
-                  You are registered under one primary MEDORA Doctor Identity (<strong>{doctorId}</strong>). You can practice across multiple hospitals, diagnostic centers, and clinics with independent consultation rates, OPD rooms, and schedule allocations.
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black bg-red-600 text-white px-2 py-0.5 rounded">
+                    EMERGENCY INGRESS
+                  </span>
+                  <span className="font-mono text-xs font-bold text-red-950">
+                    {emergencies[0].case_number}
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-red-900 mt-0.5">
+                  <strong>{emergencies[0].patient_name}</strong> • {emergencies[0].emergency_type.replace("_", " ")} — {emergencies[0].description}
+                </p>
+                <p className="text-[11px] text-red-700 font-mono mt-0.5">
+                  Status: <strong>{emergencies[0].status}</strong> {emergencies[0].arriving_by_ambulance ? `(Ambulance ETA: ${emergencies[0].eta_minutes || 0}m)` : "(Direct Walk-in ER)"}
                 </p>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {affiliations.map((aff) => (
-                <Card key={aff.id} className="bg-white border-slate-200 rounded-3xl shadow-xs">
-                  <CardHeader className="p-5 pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold text-slate-900">{aff.organizationName}</CardTitle>
-                      <Badge variant={aff.status === "active" ? "teal" : "warning"} className="text-[10px]">
-                        ● {aff.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-xs text-slate-500 font-mono">
-                      {aff.organizationIdentifier || aff.organizationId} • {aff.roleTitle}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-5 pt-2 text-xs space-y-2 text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span>Department:</span>
-                      <span className="font-semibold text-slate-900">{aff.departmentName}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>OPD Room:</span>
-                      <span className="font-semibold text-slate-900">{aff.opdRoom || "Room 102"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Consultation Fee:</span>
-                      <span className="font-bold text-teal-800">₹{aff.consultationFee}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: WEEKLY SCHEDULE */}
-        {selectedTab === "schedule" && (
-          <div className="space-y-4">
-            <Link href="/doctor/schedule">
-              <Button className="rounded-2xl h-10 px-5 text-xs font-bold bg-teal-700 hover:bg-teal-800">
-                <span>Manage Working Sessions & Capacity →</span>
+            <Link href="/doctor/consultations">
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shrink-0 gap-1.5">
+                <Stethoscope className="h-4 w-4" />
+                <span>Attend Emergency</span>
               </Button>
             </Link>
           </div>
         )}
+
+        {/* Operational Action Notification Toast */}
+        {actionMessage && (
+          <div
+            className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between shadow-xs ${
+              actionMessage.type === "success"
+                ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                : "bg-rose-50 text-rose-900 border border-rose-200"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {actionMessage.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-rose-600" />
+              )}
+              <span>{actionMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionMessage(null)}
+              className="text-slate-400 hover:text-slate-700"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Operational Session Control Header */}
+        <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
+          <CardContent className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Session Info */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge variant="teal" className="text-[10px] font-bold">
+                  {currentSummary?.session_time || "08:00 AM - 12:00 PM"}
+                </Badge>
+                <span className="font-bold text-slate-900 text-sm">
+                  {context?.departmentName || "Cardiology OPD"}
+                </span>
+                <span className="text-slate-400 font-mono text-xs">·</span>
+                <span className="text-slate-600 font-mono text-xs font-semibold">
+                  {context?.opdRoom || "Room 102"}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                OPD Schedule Session Capacity: <strong>{totalCapacity} Slots</strong> • Currently Booked: <strong>{totalBooked}</strong>
+              </p>
+            </div>
+
+            {/* Session State Badge & Control Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              {sessionStatus === "PAUSED" && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-xs py-1 px-2.5">
+                  SESSION PAUSED
+                </Badge>
+              )}
+              {sessionStatus === "ENDED" && (
+                <Badge className="bg-slate-100 text-slate-700 border-slate-300 font-bold text-xs py-1 px-2.5">
+                  SESSION ENDED
+                </Badge>
+              )}
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleToggleSessionPause}
+                disabled={sessionStatus === "ENDED" || isProcessing}
+                className="h-8 text-xs font-semibold rounded-xl gap-1.5 border-slate-200"
+              >
+                {sessionStatus === "PAUSED" ? (
+                  <>
+                    <Play className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Resume Session</span>
+                  </>
+                ) : (
+                  <>
+                    <Pause className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Pause Session</span>
+                  </>
+                )}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowEndSessionModal(true)}
+                disabled={sessionStatus === "ENDED" || isProcessing}
+                className="h-8 text-xs font-semibold rounded-xl text-rose-700 hover:bg-rose-50 hover:border-rose-200 border-slate-200 gap-1.5"
+              >
+                <StopCircle className="h-3.5 w-3.5 text-rose-600" />
+                <span>End OPD Session</span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={loadData}
+                className="h-8 text-xs font-semibold rounded-xl border-slate-200 gap-1.5"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 text-slate-500 ${isProcessing ? "animate-spin" : ""}`} />
+                <span>Refresh</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* OPD Capacity & Operational Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Card className="bg-white rounded-xl shadow-xs border-slate-200 p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Waiting in Lobby</p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-slate-900">{waitingList.length}</span>
+              <span className="text-xs text-slate-500 font-medium">patients</span>
+            </div>
+          </Card>
+
+          <Card className="bg-white rounded-xl shadow-xs border-slate-200 p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">In Consultation</p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-teal-700">{currentPatient ? "1" : "0"}</span>
+              <span className="text-xs text-slate-500 font-medium">active</span>
+            </div>
+          </Card>
+
+          <Card className="bg-white rounded-xl shadow-xs border-slate-200 p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Completed Today</p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-emerald-700">{completedCount}</span>
+              <span className="text-xs text-slate-500 font-medium">finished</span>
+            </div>
+          </Card>
+
+          <Card className="bg-white rounded-xl shadow-xs border-slate-200 p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Skipped / On Hold</p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-amber-600">{skippedList.length}</span>
+              <span className="text-xs text-slate-500 font-medium">re-callable</span>
+            </div>
+          </Card>
+        </div>
+
+        {/* PRIMARY OPERATIONAL WORKBENCH: Current Patient Slot */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left 2 Cols: Active Patient in Consultation */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card className={`rounded-2xl shadow-xs transition-all ${
+              currentPatient 
+                ? "bg-white border-2 border-teal-500 shadow-md" 
+                : "bg-slate-50/70 border-dashed border-2 border-slate-200"
+            }`}>
+              <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4 text-teal-700" />
+                  <span>Current Patient In Consultation</span>
+                </CardTitle>
+
+                {currentPatient && (
+                  <Badge variant="teal" className="text-[10px] font-mono font-bold animate-pulse">
+                    ACTIVE ENCOUNTER
+                  </Badge>
+                )}
+              </CardHeader>
+
+              <CardContent className="p-5">
+                {currentPatient ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                      
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-teal-600 text-white font-mono font-black text-lg flex items-center justify-center shrink-0">
+                          {currentPatient.token_number}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base font-black text-slate-900">{currentPatient.patient_name}</h3>
+                            <span className="text-[10px] font-mono font-semibold bg-white px-2 py-0.5 rounded border border-slate-200">
+                              {currentPatient.patient_id}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium mt-0.5">
+                            Appointment: <strong className="font-mono text-slate-900">{currentPatient.appointment_id || "Direct Check-in"}</strong> • Room: <strong className="text-slate-900">{currentPatient.room_number || "Room 102"}</strong>
+                          </p>
+                          <p className="text-[11px] text-teal-800 font-mono mt-0.5">
+                            Checked in at: {new Date(currentPatient.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Status</span>
+                        <Badge className="bg-teal-700 text-white text-xs font-bold">
+                          {currentPatient.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                    </div>
+
+                    {/* Operational Actions for Current Patient */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/doctor/consultations?encounterId=ENC-1001&patientId=${currentPatient.patient_id}`}>
+                          <Button className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-9 rounded-xl gap-1.5 shadow-xs">
+                            <Stethoscope className="h-4 w-4" />
+                            <span>Open Clinical Workbench</span>
+                            <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </Link>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSkipModalEntry(currentPatient)}
+                          disabled={isProcessing}
+                          className="h-9 text-xs font-semibold text-amber-700 hover:bg-amber-50 border-amber-200 rounded-xl gap-1"
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                          <span>Hold / Skip</span>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setNoShowModalEntry(currentPatient)}
+                          disabled={isProcessing}
+                          className="h-9 text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200 rounded-xl gap-1"
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          <span>No-Show</span>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => handleCompleteConsultation(currentPatient)}
+                          disabled={isProcessing}
+                          className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs h-9 rounded-xl gap-1 shadow-xs"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Complete Visit</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center space-y-3">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                      <UserCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Doctor OPD Ready</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {waitingList.length > 0 
+                          ? `${waitingList.length} patient(s) waiting in the lobby. Call the next patient to begin.` 
+                          : "No patients currently in consultation. You're all caught up."}
+                      </p>
+                    </div>
+
+                    {waitingList.length > 0 && sessionStatus === "ACTIVE" && (
+                      <Button
+                        onClick={handleCallNext}
+                        disabled={isProcessing}
+                        className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-9 rounded-xl gap-1.5 shadow-sm"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                        <span>Call Next Patient ({nextPatient?.token_number || "Next"})</span>
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Col: Next Patient Call Panel */}
+          <div className="space-y-4">
+            <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
+              <CardHeader className="p-4 pb-2 border-b border-slate-100">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                  <span>Next in Queue</span>
+                  <span className="font-mono text-teal-700 font-bold">{waitingList.length} Waiting</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                {nextPatient ? (
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="h-7 px-2 bg-teal-100 text-teal-800 rounded font-mono font-bold text-xs flex items-center justify-center">
+                        {nextPatient.token_number}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        Sequence #{nextPatient.token_sequence}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">{nextPatient.patient_name}</h4>
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">{nextPatient.patient_id}</p>
+                    </div>
+                    
+                    <Button
+                      onClick={() => handleCallSpecific(nextPatient)}
+                      disabled={sessionStatus === "PAUSED" || isProcessing}
+                      size="sm"
+                      className="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-8 rounded-xl gap-1.5 shadow-xs"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span>Call to Room {context?.opdRoom || "102"}</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-slate-400">
+                    <Clock className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
+                    <span>No waiting patients in this session.</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* FULL PATIENT QUEUE TABLE WITH OPERATIONAL TABS */}
+        <Card className="bg-white rounded-2xl shadow-xs border-slate-200 overflow-hidden">
+          <CardHeader className="p-4 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Users className="h-4 w-4 text-teal-700" />
+                <span>Today's Patient Queue Registry</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Deterministic token sequence for {context?.facilityName || "City Hospital"} • {context?.departmentName || "Cardiology OPD"}
+              </CardDescription>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFilterCategory("ALL")}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterCategory === "ALL" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                All ({(waitingList.length) + (currentPatient ? 1 : 0) + skippedList.length + completedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterCategory("WAITING")}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterCategory === "WAITING" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Waiting ({waitingList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterCategory("SKIPPED")}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterCategory === "SKIPPED" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Skipped ({skippedList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterCategory("COMPLETED")}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterCategory === "COMPLETED" ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Completed ({completedCount})
+              </button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50/80">
+                  <TableRow className="border-slate-100">
+                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase w-20">Token</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase">Patient Information</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase">Checked In</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase">Status</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100">
+                  
+                  {/* Render Current Patient if applicable */}
+                  {currentPatient && (filterCategory === "ALL" || filterCategory === "CURRENT") && (
+                    <TableRow className="bg-teal-50/40 hover:bg-teal-50/60 font-medium">
+                      <TableCell className="font-mono font-black text-teal-800">{currentPatient.token_number}</TableCell>
+                      <TableCell>
+                        <div className="font-bold text-xs text-slate-900">{currentPatient.patient_name}</div>
+                        <span className="font-mono text-[10px] text-slate-500">{currentPatient.patient_id}</span>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 font-mono">
+                        {new Date(currentPatient.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-teal-700 text-white text-[10px]">IN CONSULTATION</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/doctor/consultations?encounterId=ENC-1001&patientId=${currentPatient.patient_id}`}>
+                          <Button size="sm" className="h-7 text-xs bg-teal-700 text-white font-bold rounded-lg gap-1">
+                            <span>Open</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {/* Render Waiting List */}
+                  {(filterCategory === "ALL" || filterCategory === "WAITING") &&
+                    waitingList.map((entry) => (
+                      <TableRow key={entry.id} className="hover:bg-slate-50/70">
+                        <TableCell className="font-mono font-bold text-slate-900">{entry.token_number}</TableCell>
+                        <TableCell>
+                          <div className="font-bold text-xs text-slate-900">{entry.patient_name}</div>
+                          <span className="font-mono text-[10px] text-slate-500">{entry.patient_id}</span>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-600 font-mono">
+                          {new Date(entry.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] text-slate-700 bg-slate-50">WAITING</Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCallSpecific(entry)}
+                            disabled={sessionStatus === "PAUSED" || isProcessing}
+                            className="h-7 text-xs font-semibold rounded-lg text-teal-800 border-teal-200 hover:bg-teal-50"
+                          >
+                            <Volume2 className="h-3 w-3 mr-1" /> Call
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSkipModalEntry(entry)}
+                            disabled={isProcessing}
+                            className="h-7 text-xs font-semibold rounded-lg text-amber-700 hover:bg-amber-50"
+                          >
+                            Skip
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setNoShowModalEntry(entry)}
+                            disabled={isProcessing}
+                            className="h-7 text-xs font-semibold rounded-lg text-rose-700 hover:bg-rose-50"
+                          >
+                            No-Show
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+
+                  {/* Render Skipped List */}
+                  {(filterCategory === "ALL" || filterCategory === "SKIPPED") &&
+                    skippedList.map((entry) => (
+                      <TableRow key={entry.id} className="bg-amber-50/30 hover:bg-amber-50/50">
+                        <TableCell className="font-mono font-bold text-amber-900">{entry.token_number}</TableCell>
+                        <TableCell>
+                          <div className="font-bold text-xs text-slate-900">{entry.patient_name}</div>
+                          <span className="text-[10px] text-amber-800 italic">Reason: {entry.notes || "Bypassed"}</span>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-600 font-mono">
+                          {new Date(entry.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] text-amber-800 bg-amber-50 border-amber-300">SKIPPED</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRecallPatient(entry)}
+                            disabled={isProcessing}
+                            className="h-7 text-xs font-bold rounded-lg text-emerald-800 border-emerald-300 hover:bg-emerald-50 gap-1"
+                          >
+                            <RotateCcw className="h-3 w-3" /> Recall to Queue
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+
+                  {waitingList.length === 0 && !currentPatient && skippedList.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-10 text-center text-xs text-slate-400">
+                        <CheckCircle2 className="h-7 w-7 text-emerald-600 mx-auto mb-1 opacity-70" />
+                        <span className="block font-bold text-slate-800 text-xs">No active queue entries</span>
+                        <span className="text-[11px] text-slate-400">All registered OPD patients for this session have been completed.</span>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* MODAL: Skip Patient Confirmation */}
+        {skipModalEntry && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs">
+            <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-3 text-amber-600">
+                <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+                  <UserX className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Skip / Hold Patient in Queue</h3>
+                  <p className="text-xs text-slate-500">Token #{skipModalEntry.token_number} • {skipModalEntry.patient_name}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Skipping this patient will bypass them in the active sequence and move them to the <strong>Skipped List</strong>. You can recall them at any point during this session.
+              </p>
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-700">Clinical / Operational Reason</label>
+                <input
+                  type="text"
+                  value={skipReason}
+                  onChange={(e) => setSkipReason(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-teal-600"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button size="sm" variant="ghost" onClick={() => setSkipModalEntry(null)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleConfirmSkip} className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl">
+                  Confirm Skip
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: No-Show Confirmation */}
+        {noShowModalEntry && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs">
+            <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-3 text-rose-600">
+                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Mark Patient as No-Show</h3>
+                  <p className="text-xs text-slate-500">Token #{noShowModalEntry.token_number} • {noShowModalEntry.patient_name}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Are you sure you want to mark this patient as <strong>NO-SHOW</strong>? The appointment slot will be released, and the operational record will be archived with full audit traceability.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button size="sm" variant="ghost" onClick={() => setNoShowModalEntry(null)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleConfirmNoShow} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl">
+                  Confirm No-Show
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: End OPD Session Confirmation */}
+        {showEndSessionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs">
+            <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-3 text-rose-600">
+                <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center">
+                  <StopCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Conclude OPD Working Session</h3>
+                  <p className="text-xs text-slate-500">{context?.facilityName} • {context?.departmentName}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Ending this OPD session will finalize the operational queue for today. {waitingList.length > 0 && `Note: ${waitingList.length} patient(s) still remain waiting in the lobby.`}
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button size="sm" variant="ghost" onClick={() => setShowEndSessionModal(false)} className="text-xs">
+                  Keep Active
+                </Button>
+                <Button size="sm" onClick={handleEndSession} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl">
+                  Conclude Session
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </RoleGuard>
   );

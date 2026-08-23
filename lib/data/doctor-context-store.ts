@@ -1,7 +1,7 @@
 // ============================================================
 // MEDORA — CANONICAL DOCTOR CONTEXT & WORKSPACE STORE
 // Single Authoritative Source for Doctor Identity, Facility Context,
-// Duty Status, and Multi-Facility Affiliations
+// Duty Status, Session State, and Multi-Facility Affiliations
 // ============================================================
 
 import { 
@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/identity-store";
 
 export type DoctorDutyStatus = "AVAILABLE" | "IN_CONSULTATION" | "ON_BREAK" | "OFF_DUTY";
+export type DoctorSessionStatus = "ACTIVE" | "PAUSED" | "ENDED";
 
 export interface DoctorActiveContext {
   doctorId: string; // e.g. DOC-1001
@@ -26,11 +27,12 @@ export interface DoctorActiveContext {
   opdRoom: string;
   scheduleNotes?: string;
   dutyStatus: DoctorDutyStatus;
+  sessionStatus: DoctorSessionStatus;
   authorizedAffiliations: StoredDoctorAffiliation[];
 }
 
-// In-memory runtime state for active doctor context & duty status
-const doctorContextMap: Record<string, { activeAffiliationId: string; dutyStatus: DoctorDutyStatus }> = {};
+// In-memory runtime state for active doctor context, duty status & session control
+const doctorContextMap: Record<string, { activeAffiliationId: string; dutyStatus: DoctorDutyStatus; sessionStatus: DoctorSessionStatus }> = {};
 
 /**
  * Resolves the canonical Doctor context for a given authenticated doctor identifier or UUID
@@ -57,6 +59,7 @@ export function getDoctorContext(doctorIdentifierOrId: string): DoctorActiveCont
       roleTitle: "Medical Doctor",
       opdRoom: "N/A",
       dutyStatus: "OFF_DUTY",
+      sessionStatus: "ACTIVE",
       authorizedAffiliations: [],
     };
   }
@@ -67,6 +70,7 @@ export function getDoctorContext(doctorIdentifierOrId: string): DoctorActiveCont
     state = {
       activeAffiliationId: affiliations[0]?.id || "",
       dutyStatus: "AVAILABLE",
+      sessionStatus: "ACTIVE",
     };
     doctorContextMap[doctorId] = state;
   }
@@ -86,6 +90,7 @@ export function getDoctorContext(doctorIdentifierOrId: string): DoctorActiveCont
     opdRoom: activeAff?.opdRoom || "OPD Room 1",
     scheduleNotes: activeAff?.scheduleNotes,
     dutyStatus: state.dutyStatus,
+    sessionStatus: state.sessionStatus || "ACTIVE",
     authorizedAffiliations: affiliations,
   };
 }
@@ -114,11 +119,10 @@ export function setActiveDoctorAffiliation(
     };
   }
 
-  const targetId = targetAff.id || "";
   if (!doctorContextMap[doctorId]) {
-    doctorContextMap[doctorId] = { activeAffiliationId: targetId, dutyStatus: "AVAILABLE" };
+    doctorContextMap[doctorId] = { activeAffiliationId: targetAff.id || "", dutyStatus: "AVAILABLE", sessionStatus: "ACTIVE" };
   } else {
-    doctorContextMap[doctorId].activeAffiliationId = targetId;
+    doctorContextMap[doctorId].activeAffiliationId = targetAff.id || "";
   }
 
   const updatedContext = getDoctorContext(doctorId);
@@ -146,7 +150,7 @@ export function setDoctorDutyStatus(
 
   if (!doctorContextMap[doctorId]) {
     const defaultAff = identity.doctorData?.affiliations[0]?.id || "";
-    doctorContextMap[doctorId] = { activeAffiliationId: defaultAff, dutyStatus: status };
+    doctorContextMap[doctorId] = { activeAffiliationId: defaultAff, dutyStatus: status, sessionStatus: "ACTIVE" };
   } else {
     doctorContextMap[doctorId].dutyStatus = status;
   }
@@ -160,6 +164,38 @@ export function setDoctorDutyStatus(
   }
 
   return { success: true, dutyStatus: status };
+}
+
+/**
+ * Updates the operational OPD session status (ACTIVE, PAUSED, ENDED)
+ */
+export function setDoctorSessionStatus(
+  doctorIdentifierOrId: string,
+  sessionStatus: DoctorSessionStatus
+): { success: boolean; error?: string; sessionStatus?: DoctorSessionStatus } {
+  const identity = findIdentityById(doctorIdentifierOrId) || findIdentityByEmail(doctorIdentifierOrId);
+  if (!identity || identity.role !== "doctor") {
+    return { success: false, error: "UNAUTHORIZED_DOCTOR" };
+  }
+
+  const doctorId = identity.identifier || identity.id;
+
+  if (!doctorContextMap[doctorId]) {
+    const defaultAff = identity.doctorData?.affiliations[0]?.id || "";
+    doctorContextMap[doctorId] = { activeAffiliationId: defaultAff, dutyStatus: "AVAILABLE", sessionStatus };
+  } else {
+    doctorContextMap[doctorId].sessionStatus = sessionStatus;
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("medora-doctor-context-changed", { 
+        detail: getDoctorContext(doctorId) 
+      })
+    );
+  }
+
+  return { success: true, sessionStatus };
 }
 
 /**
