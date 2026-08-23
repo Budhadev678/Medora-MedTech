@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 6.2 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 6.2 TEST SUITE
 // CAPACITY ENGINE, TOKEN GENERATION &
 // DYNAMIC QUEUE MANAGEMENT
 // ============================================================
@@ -19,15 +19,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 6.2 TEST SUITE: CAPACITY & DYNAMIC QUEUE");
+console.log("MEDORA â€” PHASE 6.2 TEST SUITE: CAPACITY & DYNAMIC QUEUE");
 console.log("============================================================\n");
 
 // Reset stores
@@ -80,7 +80,7 @@ async function runPhase62TestSuite() {
   // ------------------------------------------------------------
   // TEST GROUP 1: APPOINTMENT VS QUEUE VS TOKEN ENTITY SEPARATION
   // ------------------------------------------------------------
-  console.log("TEST GROUP 1: Entity Separation (Appointment ≠ Queue Entry ≠ Token)");
+  console.log("TEST GROUP 1: Entity Separation (Appointment â‰  Queue Entry â‰  Token)");
 
   const sessions = AppointmentStore.getDoctorSessions("DOC-1001");
   const targetSession = sessions.find((s) => s.is_active) || sessions[0];
@@ -103,7 +103,7 @@ async function runPhase62TestSuite() {
   const initialQueue = QueueStore.getQueueForSession(targetSession.id, todayStr);
   assert(
     !initialQueue.some((q) => q.appointment_id === bookingRes.appointment!.id),
-    "Confirmed appointment is NOT in queue before check-in (Appointment ≠ Queue invariant)"
+    "Confirmed appointment is NOT in queue before check-in (Appointment â‰  Queue invariant)"
   );
 
   // ------------------------------------------------------------
@@ -229,7 +229,7 @@ async function runPhase62TestSuite() {
   assert(!!waitEst, "Calculated dynamic waiting time estimate for queue entry");
   assert(
     waitEst.estimated_upper_minutes >= waitEst.estimated_lower_minutes,
-    `Waiting estimate provides realistic range (${waitEst.estimated_lower_minutes}–${waitEst.estimated_upper_minutes} min)`
+    `Waiting estimate provides realistic range (${waitEst.estimated_lower_minutes}â€“${waitEst.estimated_upper_minutes} min)`
   );
   assert(
     !waitEst.display_text.includes("9:") && !waitEst.display_text.includes("10:"),

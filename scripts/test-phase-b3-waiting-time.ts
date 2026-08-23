@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE B.3 AUTOMATED TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE B.3 AUTOMATED TEST SUITE
 // Dynamic Waiting-Time Estimation & Queue Optimization
 // ============================================================
 
@@ -20,10 +20,10 @@ let failedCount = 0;
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
     passedCount++;
-    console.log(`  ✓ [PASS] ${testName}`);
+    console.log(`  âœ“ [PASS] ${testName}`);
   } else {
     failedCount++;
-    console.error(`  ✗ [FAIL] ${testName}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  âœ— [FAIL] ${testName}${detail ? ` â€” ${detail}` : ""}`);
   }
 }
 

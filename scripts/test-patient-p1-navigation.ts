@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PATIENT INFORMATION ARCHITECTURE & NAVIGATION TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PATIENT INFORMATION ARCHITECTURE & NAVIGATION TEST SUITE
 // P1 PROMPT 1 ACCEPTANCE VERIFICATION
 // ============================================================
 
@@ -19,17 +19,17 @@ let failed = 0;
 
 function assert(condition: boolean, testName: string, details?: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
     passed++;
   } else {
-    console.error(`  ✗ FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
     failed++;
   }
 }
 
 async function runPatientP1Suite() {
   console.log("============================================================");
-  console.log("MEDORA — P1 PATIENT INFORMATION ARCHITECTURE & NAVIGATION SUITE");
+  console.log("MEDORA â€” P1 PATIENT INFORMATION ARCHITECTURE & NAVIGATION SUITE");
   console.log("============================================================\n");
 
   const patientA = findIdentityById("PAT-1001")!;

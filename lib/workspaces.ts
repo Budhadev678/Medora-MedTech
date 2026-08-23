@@ -35,7 +35,7 @@ import {
 import { UserRole } from "@/lib/constants";
 import { StoredIdentity } from "@/lib/data/identity-store";
 import type { OrganizationMembership } from "@/types/database.types";
-import { NavItem } from "@/lib/navigation";
+import { NavItem, DOCTOR_NAV } from "@/lib/navigation";
 
 export type WorkspaceType =
   | "patient_mobile"
@@ -82,17 +82,7 @@ export const DOCTOR_WORKSPACE: WorkspaceDefinition = {
   landingRoute: "/doctor",
   allowedRoles: ["doctor"],
   badgeText: "Clinical Workspace",
-  navItems: [
-    { label: "Today / Queue", href: "/doctor", icon: Activity, exact: true },
-    { label: "Consultation Suite", href: "/doctor/consultations", icon: Stethoscope },
-    { label: "Patient Registry", href: "/doctor/patients", icon: Users },
-    { label: "Appointments", href: "/doctor/appointments", icon: Calendar },
-    { label: "Prescriptions", href: "/doctor/prescriptions", icon: Pill, comingSoon: true, phase: "Phase 4.3" },
-    { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: FlaskConical, comingSoon: true, phase: "Phase 4.3" },
-    { label: "Schedule & Hours", href: "/doctor/schedule", icon: Clock },
-    { label: "Referrals", href: "/doctor/referrals", icon: Share2, comingSoon: true, phase: "Phase 7" },
-    { label: "Doctor Profile", href: "/doctor/profile", icon: User },
-  ],
+  navItems: DOCTOR_NAV,
 };
 
 // 3. Receptionist Front-Desk Workspace

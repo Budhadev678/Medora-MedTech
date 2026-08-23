@@ -460,6 +460,10 @@ class AppointmentRepository {
     return override;
   }
 
+  public deleteOverride(id: string): boolean {
+    return this.overrides.delete(id);
+  }
+
   // APPOINTMENTS
   public getAllAppointments(): Appointment[] {
     return Array.from(this.appointments.values());
@@ -524,6 +528,10 @@ class AppointmentRepository {
     };
     this.appointments.set(appointment.id, updated);
     return updated;
+  }
+
+  public deleteAppointment(id: string): boolean {
+    return this.appointments.delete(id);
   }
 }
 

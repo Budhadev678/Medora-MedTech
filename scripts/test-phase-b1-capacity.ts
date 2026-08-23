@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE B.1 AUTOMATED TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE B.1 AUTOMATED TEST SUITE
 // DOCTOR AVAILABILITY, CAPACITY & INTELLIGENT APPOINTMENT BOOKING
 // ============================================================
 
@@ -14,17 +14,17 @@ let failedCount = 0;
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
     passedCount++;
-    console.log(`  ✅ PASS: ${testName}`);
+    console.log(`  âœ… PASS: ${testName}`);
   } else {
     failedCount++;
-    console.error(`  ❌ FAIL: ${testName}`);
+    console.error(`  âŒ FAIL: ${testName}`);
     if (detail) console.error(`     Detail: ${detail}`);
   }
 }
 
 async function runTests() {
   console.log("\n============================================================");
-  console.log("🧪 STARTING PHASE B.1 DOCTOR AVAILABILITY & CAPACITY TESTS");
+  console.log("ðŸ§ª STARTING PHASE B.1 DOCTOR AVAILABILITY & CAPACITY TESTS");
   console.log("============================================================\n");
 
   // Reset store to known state
@@ -37,7 +37,7 @@ async function runTests() {
   const hospAdmin = findIdentityByEmail("admin@cityhospital.org") || findIdentityById("HSP-1001");
 
   // ------------------------------------------------------------
-  // TEST 1 — Capacity 3, Bookings 0 -> 3 Remaining
+  // TEST 1 â€” Capacity 3, Bookings 0 -> 3 Remaining
   // ------------------------------------------------------------
   console.log("--- TEST 1: CAPACITY & REMAINING CALCULATION (0 BOOKINGS) ---");
   const availT1 = await AppointmentBookingService.getDoctorAvailability(
@@ -54,7 +54,7 @@ async function runTests() {
   assert(sessT1.status === "AVAILABLE", "Session status is AVAILABLE");
 
   // ------------------------------------------------------------
-  // TEST 2 — Capacity 3, Bookings 1 -> 2 Remaining
+  // TEST 2 â€” Capacity 3, Bookings 1 -> 2 Remaining
   // ------------------------------------------------------------
   console.log("\n--- TEST 2: SINGLE APPOINTMENT BOOKING & CAPACITY DECREMENT ---");
   const bookRes1 = await AppointmentBookingService.bookAppointment(
@@ -84,7 +84,7 @@ async function runTests() {
   assert(availT2[0].status === "LIMITED", "Session status transitioned to LIMITED (<=2)");
 
   // ------------------------------------------------------------
-  // TEST 3 — Capacity 3, Bookings 3 -> FULL, 4th Booking Denied
+  // TEST 3 â€” Capacity 3, Bookings 3 -> FULL, 4th Booking Denied
   // ------------------------------------------------------------
   console.log("\n--- TEST 3: CAPACITY EXHAUSTION & OVERBOOKING PREVENTION ---");
   // Book 2nd patient
@@ -147,7 +147,7 @@ async function runTests() {
   assert(bookRes4.error_code === "SESSION_FULL", "Error code is SESSION_FULL");
 
   // ------------------------------------------------------------
-  // TEST 4 — Cancellation Reopening & Capacity Recovery
+  // TEST 4 â€” Cancellation Reopening & Capacity Recovery
   // ------------------------------------------------------------
   console.log("\n--- TEST 4: CANCELLATION & CAPACITY RECOVERY ---");
   const cancelRes = await AppointmentBookingService.cancelAppointment(
@@ -168,7 +168,7 @@ async function runTests() {
   assert(availT4[0].status === "LIMITED", "Session reopened from FULL to LIMITED");
 
   // ------------------------------------------------------------
-  // TEST 5 — Strict Patient Data Isolation (Zero Cross-Account Leakage)
+  // TEST 5 â€” Strict Patient Data Isolation (Zero Cross-Account Leakage)
   // ------------------------------------------------------------
   console.log("\n--- TEST 5: PATIENT ISOLATION & ACCESS CONTROL ---");
   const patientAAppointments = AppointmentStore.getAppointmentsForPatient("PAT-1001");
@@ -184,7 +184,7 @@ async function runTests() {
   );
 
   // ------------------------------------------------------------
-  // TEST 6 — Multi-Hospital Doctor Availability (Dr. Ananya DOC-1001)
+  // TEST 6 â€” Multi-Hospital Doctor Availability (Dr. Ananya DOC-1001)
   // ------------------------------------------------------------
   console.log("\n--- TEST 6: MULTI-HOSPITAL DOCTOR AVAILABILITY ---");
   // City Hospital (Monday)
@@ -219,7 +219,7 @@ async function runTests() {
   assert(hosp2Avail[0].capacity === 15, "Green Care Hospital session capacity is 15");
 
   // ------------------------------------------------------------
-  // TEST 7 — Doctor Leave Blocking
+  // TEST 7 â€” Doctor Leave Blocking
   // ------------------------------------------------------------
   console.log("\n--- TEST 7: DOCTOR LEAVE OVERRIDE BLOCKING ---");
   const leaveAvail = await AppointmentBookingService.getDoctorAvailability(
@@ -249,7 +249,7 @@ async function runTests() {
   assert(leaveBooking.error_code === "DOCTOR_ON_LEAVE", "Error code is DOCTOR_ON_LEAVE");
 
   // ------------------------------------------------------------
-  // TEST 8 — Facility Closure Blocking
+  // TEST 8 â€” Facility Closure Blocking
   // ------------------------------------------------------------
   console.log("\n--- TEST 8: FACILITY CLOSURE BLOCKING ---");
   const closureAvail = await AppointmentBookingService.getDoctorAvailability(
@@ -278,7 +278,7 @@ async function runTests() {
   assert(closureBooking.error_code === "FACILITY_CLOSED", "Error code is FACILITY_CLOSED");
 
   // ------------------------------------------------------------
-  // TEST 9 — Concurrent Race Condition Protection (Capacity = 1)
+  // TEST 9 â€” Concurrent Race Condition Protection (Capacity = 1)
   // ------------------------------------------------------------
   console.log("\n--- TEST 9: CONCURRENCY & RACE CONDITION TEST (CAPACITY = 1) ---");
   // 2 simultaneous booking attempts for SES-9902 (Capacity: 1) on 2026-09-01
@@ -320,7 +320,7 @@ async function runTests() {
   assert(failures[0].error_code === "SESSION_FULL", "Rejected request received SESSION_FULL");
 
   // ------------------------------------------------------------
-  // TEST 10 — Idempotency & Duplicate Booking Prevention
+  // TEST 10 â€” Idempotency & Duplicate Booking Prevention
   // ------------------------------------------------------------
   console.log("\n--- TEST 10: IDEMPOTENCY & DUPLICATE BOOKING PREVENTION ---");
   const dupBooking = await AppointmentBookingService.bookAppointment(
@@ -339,7 +339,7 @@ async function runTests() {
   assert(dupBooking.appointment?.patient_id === "CON-PAT-1", "Returned existing confirmed appointment");
 
   // ------------------------------------------------------------
-  // TEST 11 — Rescheduling Atomicity (Capacity Handover)
+  // TEST 11 â€” Rescheduling Atomicity (Capacity Handover)
   // ------------------------------------------------------------
   console.log("\n--- TEST 11: RESCHEDULING CAPACITY HANDOVER ---");
   // Patient A has seeded appointment APT-1001 on 2026-08-24 (SES-1001). Reschedule to 2026-08-31 (SES-1002)
@@ -358,7 +358,7 @@ async function runTests() {
   assert(rescheduleRes.appointment?.session_id === "SES-1002", "New appointment assigned to new session");
 
   // ------------------------------------------------------------
-  // TEST 12 — Schedule Overlap & Physical Conflict Detection
+  // TEST 12 â€” Schedule Overlap & Physical Conflict Detection
   // ------------------------------------------------------------
   console.log("\n--- TEST 12: SCHEDULE OVERLAP CONFLICT DETECTION ---");
   // Dr. Ananya is already scheduled at City Hospital on Monday 08:00-10:00.
@@ -379,7 +379,7 @@ async function runTests() {
   assert(conflictRes.message.includes("Physical Schedule Conflict"), "Conflict error message returned");
 
   // ------------------------------------------------------------
-  // TEST 13 — Authorization Boundaries & Security
+  // TEST 13 â€” Authorization Boundaries & Security
   // ------------------------------------------------------------
   console.log("\n--- TEST 13: SECURITY & AUTHORIZATION BOUNDARIES ---");
   // Patient attempting to modify doctor capacity
@@ -428,7 +428,7 @@ async function runTests() {
   assert(receptionBooking.appointment?.booking_source === "RECEPTION", "Booking source recorded as RECEPTION");
 
   // ------------------------------------------------------------
-  // TEST 14 — Date-Specific Capacity Override
+  // TEST 14 â€” Date-Specific Capacity Override
   // ------------------------------------------------------------
   console.log("\n--- TEST 14: DATE-SPECIFIC CAPACITY OVERRIDE ---");
   // 2026-08-24 has override capacity 6 (Normal 12)
@@ -441,7 +441,7 @@ async function runTests() {
   assert(overrideAvail[0].capacity === 6, "Date override takes precedence: Capacity is 6 (overridden from 12)");
 
   // ------------------------------------------------------------
-  // TEST 15 — Past Date Validation
+  // TEST 15 â€” Past Date Validation
   // ------------------------------------------------------------
   console.log("\n--- TEST 15: PAST DATE BOOKING REJECTION ---");
   const pastBooking = await AppointmentBookingService.bookAppointment(
@@ -460,7 +460,7 @@ async function runTests() {
   assert(pastBooking.error_code === "PAST_SESSION", "Error code is PAST_SESSION");
 
   // ------------------------------------------------------------
-  // TEST 16 — Audit Ledger Integration
+  // TEST 16 â€” Audit Ledger Integration
   // ------------------------------------------------------------
   console.log("\n--- TEST 16: IMMUTABLE AUDIT LEDGER INTEGRATION ---");
   const allEvents = AuditLedger.getEvents();
@@ -480,7 +480,7 @@ async function runTests() {
   assert(aptEvents.length >= 5, "Audit ledger recorded appointment lifecycle and capacity events");
 
   console.log("\n============================================================");
-  console.log(`📊 PHASE B.1 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
+  console.log(`ðŸ“Š PHASE B.1 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
   console.log("============================================================\n");
 
   if (failedCount > 0) {

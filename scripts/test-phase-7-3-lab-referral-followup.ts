@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 7.3 TEST SUITE: CLINICAL ORDERS, REFERRALS & FOLLOW-UP
+﻿// ============================================================
+// MEDORA â€” PHASE 7.3 TEST SUITE: CLINICAL ORDERS, REFERRALS & FOLLOW-UP
 // ============================================================
 
 import { LabOrderService } from "../lib/services/lab-order-service";
@@ -19,17 +19,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase73Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 7.3 TEST SUITE: LAB ORDERS, REFERRALS & FOLLOW-UP");
+  console.log("MEDORA â€” PHASE 7.3 TEST SUITE: LAB ORDERS, REFERRALS & FOLLOW-UP");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

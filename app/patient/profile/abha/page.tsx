@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -680,7 +680,7 @@ export default function AbhaLinkingPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Status:</span>
-                    <Badge variant="success" className="text-[10px]">● Connected</Badge>
+                    <Badge variant="success" className="text-[10px]">● Connected</Badge>
                   </div>
                 </div>
 

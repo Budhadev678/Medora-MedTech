@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getAuthenticatedUser, jsonResponse, jsonUnauthorized } from "@/lib/api/api-utils";
 
 export async function GET(request: NextRequest) {

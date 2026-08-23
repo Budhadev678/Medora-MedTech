@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S6 UI/UX & DESIGN SYSTEM TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S6 UI/UX & DESIGN SYSTEM TEST SUITE
 // Validates Design System Primitives, Status Badges, Typography,
 // Indian Healthcare Currency Formatting, Date Formats & Responsive Shells
 // ============================================================
@@ -9,7 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 
 async function runS6Tests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S6 UI/UX & DESIGN SYSTEM SUITE");
+  console.log("MEDORA â€” STABILIZATION S6 UI/UX & DESIGN SYSTEM SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -18,10 +18,10 @@ async function runS6Tests() {
   function assert(condition: boolean, description: string) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`);
+      console.error(`  âœ• FAIL: ${description}`);
     }
   }
 

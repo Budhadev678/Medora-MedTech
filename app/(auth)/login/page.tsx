@@ -17,19 +17,14 @@ import {
   Pill,
   AlertTriangle,
   Droplet,
-  Receipt,
   Eye,
   EyeOff,
   KeyRound,
-  Ambulance,
-  Landmark,
-  Shield,
-  UserCheck,
   ClipboardList,
-  HeartPulse
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { DEMO_PERSONAS, ROLE_LABELS, ROLE_DASHBOARD_ROUTES, type UserRole, type DemoPersona } from "@/lib/constants";
+import { DEMO_PERSONAS, ROLE_DASHBOARD_ROUTES, type DemoPersona } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,25 +33,34 @@ import { Badge } from "@/components/ui/badge";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, switchPersona, isLoading } = useAuth();
+  const { signIn, switchPersona } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"standard" | "demo">("standard");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!email) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
       setError("Please enter your email address.");
       return;
     }
 
-    const result = await signIn(email, password);
-    if (!result.success) {
-      setError(result.error || "Invalid credentials.");
+    setIsSubmitting(true);
+    try {
+      const result = await signIn(cleanEmail, password || "Password@123");
+      if (!result.success) {
+        setError(result.error || "Invalid credentials.");
+      }
+    } catch (err: any) {
+      setError(err.message || "An authentication error occurred.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -142,24 +146,24 @@ export default function LoginPage() {
 
               <CardContent className="p-5 pt-0 space-y-4">
                 {error && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium flex items-start gap-2 animate-in fade-in-50 duration-150">
+                    <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
                 )}
 
                 {/* Email Address */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-semibold">Email Address</Label>
+                  <Label htmlFor="email" className="text-xs font-semibold text-slate-700">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="e.g. patient@medora.health, doctor@medora.health, anita@cityhospital.org"
+                      placeholder="e.g. patient@medora.health, doctor@medora.health"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9 text-xs rounded-xl"
+                      className="pl-9 text-xs rounded-xl h-9"
                       required
                     />
                   </div>
@@ -168,23 +172,23 @@ export default function LoginPage() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs font-semibold">Password</Label>
-                    <a href="#" className="text-[11px] text-teal-700 hover:underline">Forgot password?</a>
+                    <Label htmlFor="password" className="text-xs font-semibold text-slate-700">Password</Label>
+                    <span className="text-[11px] text-teal-700">Default: Password@123</span>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="Password@123"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9 pr-9 text-xs rounded-xl"
+                      className="pl-9 pr-9 text-xs rounded-xl h-9"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-hidden"
                       tabIndex={-1}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
@@ -193,8 +197,20 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full text-xs font-bold h-9 shadow-xs rounded-xl bg-teal-700 hover:bg-teal-800" disabled={isLoading}>
-                  {isLoading ? "Authenticating Session..." : "Sign In to MEDORA"}
+                {/* Submit Action Button */}
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full text-xs font-bold h-9 shadow-xs rounded-xl bg-teal-700 hover:bg-teal-800 text-white flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    <span>Sign In to MEDORA</span>
+                  )}
                 </Button>
 
                 {/* Quick-Fill Sample Credentials Helper Strip */}

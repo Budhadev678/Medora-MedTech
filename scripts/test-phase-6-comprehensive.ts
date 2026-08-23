@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 6 COMPREHENSIVE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 6 COMPREHENSIVE TEST SUITE
 // APPOINTMENTS, DOCTOR-FIRST BOOKING, CAPACITY, CHECK-IN,
 // TOKEN, DYNAMIC QUEUE & WAITING-TIME OPTIMIZATION
 // ============================================================
@@ -25,15 +25,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 6 TEST SUITE: APPOINTMENTS, QUEUE & CAPACITY");
+console.log("MEDORA â€” PHASE 6 TEST SUITE: APPOINTMENTS, QUEUE & CAPACITY");
 console.log("============================================================\n");
 
 // Reset all stores
@@ -227,7 +227,7 @@ async function runTestSuite() {
 
   assert(
     sameDoctorOnlyAlts.every((a) => a.is_same_doctor === true),
-    "MEDORA strictly respects 'Same Doctor Only' filter — never substitutes other doctors against patient preference"
+    "MEDORA strictly respects 'Same Doctor Only' filter â€” never substitutes other doctors against patient preference"
   );
 
   // ------------------------------------------------------------
@@ -341,7 +341,7 @@ async function runTestSuite() {
   assert(!!waitEst, "Calculated dynamic waiting time estimate for checked-in patient");
   assert(
     waitEst.estimated_upper_minutes >= waitEst.estimated_lower_minutes,
-    "Waiting estimate provides realistic range (lower <= upper, e.g. 20–35 min)"
+    "Waiting estimate provides realistic range (lower <= upper, e.g. 20â€“35 min)"
   );
   assert(
     !waitEst.display_text.includes("9:") && !waitEst.display_text.includes("10:"),

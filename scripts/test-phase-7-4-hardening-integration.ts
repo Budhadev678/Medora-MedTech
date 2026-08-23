@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 7.4 TEST SUITE: WORKFLOW INTEGRITY & HARDENING
+﻿// ============================================================
+// MEDORA â€” PHASE 7.4 TEST SUITE: WORKFLOW INTEGRITY & HARDENING
 // ============================================================
 
 import { ConsultationService } from "../lib/services/consultation-service";
@@ -17,17 +17,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase74Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 7.4 TEST SUITE: WORKFLOW INTEGRITY & HARDENING");
+  console.log("MEDORA â€” PHASE 7.4 TEST SUITE: WORKFLOW INTEGRITY & HARDENING");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

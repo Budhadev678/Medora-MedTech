@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 8.4 TEST SUITE: REPORT DELIVERY, ACCESS & AUTHENTICITY
+﻿// ============================================================
+// MEDORA â€” PHASE 8.4 TEST SUITE: REPORT DELIVERY, ACCESS & AUTHENTICITY
 // ============================================================
 
 import { LabReportService } from "../lib/services/lab-report-service";
@@ -18,17 +18,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase84Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 8.4 TEST SUITE: REPORT DELIVERY, ACCESS & AUTHENTICITY");
+  console.log("MEDORA â€” PHASE 8.4 TEST SUITE: REPORT DELIVERY, ACCESS & AUTHENTICITY");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

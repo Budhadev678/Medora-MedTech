@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 4.2 CLINICAL RECORD CORE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 4.2 CLINICAL RECORD CORE TEST SUITE
 // ============================================================
 
 import { 
@@ -26,10 +26,10 @@ let total = 0;
 function assert(condition: boolean, description: string) {
   total++;
   if (condition) {
-    console.log(`✓ [PASS] ${description}`);
+    console.log(`âœ“ [PASS] ${description}`);
     passed++;
   } else {
-    console.error(`✗ [FAIL] ${description}`);
+    console.error(`âœ— [FAIL] ${description}`);
   }
 }
 
@@ -49,7 +49,7 @@ assert(!!cr1?.vitals && cr1!.vitals.systolic_bp_mmhg === 142, "CR-1001 contains 
 assert(Array.isArray(cr1?.diagnoses) && cr1!.diagnoses[0].name.includes("hypertension"), "CR-1001 contains clinician-entered diagnosis (ICD-10 I10)");
 
 // ------------------------------------------------------------
-// TEST 2: Strict Encounter ↔ Patient Hierarchy & Isolation
+// TEST 2: Strict Encounter â†” Patient Hierarchy & Isolation
 // ------------------------------------------------------------
 console.log("\n--- 2. Testing Strict Hierarchy & Patient Isolation ---");
 const enc1 = getEncounterById("ENC-1001");

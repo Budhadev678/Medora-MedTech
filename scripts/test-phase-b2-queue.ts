@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE B.2 COMPREHENSIVE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE B.2 COMPREHENSIVE TEST SUITE
 // CHECK-IN, TOKEN GENERATION & INTELLIGENT QUEUE MANAGEMENT
 // ============================================================
 
@@ -17,10 +17,10 @@ let failed = 0;
 function assert(condition: boolean, testName: string, detail?: any) {
   if (condition) {
     passed++;
-    console.log(`  ✓ [PASS] ${testName}`);
+    console.log(`  âœ“ [PASS] ${testName}`);
   } else {
     failed++;
-    console.error(`  ✗ [FAIL] ${testName}`, detail !== undefined ? detail : "");
+    console.error(`  âœ— [FAIL] ${testName}`, detail !== undefined ? detail : "");
   }
 }
 

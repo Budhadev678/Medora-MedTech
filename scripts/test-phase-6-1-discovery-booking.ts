@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 6.1 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 6.1 TEST SUITE
 // APPOINTMENT DISCOVERY, DOCTOR-FIRST BOOKING &
 // INTELLIGENT APPOINTMENT SELECTION
 // ============================================================
@@ -23,15 +23,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 6.1 TEST SUITE: DISCOVERY & BOOKING");
+console.log("MEDORA â€” PHASE 6.1 TEST SUITE: DISCOVERY & BOOKING");
 console.log("============================================================\n");
 
 // Reset all stores
@@ -209,7 +209,7 @@ async function runPhase61TestSuite() {
 
   assert(
     sameDoctorOnlyAlts.every((a) => a.is_same_doctor === true),
-    "MEDORA strictly respects 'Same Doctor Only' filter — never substitutes other doctors against patient preference"
+    "MEDORA strictly respects 'Same Doctor Only' filter â€” never substitutes other doctors against patient preference"
   );
 
   // ------------------------------------------------------------

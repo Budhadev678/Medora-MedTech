@@ -369,7 +369,7 @@ export default function PatientProfilePage() {
               </p>
               <div className="flex items-center gap-2 mt-1.5">
                 <Badge variant="success" className="text-[10px] py-0">
-                  ● Verified Identity
+                  ● Verified Identity
                 </Badge>
                 {isAbhaLinked ? (
                   <Badge variant="outline" className="text-[10px] text-teal-800 bg-teal-50 border-teal-200 py-0">
@@ -520,7 +520,7 @@ export default function PatientProfilePage() {
               </CardTitle>
               {activeCorrectionsCount > 0 && (
                 <span className="text-[10px] text-amber-700 font-semibold block">
-                  ● {activeCorrectionsCount} correction request under review
+                  ● {activeCorrectionsCount} correction request under review
                 </span>
               )}
             </div>
@@ -548,7 +548,7 @@ export default function PatientProfilePage() {
               <span className="text-slate-500">Full Legal Name</span>
               <div className="text-right">
                 <span className="font-semibold text-slate-900">{patient?.fullName}</span>
-                <span className="text-[9px] text-emerald-700 block">● Verified Field</span>
+                <span className="text-[9px] text-emerald-700 block">● Verified Field</span>
               </div>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-100">
@@ -562,7 +562,7 @@ export default function PatientProfilePage() {
             <div className="flex justify-between py-1">
               <span className="text-slate-500">Preferred Language</span>
               <span className="font-medium text-slate-900 capitalize">
-                {patient?.patientData?.preferredLanguage === "hi" ? "Hindi (हिंदी)" : patient?.patientData?.preferredLanguage === "or" ? "Odia (ଓଡ଼ିଆ)" : "English"}
+                {patient?.patientData?.preferredLanguage === "hi" ? "Hindi (à¤¹à¤¿à¤‚à¤¦à¥€)" : patient?.patientData?.preferredLanguage === "or" ? "Odia (à¬“à¬¡à¬¼à¬¿à¬†)" : "English"}
               </span>
             </div>
           </CardContent>
@@ -622,8 +622,8 @@ export default function PatientProfilePage() {
                 <span className="font-bold text-rose-700">{patient?.patientData?.bloodGroup || "Unknown"}</span>
                 <span className="text-[10px] text-slate-400 block">
                   {patient?.patientData?.bloodGroupSource === "clinical_verified"
-                    ? `● Clinically Certified (${patient.patientData.bloodGroupVerifiedBy || "Hospital Lab"})`
-                    : "● Patient reported"}
+                    ? `● Clinically Certified (${patient.patientData.bloodGroupVerifiedBy || "Hospital Lab"})`
+                    : "● Patient reported"}
                 </span>
               </div>
             </div>
@@ -840,8 +840,8 @@ export default function PatientProfilePage() {
                     className="w-full text-xs mt-1 border border-slate-200 rounded-lg p-2 bg-white"
                   >
                     <option value="en">English</option>
-                    <option value="hi">Hindi (हिंदी)</option>
-                    <option value="or">Odia (ଓଡ଼ିଆ)</option>
+                    <option value="hi">Hindi (à¤¹à¤¿à¤‚à¤¦à¥€)</option>
+                    <option value="or">Odia (à¬“à¬¡à¬¼à¬¿à¬†)</option>
                   </select>
                 </div>
               </div>

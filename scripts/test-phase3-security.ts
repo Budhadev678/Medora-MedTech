@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 3 AUTOMATED SECURITY & ACCESS ENGINE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 3 AUTOMATED SECURITY & ACCESS ENGINE TEST SUITE
 // ============================================================
 
 import { AccessEngine } from "../lib/services/access-engine";
@@ -16,10 +16,10 @@ let total = 0;
 function assert(condition: boolean, description: string) {
   total++;
   if (condition) {
-    console.log(`✓ [PASS] ${description}`);
+    console.log(`âœ“ [PASS] ${description}`);
     passed++;
   } else {
-    console.error(`✗ [FAIL] ${description}`);
+    console.error(`âœ— [FAIL] ${description}`);
   }
 }
 

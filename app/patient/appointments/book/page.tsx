@@ -30,11 +30,14 @@ import { AppointmentBookingService } from "@/lib/services/appointment-booking-se
 import { AlternativeSearchService } from "@/lib/services/alternative-search-service";
 import { WaitlistStore } from "@/lib/data/waitlist-store";
 import { SessionAvailability, BookingResult, AlternativeAppointmentOption, WaitlistEntry } from "@/types/database.types";
+import { getRemainingCurrentWeekDates } from "@/lib/utils";
 
 // Pre-defined Specialities
 const SPECIALTIES = [
+  { id: "all", name: "All Specialties", icon: Stethoscope, desc: "Explore all hospital departments & clinicians" },
   { id: "cardiology", name: "Cardiology", icon: Activity, desc: "Heart conditions, hypertension & ECG reviews" },
   { id: "general_medicine", name: "General Medicine", icon: Stethoscope, desc: "Primary care, fevers & general health checks" },
+  { id: "general_surgery", name: "General Surgery", icon: Building2, desc: "Surgical evaluations & consultations" },
   { id: "pediatrics", name: "Pediatrics", icon: Users, desc: "Child health, growth & vaccinations" },
   { id: "orthopedics", name: "Orthopedics", icon: Building2, desc: "Bone, joint & musculoskeletal disorders" },
 ];
@@ -82,13 +85,31 @@ const DOCTORS = [
     avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
   },
   {
+    id: "DOC-1002",
+    name: "Dr. Rajesh Sharma",
+    qualification: "MBBS, MD (Medicine)",
+    specialty: "general_medicine",
+    experience: "16+ Years Exp.",
+    organizations: ["HSP-1001"],
+    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+  },
+  {
     id: "MULTI-1001",
     name: "Dr. Rahul Sharma",
     qualification: "MD (General Medicine)",
     specialty: "general_medicine",
     experience: "8+ Years Exp.",
     organizations: ["HSP-1001", "CLN-1001"],
-    avatar: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "DOC-1003",
+    name: "Dr. Priya Das",
+    qualification: "MS (General Surgery)",
+    specialty: "general_surgery",
+    experience: "10+ Years Exp.",
+    organizations: ["HSP-1001"],
+    avatar: "https://images.unsplash.com/photo-1594824813589-389f41dfd164?w=150&auto=format&fit=crop&q=80",
   },
 ];
 
@@ -96,7 +117,7 @@ export default function BookAppointmentPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Phase 6 Discovery Modes
+  // Discovery Modes
   const [discoveryMode, setDiscoveryMode] = useState<"DOCTOR_FIRST" | "FACILITY_FIRST" | "SERVICE_FIRST">("DOCTOR_FIRST");
   const [doctorPreference, setDoctorPreference] = useState<"SAME_DOCTOR_ONLY" | "PREFER_DOCTOR_ALLOW_ALTERNATIVES">("SAME_DOCTOR_ONLY");
 
@@ -121,20 +142,13 @@ export default function BookAppointmentPage() {
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Phase B.4 / 6.4: Alternatives & Waitlist State
+  // Alternatives & Waitlist State
   const [alternatives, setAlternatives] = useState<AlternativeAppointmentOption[]>([]);
   const [waitlistStatusMsg, setWaitlistStatusMsg] = useState<string | null>(null);
   const [isWaitlisting, setIsWaitlisting] = useState<boolean>(false);
 
-  // Generate Quick Date Options (Next 7 days)
-  const dateOptions = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const iso = d.toISOString().split("T")[0];
-    const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
-    const dayNum = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
-    return { iso, dayName, dayNum };
-  });
+  // Generate Quick Date Options (Remaining days in Current Calendar Week only)
+  const dateOptions = getRemainingCurrentWeekDates();
 
   // Fetch real-time doctor availability whenever doctor, facility, or date changes
   useEffect(() => {
@@ -303,7 +317,7 @@ export default function BookAppointmentPage() {
           ]}
         />
 
-        {/* Phase 6 Discovery Mode Selector */}
+        {/* Discovery Mode Selector */}
         {step < 5 && (
           <div className="bg-slate-100/90 p-1.5 rounded-2xl flex items-center gap-1 text-xs font-bold text-slate-600 border border-slate-200/80 shadow-2xs">
             <button
@@ -530,7 +544,7 @@ export default function BookAppointmentPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-5 pt-0 space-y-3.5">
-              {/* Doctor Preference Mode Toggle (Phase 6.1) */}
+              {/* Doctor Preference Mode Toggle */}
               <div className="bg-teal-50/60 p-3 rounded-2xl border border-teal-100 text-xs">
                 <span className="font-bold text-teal-900 block mb-1.5">Doctor Preference:</span>
                 <div className="grid grid-cols-2 gap-2">
@@ -561,7 +575,7 @@ export default function BookAppointmentPage() {
                 </div>
               </div>
 
-              {DOCTORS.map((doc) => {
+              {(selectedSpecialty === "all" ? DOCTORS : DOCTORS.filter(d => d.specialty === selectedSpecialty)).map((doc) => {
                 const isSelected = selectedDoctor.id === doc.id;
                 return (
                   <button
@@ -738,7 +752,7 @@ export default function BookAppointmentPage() {
                         <div>
                           {isBookable && isSelected && (
                             <Badge variant="teal" className="text-[10px]">
-                              ● Selected
+                              ● Selected
                             </Badge>
                           )}
                           {isFull && <Badge variant="destructive" className="text-[10px]">Full</Badge>}
@@ -749,7 +763,7 @@ export default function BookAppointmentPage() {
                   })}
                 </div>
 
-                {/* PHASE B.4: ALTERNATIVE APPOINTMENT OPTIONS & SAME-DOCTOR OPTIONS */}
+                {/* ALTERNATIVE APPOINTMENT OPTIONS & SAME-DOCTOR OPTIONS */}
                 {alternatives.length > 0 && (
                   <div className="space-y-3 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between">
@@ -833,7 +847,7 @@ export default function BookAppointmentPage() {
                   </div>
                 )}
 
-                {/* PHASE B.4: WAITLIST ACTION */}
+                {/* WAITLIST ACTION */}
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
@@ -953,15 +967,15 @@ export default function BookAppointmentPage() {
               </div>
             </div>
 
-            <div className="flex gap-2.5 pt-2">
-              <Link href="/patient/appointments" className="flex-1">
-                <Button className="w-full h-11 rounded-2xl text-xs font-bold bg-teal-700 hover:bg-teal-800 shadow-xs">
-                  View in My Appointments
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <Link href={`/patient/appointments/${bookingResult.appointment.id}`} className="flex-1">
+                <Button className="w-full h-11 rounded-2xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white shadow-xs">
+                  View Digital Pass & Queue
                 </Button>
               </Link>
-              <Link href="/patient" className="flex-1">
-                <Button variant="outline" className="w-full h-11 rounded-2xl text-xs font-semibold">
-                  Return Home
+              <Link href="/patient/appointments" className="flex-1">
+                <Button variant="outline" className="w-full h-11 rounded-2xl text-xs font-semibold border-slate-200 hover:bg-slate-50">
+                  My Appointments
                 </Button>
               </Link>
             </div>

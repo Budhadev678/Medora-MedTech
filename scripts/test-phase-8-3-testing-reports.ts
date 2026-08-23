@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 8.3 TEST SUITE: TESTING, RESULT ENTRY & REPORT GENERATION
+﻿// ============================================================
+// MEDORA â€” PHASE 8.3 TEST SUITE: TESTING, RESULT ENTRY & REPORT GENERATION
 // ============================================================
 
 import { LabTestingService } from "../lib/services/lab-testing-service";
@@ -19,17 +19,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase83Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 8.3 TEST SUITE: TESTING, RESULT ENTRY & REPORT GENERATION");
+  console.log("MEDORA â€” PHASE 8.3 TEST SUITE: TESTING, RESULT ENTRY & REPORT GENERATION");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();
@@ -127,7 +127,7 @@ async function runPhase83Tests() {
     orderId,
     "LOI-CBC-01",
     "LAB-FAC-1001",
-    "ABC Diagnostics — Rourkela Central Lab",
+    "ABC Diagnostics â€” Rourkela Central Lab",
     labTechActor as any
   );
   assert(enrollRes.success === true, "Enrolled ready sample into test worklist");

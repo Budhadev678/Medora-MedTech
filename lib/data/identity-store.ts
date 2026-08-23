@@ -1745,10 +1745,10 @@ export function updatePatientAddress(
     line1: string;
     line2?: string;
     city: string;
-    district: string;
+    district?: string;
     state: string;
     pincode: string;
-    country: string;
+    country?: string;
   }
 ): { success: boolean; error?: string; updated?: StoredIdentity } {
   const patient = findIdentityById(patientIdentifier);
@@ -1769,10 +1769,10 @@ export function updatePatientAddress(
     line1: address.line1.trim(),
     line2: address.line2?.trim() || "",
     city: address.city.trim(),
-    district: address.district.trim(),
+    district: address.district?.trim() || address.city.trim(),
     state: address.state.trim(),
     pincode: address.pincode.trim(),
-    country: address.country.trim() || "India",
+    country: address.country?.trim() || "India",
   };
 
   saveIdentity(patient);

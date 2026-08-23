@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — APPOINTMENT BACKEND RECONSTRUCTION TEST SUITE (PROMPT 2)
+﻿// ============================================================
+// MEDORA â€” APPOINTMENT BACKEND RECONSTRUCTION TEST SUITE (PROMPT 2)
 // Comprehensive 28-Point Validation Suite
 // ============================================================
 
@@ -14,17 +14,17 @@ let failed = 0;
 
 function assert(condition: boolean, testName: string, details?: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
     passed++;
   } else {
-    console.error(`  ✗ FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
     failed++;
   }
 }
 
 async function runTests() {
   console.log("============================================================");
-  console.log("MEDORA — APPOINTMENT BACKEND & DATABASE SUITE (PROMPT 2)");
+  console.log("MEDORA â€” APPOINTMENT BACKEND & DATABASE SUITE (PROMPT 2)");
   console.log("============================================================\n");
 
   const patientIdentity = findIdentityById("PAT-1001")!;
@@ -174,7 +174,7 @@ async function runTests() {
   assert(missingApt === null, "16. Querying non-existent appointment safely returns null (404 Not Found semantic)");
 
   // 17. Cancellation Flow
-  console.log("\nTEST GROUP 4: Lifecycle Operations — Rescheduling & Cancellation");
+  console.log("\nTEST GROUP 4: Lifecycle Operations â€” Rescheduling & Cancellation");
   const cancelRes = await AppointmentBookingService.cancelAppointment(
     createdAptId,
     patientIdentity,

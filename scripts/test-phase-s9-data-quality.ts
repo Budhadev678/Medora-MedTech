@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S9 MASTER DATA QUALITY & VALIDATION SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S9 MASTER DATA QUALITY & VALIDATION SUITE
 // Validates Data Correctness, Business Rules, Status Transitions,
 // Edge Cases, Duplicate Prevention, Mathematical Integrity & Zero Orphans
 // ============================================================
@@ -33,7 +33,7 @@ import { AppointmentStatus, BillStatus, PrescriptionStatus } from "@/types/datab
 
 async function runS9DataQualityTests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S9 DATA QUALITY & BUSINESS RULES SUITE");
+  console.log("MEDORA â€” STABILIZATION S9 DATA QUALITY & BUSINESS RULES SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -42,10 +42,10 @@ async function runS9DataQualityTests() {
   function assert(condition: boolean, description: string, details?: any) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
+      console.error(`  âœ• FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
     }
   }
 

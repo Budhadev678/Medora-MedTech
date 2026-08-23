@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 9.2 TEST SUITE: INVENTORY, AVAILABILITY & STOCK RESERVATION
+﻿// ============================================================
+// MEDORA â€” PHASE 9.2 TEST SUITE: INVENTORY, AVAILABILITY & STOCK RESERVATION
 // ============================================================
 
 import { PharmacyInventoryService } from "../lib/services/pharmacy-inventory-service";
@@ -20,17 +20,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase92Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 9.2 TEST SUITE: INVENTORY, AVAILABILITY & RESERVATION");
+  console.log("MEDORA â€” PHASE 9.2 TEST SUITE: INVENTORY, AVAILABILITY & RESERVATION");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

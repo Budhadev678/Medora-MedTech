@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getAuthenticatedUser, jsonResponse, jsonError, jsonUnauthorized, validateRole } from "@/lib/api/api-utils";
 import { ReferralService } from "@/lib/services/referral-service";
 import { getAllReferrals } from "@/lib/data/referral-store";

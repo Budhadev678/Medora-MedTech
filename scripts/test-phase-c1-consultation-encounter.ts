@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE C.1 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE C.1 TEST SUITE
 // CLINICAL ENCOUNTER & DOCTOR CONSULTATION WORKSPACE
 // ============================================================
 
@@ -27,17 +27,17 @@ let failed = 0;
 
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
-    console.log(`  ✅ PASS: ${testName}`);
+    console.log(`  âœ… PASS: ${testName}`);
     passed++;
   } else {
-    console.error(`  ❌ FAIL: ${testName}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  âŒ FAIL: ${testName}${detail ? ` â€” ${detail}` : ""}`);
     failed++;
   }
 }
 
 async function runTests() {
   console.log("\n============================================================");
-  console.log("MEDORA — PHASE C.1 VERIFICATION TEST SUITE");
+  console.log("MEDORA â€” PHASE C.1 VERIFICATION TEST SUITE");
   console.log("CLINICAL ENCOUNTER & DOCTOR CONSULTATION WORKSPACE");
   console.log("============================================================\n");
 
@@ -71,7 +71,7 @@ async function runTests() {
   }
 
   // ------------------------------------------------------------
-  // TEST 1: Invariant — Booking Appointment Does NOT Create Encounter
+  // TEST 1: Invariant â€” Booking Appointment Does NOT Create Encounter
   // ------------------------------------------------------------
   console.log("--- TEST GROUP 1: Appointment vs Encounter Separation Invariant ---");
 
@@ -177,7 +177,7 @@ async function runTests() {
   const encounterId = startRes.encounter!.id;
 
   // ------------------------------------------------------------
-  // TEST 5: Doctor Exclusivity — Concurrent Consultations Guard
+  // TEST 5: Doctor Exclusivity â€” Concurrent Consultations Guard
   // ------------------------------------------------------------
   console.log("\n--- TEST GROUP 5: Single Active Consultation Invariant ---");
 

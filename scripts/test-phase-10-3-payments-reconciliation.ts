@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 10.3 TEST SUITE: PAYMENTS & RECONCILIATION
+﻿// ============================================================
+// MEDORA â€” PHASE 10.3 TEST SUITE: PAYMENTS & RECONCILIATION
 // ============================================================
 
 import { PaymentProcessingService } from "../lib/services/payment-processing-service";
@@ -14,17 +14,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase103Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 10.3 TEST SUITE: PAYMENTS & RECONCILIATION");
+  console.log("MEDORA â€” PHASE 10.3 TEST SUITE: PAYMENTS & RECONCILIATION");
   console.log("============================================================\n");
 
   const cashier = {
@@ -50,7 +50,7 @@ async function runPhase103Tests() {
     organizationId: "11111111-1111-1111-1111-111111111101",
     organizationName: "City Hospital",
     facilityId: "FAC-1001",
-    facilityName: "City Hospital — Rourkela Central",
+    facilityName: "City Hospital â€” Rourkela Central",
     billType: "FINAL",
     actor: cashier as any,
   });

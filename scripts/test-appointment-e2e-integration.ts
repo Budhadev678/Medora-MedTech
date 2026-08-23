@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — APPOINTMENT MASTER INTEGRATION & LOGIC SUITE (PROMPT 4)
+﻿// ============================================================
+// MEDORA â€” APPOINTMENT MASTER INTEGRATION & LOGIC SUITE (PROMPT 4)
 // End-to-End Cross-Role Synchronization & Concurrency Test
 // ============================================================
 
@@ -16,17 +16,17 @@ let failed = 0;
 
 function assert(condition: boolean, testName: string, details?: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
     passed++;
   } else {
-    console.error(`  ✗ FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` -> ${details}` : ""}`);
     failed++;
   }
 }
 
 async function runMasterIntegrationSuite() {
   console.log("============================================================");
-  console.log("MEDORA — APPOINTMENT END-TO-END LOGIC & INTEGRATION SUITE");
+  console.log("MEDORA â€” APPOINTMENT END-TO-END LOGIC & INTEGRATION SUITE");
   console.log("============================================================\n");
 
   const patientA = findIdentityById("PAT-1001")!;

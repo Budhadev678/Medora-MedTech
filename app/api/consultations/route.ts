@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getAuthenticatedUser, jsonResponse, jsonError, jsonUnauthorized, jsonForbidden, validateRole, validatePatientRecordAccess } from "@/lib/api/api-utils";
 import { ConsultationService } from "@/lib/services/consultation-service";
 import { getEncounterById, getPatientEncounters } from "@/lib/data/encounter-store";

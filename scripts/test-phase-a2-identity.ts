@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE A.2 AUTOMATED TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE A.2 AUTOMATED TEST SUITE
 // IDENTITY & ORGANIZATION MEMBERSHIP ARCHITECTURE (11/11 TESTS)
 // ============================================================
 
@@ -32,20 +32,20 @@ let failedCount = 0;
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
     passedCount++;
-    console.log(`  ✅ PASS: ${testName}`);
+    console.log(`  âœ… PASS: ${testName}`);
   } else {
     failedCount++;
-    console.error(`  ❌ FAIL: ${testName}`);
+    console.error(`  âŒ FAIL: ${testName}`);
     if (detail) console.error(`     Detail: ${detail}`);
   }
 }
 
 console.log("\n============================================================");
-console.log("🧪 STARTING PHASE A.2 IDENTITY & MEMBERSHIP VERIFICATION");
+console.log("ðŸ§ª STARTING PHASE A.2 IDENTITY & MEMBERSHIP VERIFICATION");
 console.log("============================================================\n");
 
 // ------------------------------------------------------------
-// TEST 1 — PATIENT IDENTITY ISOLATION
+// TEST 1 â€” PATIENT IDENTITY ISOLATION
 // ------------------------------------------------------------
 console.log("--- TEST 1: PATIENT IDENTITY ISOLATION ---");
 const patientA = findIdentityById("PAT-1001");
@@ -63,7 +63,7 @@ assert(encB.every(e => e.patient_id === "PAT-1002"), "Patient B encounters stric
 assert(!encB.some(e => e.patient_name === "Rahul Verma"), "Patient B never sees Patient A data");
 
 // ------------------------------------------------------------
-// TEST 2 — ONE DOCTOR, ONE ORGANIZATION
+// TEST 2 â€” ONE DOCTOR, ONE ORGANIZATION
 // ------------------------------------------------------------
 console.log("\n--- TEST 2: ONE DOCTOR, ONE ORGANIZATION ---");
 const docRajesh = findIdentityById("DOC-1002");
@@ -74,7 +74,7 @@ assert(rajeshMemberships[0].organization_identifier === "HSP-1001", "Dr. Rajesh 
 assert(rajeshMemberships[0].role_title === "Senior Consultant", "Dr. Rajesh designation is Senior Consultant");
 
 // ------------------------------------------------------------
-// TEST 3 — ONE DOCTOR, MULTIPLE ORGANIZATIONS
+// TEST 3 â€” ONE DOCTOR, MULTIPLE ORGANIZATIONS
 // ------------------------------------------------------------
 console.log("\n--- TEST 3: ONE DOCTOR, MULTIPLE ORGANIZATIONS ---");
 const docAnanya = findIdentityById("DOC-1001");
@@ -90,7 +90,7 @@ assert(orgsAffiliated.includes("HSP-1002"), "Dr. Ananya has membership at Green 
 assert(orgsAffiliated.includes("CLN-1001"), "Dr. Ananya has membership at Green Care Clinic (CLN-1001)");
 
 // ------------------------------------------------------------
-// TEST 4 — STAFF MULTIPLE ORGANIZATIONS
+// TEST 4 â€” STAFF MULTIPLE ORGANIZATIONS
 // ------------------------------------------------------------
 console.log("\n--- TEST 4: STAFF MULTIPLE ORGANIZATIONS ---");
 const anitaMemberships = getAllMemberships().filter(m => m.person_id === "PER-STAFF-1002");
@@ -101,7 +101,7 @@ assert(anitaMemberships[1].organization_identifier === "CLN-1001", "Anita member
 assert(anitaMemberships[0].role_title === "Receptionist", "Anita role title is Receptionist");
 
 // ------------------------------------------------------------
-// TEST 5 — SAME PERSON DIFFERENT ROLES
+// TEST 5 â€” SAME PERSON DIFFERENT ROLES
 // ------------------------------------------------------------
 console.log("\n--- TEST 5: SAME PERSON DIFFERENT ROLES ---");
 const rahulMulti = getAllMemberships().filter(m => m.person_id === "PER-MULTI-1001");
@@ -111,7 +111,7 @@ assert(rahulMulti.find(m => m.organization_identifier === "HSP-1001")?.member_ro
 assert(rahulMulti.find(m => m.organization_identifier === "CLN-1001")?.member_role === "hospital_admin", "Rahul is an Administrator at Green Care Clinic");
 
 // ------------------------------------------------------------
-// TEST 6 — REVOKED MEMBERSHIP & HISTORICAL INTEGRITY
+// TEST 6 â€” REVOKED MEMBERSHIP & HISTORICAL INTEGRITY
 // ------------------------------------------------------------
 console.log("\n--- TEST 6: REVOKED MEMBERSHIP ---");
 const testRevokeRes = revokeMembership("MEM-1003", "Doctor ended visiting contract");
@@ -129,7 +129,7 @@ assert(stillDoc !== null && stillDoc.fullName === "Dr. Ananya Sharma", "Dr. Anan
 acceptMembership("MEM-1003");
 
 // ------------------------------------------------------------
-// TEST 7 — NEW ORGANIZATION CREATION
+// TEST 7 â€” NEW ORGANIZATION CREATION
 // ------------------------------------------------------------
 console.log("\n--- TEST 7: NEW ORGANIZATION CREATION ---");
 const newOrgRes = createOrganization({
@@ -146,7 +146,7 @@ const fetchedOrg = getOrganizationById("CLN-9999");
 assert(fetchedOrg !== null && fetchedOrg.name === "Lifeline Specialty Clinic", "Fetched newly created organization by medora_id");
 
 // ------------------------------------------------------------
-// TEST 8 — EXISTING USER JOINS NEW ORGANIZATION
+// TEST 8 â€” EXISTING USER JOINS NEW ORGANIZATION
 // ------------------------------------------------------------
 console.log("\n--- TEST 8: EXISTING USER JOINS ORGANIZATION ---");
 const joinRes = createMembership({
@@ -166,7 +166,7 @@ const ananyaUpdatedMemberships = getPersonMemberships(docAnanya!.id);
 assert(ananyaUpdatedMemberships.some(m => m.organization_identifier === "CLN-9999"), "New membership appears in doctor's memberships");
 
 // ------------------------------------------------------------
-// TEST 9 — PROFILE FAILURE (ZERO CROSS-IDENTITY FALLBACK)
+// TEST 9 â€” PROFILE FAILURE (ZERO CROSS-IDENTITY FALLBACK)
 // ------------------------------------------------------------
 console.log("\n--- TEST 9: MISSING PROFILE ZERO FALLBACK ---");
 const nonExistent = findIdentityById("PAT-9999");
@@ -175,7 +175,7 @@ const nonExistentEnc = getPatientEncounters("PAT-9999");
 assert(nonExistentEnc.length === 0, "Non-existent patient encounters list is empty (Zero data leakage)");
 
 // ------------------------------------------------------------
-// TEST 10 — DATA PERSISTENCE ACROSS RE-QUERY
+// TEST 10 â€” DATA PERSISTENCE ACROSS RE-QUERY
 // ------------------------------------------------------------
 console.log("\n--- TEST 10: DATA PERSISTENCE ---");
 const allOrgs = getAllOrganizations();
@@ -184,7 +184,7 @@ const allMems = getAllMemberships();
 assert(allMems.length >= 10, "Authoritative memberships store contains all seeded & active relationships");
 
 // ------------------------------------------------------------
-// TEST 11 — HISTORICAL DATA PRESERVATION
+// TEST 11 â€” HISTORICAL DATA PRESERVATION
 // ------------------------------------------------------------
 console.log("\n--- TEST 11: HISTORICAL DATA PRESERVATION ---");
 const rahulEncounters = getPatientEncounters("PAT-1001");
@@ -194,7 +194,7 @@ assert(enc1?.provider_name === "Dr. Ananya Sharma", "ENC-1001 provider remains D
 assert(enc1?.organization_name === "City Hospital", "ENC-1001 organization remains City Hospital");
 
 // ------------------------------------------------------------
-// TEST 12 — EMAIL ALIASES & IDENTIFIER RESOLUTION
+// TEST 12 â€” EMAIL ALIASES & IDENTIFIER RESOLUTION
 // ------------------------------------------------------------
 console.log("\n--- TEST 12: EMAIL ALIASES & IDENTIFIER RESOLUTION ---");
 const cityHospByAlias = findIdentityByEmail("admin@cityhospital.org");
@@ -212,7 +212,7 @@ const recepByEmail = findIdentityByEmail("anita@cityhospital.org");
 assert(recepByEmail !== null && recepByEmail.identifier === "STAFF-1002", "anita@cityhospital.org resolves to STAFF-1002");
 
 console.log("\n============================================================");
-console.log(`📊 PHASE A.2 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
+console.log(`ðŸ“Š PHASE A.2 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
 console.log("============================================================\n");
 
 if (failedCount > 0) {

@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 9.4 TEST SUITE: PHARMACY TRANSPARENCY & NOTIFICATIONS
+﻿// ============================================================
+// MEDORA â€” PHASE 9.4 TEST SUITE: PHARMACY TRANSPARENCY & NOTIFICATIONS
 // ============================================================
 
 import { PharmacyTransparencyService } from "../lib/services/pharmacy-transparency-service";
@@ -12,17 +12,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase94Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 9.4 TEST SUITE: TRANSPARENCY & NOTIFICATIONS");
+  console.log("MEDORA â€” PHASE 9.4 TEST SUITE: TRANSPARENCY & NOTIFICATIONS");
   console.log("============================================================\n");
 
   const sampleOrder: any = {
@@ -31,7 +31,7 @@ async function runPhase94Tests() {
     patient_id: "PAT-1001",
     patient_name: "Rahul Verma",
     facility_id: "PHARM-FAC-1001",
-    facility_name: "ABC Pharmacy — Rourkela Central",
+    facility_name: "ABC Pharmacy â€” Rourkela Central",
     fulfillment_type: "PICKUP",
     verification_otp: "948201",
   };
@@ -41,7 +41,7 @@ async function runPhase94Tests() {
     order_id: "PHARM-ORD-1001",
     prescription_id: "PRX-1001",
     patient_id: "PAT-1001",
-    facility_name: "ABC Pharmacy — Rourkela Central",
+    facility_name: "ABC Pharmacy â€” Rourkela Central",
     pharmacist_name: "Pharmacist Priya",
     status: "DISPENSED",
     is_partial: false,

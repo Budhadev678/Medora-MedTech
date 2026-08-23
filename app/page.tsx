@@ -2,42 +2,42 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ShieldCheck, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { Activity, ArrowRight, ShieldCheck, Sparkles, HeartPulse } from "lucide-react";
 
 export default function SplashGatewayPage() {
   const router = useRouter();
-  const [progress, setProgress] = useState(15);
+  const [progress, setProgress] = useState(20);
   const [statusMessage, setStatusMessage] = useState("Initializing Sovereign Identity...");
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    // Stage 1: Verifying memberships
+    // Stage 1: Facility Memberships
     const t1 = setTimeout(() => {
-      setProgress(45);
+      setProgress(50);
       setStatusMessage("Verifying Facility & Organization Memberships...");
-    }, 450);
+    }, 500);
 
-    // Stage 2: Evaluating RBAC
+    // Stage 2: RBAC & Permissions
     const t2 = setTimeout(() => {
-      setProgress(80);
+      setProgress(85);
       setStatusMessage("Loading Multi-Factor Contextual Permissions...");
-    }, 950);
+    }, 1100);
 
     // Stage 3: Ready
     const t3 = setTimeout(() => {
       setProgress(100);
       setStatusMessage("MEDORA Ready — Launching Sign-In...");
-    }, 1450);
+    }, 1700);
 
     // Stage 4: Fade out
     const t4 = setTimeout(() => {
       setFading(true);
-    }, 1800);
+    }, 2200);
 
     // Stage 5: Automatically Navigate to /login
     const t5 = setTimeout(() => {
       router.replace("/login");
-    }, 2200);
+    }, 2600);
 
     return () => {
       clearTimeout(t1);
@@ -56,7 +56,7 @@ export default function SplashGatewayPage() {
   return (
     <div
       onClick={handleSkipOrClick}
-      className={`relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-900 via-slate-950 to-teal-950 text-white overflow-hidden cursor-pointer transition-opacity duration-500 ${
+      className={`relative min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-950 via-slate-900 to-teal-950 text-white overflow-hidden cursor-pointer select-none transition-opacity duration-500 ${
         fading ? "opacity-0" : "opacity-100"
       }`}
       title="Click anywhere to continue to Sign In"
@@ -66,20 +66,20 @@ export default function SplashGatewayPage() {
       <div className="absolute bottom-1/4 -right-32 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-teal-900/10 blur-3xl pointer-events-none" />
 
-      {/* Skip Button in Top Right */}
+      {/* Top Right Skip Button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           handleSkipOrClick();
         }}
         type="button"
-        className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-slate-300 hover:text-white transition-all backdrop-blur-md border border-white/10"
+        className="absolute top-6 right-6 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-200 hover:text-white transition-all backdrop-blur-md border border-white/10 shadow-lg group active:scale-95"
       >
         <span>Skip to Sign In</span>
-        <ArrowRight className="h-3 w-3" />
+        <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
       </button>
 
-      {/* Center Splash Branding */}
+      {/* Center Splash Branding Container */}
       <div className="relative z-10 w-full max-w-md text-center flex flex-col items-center space-y-6">
         
         {/* Animated Medora Heartbeat Emblem */}
@@ -91,8 +91,8 @@ export default function SplashGatewayPage() {
         </div>
 
         {/* Brand Name & Tagline */}
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-teal-500/10 border border-teal-400/20 text-[10px] font-bold uppercase tracking-widest text-teal-300">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-400/20 text-[10px] font-bold uppercase tracking-widest text-teal-300">
             <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-ping" />
             National Healthcare Architecture
           </div>
@@ -118,51 +118,66 @@ export default function SplashGatewayPage() {
             strokeLinejoin="round"
           >
             <path
-              d="M 0,30 L 70,30 L 85,10 L 95,50 L 110,15 L 120,38 L 130,30 L 200,30 L 215,8 L 225,52 L 240,20 L 250,30 L 300,30"
-              strokeDasharray="300"
-              strokeDashoffset="0"
+              d="M0 30 H60 L75 10 L90 50 L105 20 L120 38 L135 30 H180 L195 10 L210 50 L225 20 L240 38 L255 30 H300"
+              className="stroke-dasharray-anim"
             />
           </svg>
         </div>
 
-        {/* Animated Progress Bar & Live Stage Message */}
+        {/* Progress Bar & Real-Time Status Text */}
         <div className="w-full max-w-xs space-y-2.5">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 p-0.5 backdrop-blur-sm">
+          <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-white/5">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400 transition-all duration-300 ease-out shadow-xs shadow-teal-400/50"
+              className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-500 ease-out shadow-sm shadow-teal-400/50"
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium px-1">
             <span className="truncate max-w-[220px]">{statusMessage}</span>
-            <span className="font-bold text-teal-300">{progress}%</span>
+            <span className="font-mono text-teal-300 font-bold">{progress}%</span>
           </div>
         </div>
 
-        {/* Bottom Hint */}
-        <p className="text-[11px] text-slate-500 font-medium pt-2">
-          Redirecting to Sign In automatically... (or tap anywhere)
-        </p>
-
-        {/* Feature Badges Footer */}
-        <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-center gap-4 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-          <div className="flex items-center gap-1">
-            <ShieldCheck className="h-3.5 w-3.5 text-teal-400" />
-            <span>ABDM Integrated</span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Multi-Hospital</span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-1">
-            <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-            <span>Zero IDOR</span>
-          </div>
+        {/* Action Button Strip */}
+        <div className="pt-4 flex flex-col items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSkipOrClick();
+            }}
+            type="button"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-lg shadow-teal-900/40 hover:shadow-teal-700/50 transition-all active:scale-95"
+          >
+            <span>Enter MEDORA</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <span className="text-[10px] text-slate-400">Click anywhere to proceed</span>
         </div>
+
       </div>
+
+      {/* Footer Sovereign Compliance Indicator */}
+      <div className="absolute bottom-6 flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+        <ShieldCheck className="h-3.5 w-3.5 text-teal-400" />
+        <span>Strict Anti-IDOR Authorization • Real-Time Synchronization • ABDM Compliant</span>
+      </div>
+
+      <style jsx>{`
+        .stroke-dasharray-anim {
+          stroke-dasharray: 400;
+          stroke-dashoffset: 400;
+          animation: ecgDash 2s linear infinite;
+        }
+        @keyframes ecgDash {
+          0% {
+            stroke-dashoffset: 400;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }

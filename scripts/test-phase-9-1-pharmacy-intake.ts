@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 9.1 TEST SUITE: PHARMACY ORGANIZATION & PRESCRIPTION INTAKE
+﻿// ============================================================
+// MEDORA â€” PHASE 9.1 TEST SUITE: PHARMACY ORGANIZATION & PRESCRIPTION INTAKE
 // ============================================================
 
 import { PharmacyIntakeService } from "../lib/services/pharmacy-intake-service";
@@ -22,17 +22,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase91Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 9.1 TEST SUITE: PHARMACY ORGANIZATION & INTAKE");
+  console.log("MEDORA â€” PHASE 9.1 TEST SUITE: PHARMACY ORGANIZATION & INTAKE");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();
@@ -66,11 +66,11 @@ async function runPhase91Tests() {
   assert(orgs[0].connectivity_status === "CONNECTED", "Pharmacy Organization status is CONNECTED");
 
   const facility1 = getPharmacyFacilityById("PHARM-FAC-1001");
-  assert(Boolean(facility1), "Resolved Facility 1: ABC Pharmacy — Rourkela Central");
+  assert(Boolean(facility1), "Resolved Facility 1: ABC Pharmacy â€” Rourkela Central");
   assert(facility1?.organization_id === "PHARM-ORG-1001", "Facility 1 belongs to PHARM-ORG-1001");
 
   const facility2 = getPharmacyFacilityById("PHARM-FAC-1002");
-  assert(Boolean(facility2), "Resolved Facility 2: ABC Pharmacy — Branch 2 (Multi-Branch)");
+  assert(Boolean(facility2), "Resolved Facility 2: ABC Pharmacy â€” Branch 2 (Multi-Branch)");
 
   // ------------------------------------------------------------
   // TEST GROUP 2: Staff Memberships & RBAC Permissions

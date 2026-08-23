@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE C.3 AUTOMATED VERIFICATION SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE C.3 AUTOMATED VERIFICATION SUITE
 // Connected Laboratory Order -> Sample -> Report Engine
 // ============================================================
 
@@ -34,18 +34,18 @@ let failedCount = 0;
 
 function assert(condition: boolean, description: string) {
   if (condition) {
-    console.log(`  ✔ PASS: ${description}`);
+    console.log(`  âœ” PASS: ${description}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${description}`);
+    console.error(`  âŒ FAIL: ${description}`);
     failedCount++;
   }
 }
 
 async function runPhaseC3VerificationSuite() {
   console.log("\n============================================================");
-  console.log("MEDORA — MODIFICATION PHASE C.3 AUTOMATED VERIFICATION SUITE");
-  console.log("CONNECTED LABORATORY ORDER → SAMPLE → REPORT ENGINE");
+  console.log("MEDORA â€” MODIFICATION PHASE C.3 AUTOMATED VERIFICATION SUITE");
+  console.log("CONNECTED LABORATORY ORDER â†’ SAMPLE â†’ REPORT ENGINE");
   console.log("============================================================\n");
 
   resetLaboratoryStore();
@@ -307,8 +307,8 @@ async function runPhaseC3VerificationSuite() {
         resultType: "NUMERIC",
         value: "8.5",
         numericValue: 8.5,
-        unit: "10^3/µL",
-        referenceRange: "4.0 - 11.0 10^3/µL",
+        unit: "10^3/ÂµL",
+        referenceRange: "4.0 - 11.0 10^3/ÂµL",
         flag: "NORMAL",
       },
     ],

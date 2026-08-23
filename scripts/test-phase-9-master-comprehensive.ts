@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MASTER PHASE 9 COMPREHENSIVE SUITE (SUB-PHASES 9.1 & 9.2)
+﻿// ============================================================
+// MEDORA â€” MASTER PHASE 9 COMPREHENSIVE SUITE (SUB-PHASES 9.1 & 9.2)
 // Master Phase 9: Connected Pharmacy & Medicine Dispensing System
 // ============================================================
 
@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 
 async function runMasterPhase9Comprehensive() {
   console.log("============================================================");
-  console.log("MEDORA — MASTER PHASE 9 COMPREHENSIVE VERIFICATION (9.1 & 9.2)");
+  console.log("MEDORA â€” MASTER PHASE 9 COMPREHENSIVE VERIFICATION (9.1 & 9.2)");
   console.log("============================================================\n");
 
   const suites = [
@@ -18,12 +18,12 @@ async function runMasterPhase9Comprehensive() {
   ];
 
   for (const s of suites) {
-    console.log(`\n▶ EXECUTING: ${s.name}...`);
+    console.log(`\nâ–¶ EXECUTING: ${s.name}...`);
     try {
       const output = execSync(`npx tsx ${s.script}`, { encoding: "utf-8" });
       console.log(output);
     } catch (err: any) {
-      console.error(`❌ FAILURE IN SUITE: ${s.name}`);
+      console.error(`âŒ FAILURE IN SUITE: ${s.name}`);
       console.error(err.stdout || err.message);
       process.exit(1);
     }

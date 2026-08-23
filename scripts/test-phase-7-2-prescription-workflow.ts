@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 7.2 TEST SUITE: DIGITAL PRESCRIPTION WORKFLOW
+﻿// ============================================================
+// MEDORA â€” PHASE 7.2 TEST SUITE: DIGITAL PRESCRIPTION WORKFLOW
 // ============================================================
 
 import { PrescriptionOrderService } from "../lib/services/prescription-order-service";
@@ -15,17 +15,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase72Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 7.2 TEST SUITE: DIGITAL PRESCRIPTION WORKFLOW");
+  console.log("MEDORA â€” PHASE 7.2 TEST SUITE: DIGITAL PRESCRIPTION WORKFLOW");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

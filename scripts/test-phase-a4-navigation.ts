@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE A.4 AUTOMATED TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE A.4 AUTOMATED TEST SUITE
 // DASHBOARD, WORKSPACE & NAVIGATION ARCHITECTURE (TEST MATRIX)
 // ============================================================
 
@@ -47,16 +47,16 @@ let failedCount = 0;
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
     passedCount++;
-    console.log(`  ✅ PASS: ${testName}`);
+    console.log(`  âœ… PASS: ${testName}`);
   } else {
     failedCount++;
-    console.error(`  ❌ FAIL: ${testName}`);
+    console.error(`  âŒ FAIL: ${testName}`);
     if (detail) console.error(`     Detail: ${detail}`);
   }
 }
 
 console.log("\n============================================================");
-console.log("🧪 STARTING PHASE A.4 WORKSPACE & NAVIGATION VERIFICATION");
+console.log("ðŸ§ª STARTING PHASE A.4 WORKSPACE & NAVIGATION VERIFICATION");
 console.log("============================================================\n");
 
 // Identities
@@ -74,7 +74,7 @@ const bloodStaff = findIdentityByEmail("bloodbank@medora.health") || findIdentit
 const platformAdmin = findIdentityByEmail("admin@medora.health") || findIdentityById("ADM-1001");
 
 // ------------------------------------------------------------
-// TEST 1 — Patient Mobile Workspace & Navigation
+// TEST 1 â€” Patient Mobile Workspace & Navigation
 // ------------------------------------------------------------
 console.log("--- TEST 1: PATIENT MOBILE WORKSPACE & NAVIGATION ---");
 const patWs = resolveWorkspace(patientA, null, "patient");
@@ -88,7 +88,7 @@ const hasMoreFinance = PATIENT_MORE_NAV.some(i => i.href === "/patient/finance")
 assert(hasMoreDocuments && hasMoreInsurance && hasMoreGovt && hasMoreFinance, "Patient More drawer contains certified Documents, Insurance, Govt Schemes, and Financing");
 
 // ------------------------------------------------------------
-// TEST 2 — Doctor Workspace & Multi-Hospital Scoping
+// TEST 2 â€” Doctor Workspace & Multi-Hospital Scoping
 // ------------------------------------------------------------
 console.log("\n--- TEST 2: DOCTOR WORKSPACE & MULTI-ORGANIZATION CONTEXT ---");
 const ananyaMemberships = getPersonMemberships(docAnanya!.id);
@@ -105,7 +105,7 @@ assert(DOCTOR_NAV.some(i => i.href === "/doctor/consultations"), "Doctor workspa
 assert(!DOCTOR_NAV.some(i => i.href.includes("insurance") || i.href.includes("government")), "Doctor workspace excludes unrelated insurance/government dashboards");
 
 // ------------------------------------------------------------
-// TEST 3 — Receptionist Role-Specific Workspace (No Generic Staff Dashboard)
+// TEST 3 â€” Receptionist Role-Specific Workspace (No Generic Staff Dashboard)
 // ------------------------------------------------------------
 console.log("\n--- TEST 3: RECEPTIONIST WORKSPACE (ANITA) ---");
 const anitaMemberships = getPersonMemberships(staffAnita!.id);
@@ -117,7 +117,7 @@ assert(RECEPTION_NAV.some(i => i.href === "/reception/checkin"), "Reception navi
 assert(!RECEPTION_NAV.some(i => i.href.includes("prescription") || i.href.includes("consultations")), "Reception navigation excludes clinical diagnosis and prescribing");
 
 // ------------------------------------------------------------
-// TEST 4 — Front-Desk Multi-Clinic Staff Workspace (Anita)
+// TEST 4 â€” Front-Desk Multi-Clinic Staff Workspace (Anita)
 // ------------------------------------------------------------
 console.log("\n--- TEST 4: MULTI-CLINIC RECEPTIONIST WORKSPACE (ANITA) ---");
 const anitaMemClinic = anitaMemberships.find(m => m.organization_identifier === "CLN-1001");
@@ -127,7 +127,7 @@ assert(anitaWsClinic?.landingRoute === "/reception", "Clinic Receptionist landin
 assert(!RECEPTION_NAV.some(i => i.href.includes("billing/create") || i.href.includes("prescription")), "Reception navigation excludes clinical diagnosis and prescribing");
 
 // ------------------------------------------------------------
-// TEST 5 — Multi-Role User Context Isolation (Rahul Multi-Role)
+// TEST 5 â€” Multi-Role User Context Isolation (Rahul Multi-Role)
 // ------------------------------------------------------------
 console.log("\n--- TEST 5: MULTI-ROLE CONTEXT ISOLATION (RAHUL MULTI-ROLE) ---");
 const rahulMemberships = getPersonMemberships(rahulMulti!.id);
@@ -142,7 +142,7 @@ assert(rahulAdminWs?.id === "clinic_operations", "Rahul in Green Care Clinic con
 assert(rahulDocWs?.id !== rahulAdminWs?.id, "Doctor and Clinic Admin workspaces remain completely isolated");
 
 // ------------------------------------------------------------
-// TEST 6 — Hospital Command Center & Clinic Operations Workspaces
+// TEST 6 â€” Hospital Command Center & Clinic Operations Workspaces
 // ------------------------------------------------------------
 console.log("\n--- TEST 6: HOSPITAL & CLINIC WORKSPACES ---");
 const hspWs = resolveWorkspace(hospAdmin, null, "hospital_admin");
@@ -154,7 +154,7 @@ assert(clnWs?.id === "clinic_operations", "Clinic Admin resolves clinic_operatio
 assert(clnWs?.landingRoute === "/clinic", "Clinic landing route is /clinic");
 
 // ------------------------------------------------------------
-// TEST 7 — Diagnostic Laboratory & Pharmacy Workspaces
+// TEST 7 â€” Diagnostic Laboratory & Pharmacy Workspaces
 // ------------------------------------------------------------
 console.log("\n--- TEST 7: LABORATORY & PHARMACY WORKSPACES ---");
 const labWs = resolveWorkspace(labTech, null, "lab_staff");
@@ -166,7 +166,7 @@ assert(pharmWs?.id === "pharmacy_operations", "Pharmacist resolves pharmacy_oper
 assert(pharmWs?.landingRoute === "/pharmacy", "Pharmacy landing route is /pharmacy");
 
 // ------------------------------------------------------------
-// TEST 8 — Blood Centre & Platform Admin Workspaces
+// TEST 8 â€” Blood Centre & Platform Admin Workspaces
 // ------------------------------------------------------------
 console.log("\n--- TEST 8: BLOOD CENTRE & PLATFORM ADMIN WORKSPACES ---");
 const bloodWs = resolveWorkspace(bloodStaff, null, "blood_staff");
@@ -177,7 +177,7 @@ assert(adminWs?.id === "platform_admin", "Platform admin resolves platform_admin
 assert(adminWs?.landingRoute === "/admin", "Admin landing route is /admin");
 
 // ------------------------------------------------------------
-// TEST 9 — Security Boundary & Direct Route Manipulation Checks
+// TEST 9 â€” Security Boundary & Direct Route Manipulation Checks
 // ------------------------------------------------------------
 console.log("\n--- TEST 9: SECURITY BOUNDARY CHECKS ---");
 // Patient trying to access doctor clinical actions
@@ -209,7 +209,7 @@ const sec3 = AuthorizationEngine.evaluateOperation({
 assert(!sec3.allowed && sec3.decision === "PERMISSION_DENIED", "Hospital Admin blocked from platform admin governance");
 
 // ------------------------------------------------------------
-// TEST 10 — Multi-Organization Context Switch Authorization Check
+// TEST 10 â€” Multi-Organization Context Switch Authorization Check
 // ------------------------------------------------------------
 console.log("\n--- TEST 10: MULTI-ORG CONTEXT SWITCH AUTHORIZATION ---");
 // Dr. Ananya switching to authorized Green Care Clinic
@@ -245,7 +245,7 @@ assert(!switchRevoked.allowed && switchRevoked.decision === "MEMBERSHIP_INACTIVE
 acceptMembership("MEM-1003"); // Restore
 
 console.log("\n============================================================");
-console.log(`📊 PHASE A.4 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
+console.log(`ðŸ“Š PHASE A.4 TEST RESULTS: ${passedCount} PASSED / ${failedCount} FAILED`);
 console.log("============================================================\n");
 
 if (failedCount > 0) {

@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 5.3 COMPREHENSIVE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 5.3 COMPREHENSIVE TEST SUITE
 // HEALTHCARE STAFF, DOCTOR AFFILIATIONS, ROLES, PERMISSIONS &
 // OPERATIONAL ASSIGNMENT ENGINE
 // ============================================================
@@ -47,15 +47,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 5.3 TEST SUITE: PEOPLE, AFFILIATIONS & RBAC");
+console.log("MEDORA â€” PHASE 5.3 TEST SUITE: PEOPLE, AFFILIATIONS & RBAC");
 console.log("============================================================\n");
 
 resetAffiliationStore();

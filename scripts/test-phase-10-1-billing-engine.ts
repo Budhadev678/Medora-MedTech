@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 10.1 TEST SUITE: BILLING ENGINE & PROVENANCE
+﻿// ============================================================
+// MEDORA â€” PHASE 10.1 TEST SUITE: BILLING ENGINE & PROVENANCE
 // ============================================================
 
 import { BillingEngineService } from "../lib/services/billing-engine-service";
@@ -12,17 +12,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase101Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 10.1 TEST SUITE: BILLING ENGINE & PROVENANCE");
+  console.log("MEDORA â€” PHASE 10.1 TEST SUITE: BILLING ENGINE & PROVENANCE");
   console.log("============================================================\n");
 
   const billingOfficer = {
@@ -45,7 +45,7 @@ async function runPhase101Tests() {
     organizationId: "11111111-1111-1111-1111-111111111101",
     organizationName: "City Hospital",
     facilityId: "FAC-1001",
-    facilityName: "City Hospital — Rourkela Central",
+    facilityName: "City Hospital â€” Rourkela Central",
     encounterId: "ENC-1001",
     billType: "FINAL",
     actor: billingOfficer as any,

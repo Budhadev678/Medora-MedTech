@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 6.3 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 6.3 TEST SUITE
 // RECEPTION, CHECK-IN, OPERATIONAL DASHBOARDS &
 // DOCTOR QUEUE WORKSPACE
 // ============================================================
@@ -21,15 +21,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 6.3 TEST SUITE: OPERATIONAL DASHBOARDS & QUEUE");
+console.log("MEDORA â€” PHASE 6.3 TEST SUITE: OPERATIONAL DASHBOARDS & QUEUE");
 console.log("============================================================\n");
 
 // Reset stores

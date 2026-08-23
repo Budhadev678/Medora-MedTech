@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MASTER PHASE 10 COMPREHENSIVE TEST VERIFICATION SUITE
+﻿// ============================================================
+// MEDORA â€” MASTER PHASE 10 COMPREHENSIVE TEST VERIFICATION SUITE
 // Master Suite for Phase 10.1 & Phase 10.2
 // ============================================================
 
@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 
 async function runMasterPhase10Suite() {
   console.log("============================================================");
-  console.log("MEDORA — MASTER PHASE 10 COMPREHENSIVE VERIFICATION (10.1 & 10.2)");
+  console.log("MEDORA â€” MASTER PHASE 10 COMPREHENSIVE VERIFICATION (10.1 & 10.2)");
   console.log("============================================================\n");
 
   const suites = [
@@ -18,11 +18,11 @@ async function runMasterPhase10Suite() {
   ];
 
   for (const s of suites) {
-    console.log(`\n▶ EXECUTING: ${s.name}...`);
+    console.log(`\nâ–¶ EXECUTING: ${s.name}...`);
     try {
       const output = execSync(`npx tsx ${s.script}`, { encoding: "utf8", stdio: "inherit" });
     } catch (err: any) {
-      console.error(`❌ Suite ${s.name} failed!`);
+      console.error(`âŒ Suite ${s.name} failed!`);
       process.exit(1);
     }
   }

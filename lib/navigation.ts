@@ -1,5 +1,5 @@
 // ============================================================
-// MEDORA — WORKSPACE NAVIGATION ARCHITECTURE
+// MEDORA â€” WORKSPACE NAVIGATION ARCHITECTURE
 // Server-Authoritative Navigation Links & Route Mapping
 // ============================================================
 
@@ -55,38 +55,49 @@ export interface NavItem {
   comingSoon?: boolean;
   phase?: string;
   description?: string;
+  section?: string;
 }
 
 // 1. Patient Primary Navigation (5 Canonical Workspaces)
 export const PATIENT_PRIMARY_NAV: NavItem[] = [
   { label: "Home", href: "/patient", icon: Home, exact: true },
+  { label: "Find Care", href: "/patient/care", icon: Stethoscope },
   { label: "Appointments", href: "/patient/appointments", icon: Calendar },
-  { label: "My Health", href: "/patient/health", icon: HeartPulse, exact: false },
-  { label: "Bills & Payments", href: "/patient/billing", icon: Receipt, exact: false },
-  { label: "Profile", href: "/patient/profile", icon: User, exact: false },
+  { label: "My Health", href: "/patient/health", icon: Activity },
+  { label: "Bills & Payments", href: "/patient/billing", icon: Receipt },
 ];
 
-// 2. Patient Secondary Utilities Navigation (Genuinely Secondary Functions)
-export const PATIENT_MORE_NAV: NavItem[] = [
-  { label: "Notifications", href: "/patient/notifications", icon: Bell, description: "Alerts, clinical updates & reminders" },
-  { label: "Help & Support", href: "/patient/help", icon: HelpCircle, description: "Patient guides, FAQs & assistance" },
-  { label: "App & Security Settings", href: "/patient/settings", icon: Settings, description: "Notification channels & account security" },
-  { label: "Privacy & Consent", href: "/patient/consent", icon: ShieldCheck, description: "Healthcare data sharing & authorization" },
-  { label: "Language Settings", href: "/patient/language", icon: Globe, description: "Preferred communication & display language" },
-  { label: "About MEDORA", href: "/patient/about", icon: Activity, description: "Transparent connected healthcare ecosystem" },
+// 2. Patient Action Hub Navigation
+export const PATIENT_ACTION_NAV: NavItem[] = [
+  { label: "Book Appointment", href: "/patient/appointments/book", icon: Calendar },
+  { label: "Find Specialist", href: "/patient/care", icon: Stethoscope },
+  { label: "Emergency Assist", href: "/patient/emergency", icon: AlertTriangle },
+  { label: "Medical Timeline", href: "/patient/health", icon: Activity },
+  { label: "Digital Prescriptions", href: "/patient/health", icon: Pill },
+  { label: "Diagnostic Lab Reports", href: "/patient/health", icon: FlaskConical },
+  { label: "Billing & Receipts", href: "/patient/billing", icon: Receipt },
+  { label: "Notification Center", href: "/patient/notifications", icon: Bell },
+  { label: "Patient Profile", href: "/patient/profile", icon: User },
 ];
 
-// 3. Doctor Clinical Workspace Navigation
+// 3. Doctor Clinical Workspace Navigation (Grouped into 4 Canonical Sections)
 export const DOCTOR_NAV: NavItem[] = [
-  { label: "Today / Queue", href: "/doctor", icon: Activity, exact: true },
-  { label: "Consultation Suite", href: "/doctor/consultations", icon: Stethoscope },
-  { label: "Patient Registry", href: "/doctor/patients", icon: Users },
-  { label: "Appointments", href: "/doctor/appointments", icon: Calendar },
-  { label: "Prescriptions", href: "/doctor/prescriptions", icon: Pill },
-  { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: FlaskConical },
-  { label: "Schedule & Hours", href: "/doctor/schedule", icon: Clock },
-  { label: "Specialist Referrals", href: "/doctor/referrals", icon: Share2 },
-  { label: "Doctor Profile", href: "/doctor/profile", icon: User },
+  // CLINICAL WORK
+  { label: "Today / Queue", href: "/doctor", icon: Activity, exact: true, section: "CLINICAL WORK" },
+  { label: "Consultation Suite", href: "/doctor/consultations", icon: Stethoscope, section: "CLINICAL WORK" },
+  { label: "Patient Registry", href: "/doctor/patients", icon: Users, section: "CLINICAL WORK" },
+
+  // OPERATIONS
+  { label: "Appointments", href: "/doctor/appointments", icon: Calendar, section: "OPERATIONS" },
+  { label: "Schedule & Hours", href: "/doctor/schedule", icon: Clock, section: "OPERATIONS" },
+
+  // CLINICAL OUTPUTS
+  { label: "Prescriptions", href: "/doctor/prescriptions", icon: Pill, section: "CLINICAL OUTPUTS" },
+  { label: "Lab Test Orders", href: "/doctor/lab-orders", icon: FlaskConical, section: "CLINICAL OUTPUTS" },
+  { label: "Specialist Referrals", href: "/doctor/referrals", icon: Share2, section: "CLINICAL OUTPUTS" },
+
+  // ACCOUNT
+  { label: "Doctor Profile", href: "/doctor/profile", icon: User, section: "ACCOUNT" },
 ];
 
 // 4. Receptionist Front-Desk Navigation
@@ -108,57 +119,49 @@ export const HOSPITAL_NAV: NavItem[] = [
   { label: "Bed & Admissions", href: "/hospital/admissions", icon: BedDouble },
   { label: "Hospital Laboratory", href: "/lab", icon: FlaskConical },
   { label: "Hospital Pharmacy", href: "/pharmacy", icon: Pill },
-  { label: "Billing & Charges", href: "/hospital/billing", icon: Receipt },
-  { label: "Cashier & Payments", href: "/hospital/billing/payments", icon: CreditCard },
-  { label: "3-Way Reconciliation", href: "/hospital/finance/reconciliation", icon: Layers },
-  { label: "Financial Disputes", href: "/hospital/finance/disputes", icon: HelpCircle },
-  { label: "Hospital Audit Logs", href: "/admin/audit", icon: ShieldCheck },
+  { label: "Revenue & Billing", href: "/hospital/billing", icon: Receipt },
+  { label: "Compliance & Security", href: "/admin/telemetry", icon: ShieldCheck },
 ];
 
-// 7. Outpatient Clinic Navigation
+// 6. Clinic Operations Navigation
 export const CLINIC_NAV: NavItem[] = [
-  { label: "Clinic Overview", href: "/clinic", icon: Building2, exact: true },
-  { label: "Clinic Encounters", href: "/clinic/encounters", icon: Activity },
-  { label: "Visiting Doctors", href: "/hospital/doctors", icon: Stethoscope },
-  { label: "OPD Appointments", href: "/hospital/appointments", icon: Calendar },
-  { label: "OPD Billing & Receipts", href: "/hospital/billing", icon: Receipt },
-  { label: "Clinic Members", href: "/hospital/doctors", icon: Users },
+  { label: "Front Desk & Queue", href: "/clinic", icon: Building2, exact: true },
+  { label: "Appointments", href: "/clinic/appointments", icon: Calendar },
+  { label: "Clinical Encounters", href: "/clinic/encounters", icon: Stethoscope },
+  { label: "Billing & Invoicing", href: "/clinic/billing", icon: Receipt },
+  { label: "Practitioners", href: "/clinic/doctors", icon: User },
 ];
 
-// 8. Diagnostic Laboratory Navigation
+// 7. Laboratory Workbench Navigation
 export const LAB_NAV: NavItem[] = [
-  { label: "Work Queue", href: "/lab", icon: FlaskConical, exact: true },
-  { label: "Test Orders Queue", href: "/lab", icon: ClipboardList },
-  { label: "Sample Custody", href: "/lab/samples/SMP-1001", icon: Layers },
-  { label: "Diagnostic Testing", href: "/lab", icon: Clock },
-  { label: "Pathologist Verification", href: "/lab", icon: FileCheck },
-  { label: "Patient Lab Portal", href: "/patient/lab", icon: FileText },
+  { label: "Active Orders Queue", href: "/lab", icon: FlaskConical, exact: true },
+  { label: "Sample Accessioning", href: "/lab", icon: Layers },
+  { label: "Verified Test Reports", href: "/lab", icon: FileCheck },
+  { label: "Diagnostic Catalog", href: "/lab", icon: Package },
 ];
 
-// 9. Pharmacy Dispensing Desk Navigation
+// 8. Pharmacy Operations Navigation
 export const PHARMACY_NAV: NavItem[] = [
-  { label: "Prescription Intake Queue", href: "/pharmacy", icon: Pill, exact: true },
-  { label: "Inventory & FEFO Batches", href: "/pharmacy/inventory", icon: Layers },
-  { label: "Dispense Orders Desk", href: "/pharmacy/orders", icon: Package },
-  { label: "Patient Verification OTP", href: "/pharmacy/orders", icon: CheckCircle2 },
-  { label: "Patient Pharmacy Portal", href: "/patient/pharmacy", icon: User },
+  { label: "Prescription Queue", href: "/pharmacy", icon: Pill, exact: true },
+  { label: "Dispensing Desk", href: "/pharmacy", icon: CheckCircle2 },
+  { label: "Drug Inventory (FEFO)", href: "/pharmacy/inventory", icon: Package },
+  { label: "Batch Master & Expiry", href: "/pharmacy/inventory", icon: Clock },
 ];
 
-// 10. Blood Coordination Navigation
+// 9. Blood Coordination Navigation
 export const BLOOD_NAV: NavItem[] = [
-  { label: "Blood Request Queue", href: "/blood-bank", icon: Droplet, exact: true },
-  { label: "Blood Inventory", href: "/blood-bank/inventory", icon: Layers, comingSoon: true, phase: "Phase 14" },
-  { label: "Donor Registry", href: "/blood-bank/donors", icon: Users, comingSoon: true, phase: "Phase 14" },
-  { label: "Cross-Match Requests", href: "/blood-bank/matching", icon: FlaskConical, comingSoon: true, phase: "Phase 14" },
-  { label: "Dispatch Logistics", href: "/blood-bank/dispatch", icon: Building2, comingSoon: true, phase: "Phase 14" },
+  { label: "Blood Stock Dashboard", href: "/blood-bank", icon: Droplet, exact: true },
+  { label: "Compatible Crossmatch", href: "/blood-bank", icon: HeartPulse },
+  { label: "Donation Camp Drive", href: "/blood-bank", icon: Calendar },
+  { label: "Emergency Dispatch", href: "/blood-bank", icon: Truck },
 ];
 
-// 11. Platform Administration Navigation
+// 10. Platform Administration Navigation
 export const ADMIN_NAV: NavItem[] = [
-  { label: "Governance Overview", href: "/admin", icon: ShieldCheck, exact: true },
-  { label: "Organizations", href: "/admin/organizations", icon: Building2 },
-  { label: "Facilities & Branches", href: "/admin/facilities", icon: Layers },
-  { label: "User Identity Registry", href: "/admin/users", icon: Users },
-  { label: "License Verification", href: "/admin/verification", icon: FileCheck },
-  { label: "Immutable Audit Ledger", href: "/admin/audit", icon: ShieldCheck },
+  { label: "Global Telemetry", href: "/admin", icon: Activity, exact: true },
+  { label: "Verified Registry", href: "/admin/users", icon: Users },
+  { label: "Healthcare Facilities", href: "/admin/facilities", icon: Building2 },
+  { label: "Identity & Roles", href: "/admin/users", icon: ShieldCheck },
+  { label: "Tamper-Evident Ledger", href: "/admin/telemetry", icon: Shield },
 ];
+export const PATIENT_MORE_NAV: NavItem[] = PATIENT_ACTION_NAV;

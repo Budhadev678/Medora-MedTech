@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 9.3 TEST SUITE: ORDER MANAGEMENT & ATOMIC DISPENSING
+﻿// ============================================================
+// MEDORA â€” PHASE 9.3 TEST SUITE: ORDER MANAGEMENT & ATOMIC DISPENSING
 // ============================================================
 
 import { PharmacyFulfillmentService } from "../lib/services/pharmacy-fulfillment-service";
@@ -18,17 +18,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase93Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 9.3 TEST SUITE: ORDER MANAGEMENT & DISPENSING");
+  console.log("MEDORA â€” PHASE 9.3 TEST SUITE: ORDER MANAGEMENT & DISPENSING");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

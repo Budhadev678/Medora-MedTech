@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 8.1 TEST SUITE: LAB ORGANIZATION & ORDER INTAKE
+﻿// ============================================================
+// MEDORA â€” PHASE 8.1 TEST SUITE: LAB ORGANIZATION & ORDER INTAKE
 // ============================================================
 
 import { LabIntakeService } from "../lib/services/lab-intake-service";
@@ -26,17 +26,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase81Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 8.1 TEST SUITE: LAB ORGANIZATION & ORDER INTAKE");
+  console.log("MEDORA â€” PHASE 8.1 TEST SUITE: LAB ORGANIZATION & ORDER INTAKE");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

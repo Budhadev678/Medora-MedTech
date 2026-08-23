@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getAuthenticatedUser, jsonResponse, jsonError, jsonUnauthorized, jsonForbidden, validateRole, validatePatientRecordAccess } from "@/lib/api/api-utils";
 import { LabReportService } from "@/lib/services/lab-report-service";
 import { getPatientLabReports } from "@/lib/data/lab-order-store";

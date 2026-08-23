@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S10 MASTER SECURITY & HARDENING SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S10 MASTER SECURITY & HARDENING SUITE
 // Validates Authentication, Session Isolation, Anti-IDOR, RBAC,
 // Parameter Tampering, Financial Mutation Defense & Data Minimization
 // ============================================================
@@ -25,7 +25,7 @@ import { GET as billsGet } from "@/app/api/billing/bills/route";
 
 async function runS10SecurityHardeningTests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S10 FINAL SECURITY & HARDENING SUITE");
+  console.log("MEDORA â€” STABILIZATION S10 FINAL SECURITY & HARDENING SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -34,10 +34,10 @@ async function runS10SecurityHardeningTests() {
   function assert(condition: boolean, description: string, details?: any) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
+      console.error(`  âœ• FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
     }
   }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Globe, Check, Sparkles } from "lucide-react";
@@ -12,7 +12,7 @@ export default function PatientLanguagePage() {
 
   const languageNotes: Record<LanguageCode, string> = {
     en: "Default System Language across all interfaces",
-    hi: "National Language (Phase 19 Localization support)",
+    hi: "National Language (Hindi Localization)",
     or: "Regional Language (Odisha Health Network)",
   };
 

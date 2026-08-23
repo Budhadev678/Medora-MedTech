@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { getAuthenticatedUser, jsonResponse, jsonError, jsonUnauthorized, jsonForbidden, validatePatientRecordAccess } from "@/lib/api/api-utils";
 import { FinancialCoverageService } from "@/lib/services/financial-coverage-service";
 import { getBillById } from "@/lib/data/billing-store";

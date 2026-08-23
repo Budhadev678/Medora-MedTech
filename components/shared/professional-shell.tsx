@@ -9,11 +9,7 @@ import {
   ChevronRight, 
   Menu, 
   X, 
-  Settings, 
   LogOut, 
-  ShieldCheck, 
-  Building2,
-  Sparkles,
   ShieldAlert
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -25,6 +21,8 @@ import { NavItem } from "@/lib/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DoctorContextHeader } from "@/components/doctor/doctor-context-header";
+import { DoctorBreadcrumbs } from "@/components/doctor/doctor-breadcrumbs";
 
 interface ProfessionalShellProps {
   children: React.ReactNode;
@@ -67,47 +65,56 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
 
   const navItems: NavItem[] = workspace.navItems;
   const roleTitle = workspace.displayName;
+  const isDoctorRoute = pathname.startsWith("/doctor") || role === "doctor";
 
   const renderNavLinks = (isMobile = false) => {
+    let currentSection = "";
+
     return (
-      <div className="space-y-1 py-2">
-        {navItems.map((item) => {
+      <div className="space-y-1 py-1">
+        {navItems.map((item, index) => {
+          const showSectionHeading = item.section && item.section !== currentSection;
+          if (item.section) {
+            currentSection = item.section;
+          }
+
           const isActive = item.exact 
             ? pathname === item.href 
             : pathname === item.href || (item.href !== workspace.landingRoute && pathname.startsWith(item.href));
           const Icon = item.icon;
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => isMobile && setMobileDrawerOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-all group relative",
-                isActive
-                  ? "bg-teal-50 text-teal-900 font-bold border-l-3 border-teal-600 shadow-2xs"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              )}
-              title={collapsed && !isMobile ? item.label : undefined}
-            >
-              <Icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-teal-700" : "text-slate-500 group-hover:text-slate-700")} />
-              
-              {(!collapsed || isMobile) && (
-                <div className="flex-1 flex items-center justify-between min-w-0">
-                  <span className="truncate">{item.label}</span>
-                  {item.comingSoon && (
-                    <Badge variant="outline" className="text-[9px] py-0 px-1 text-slate-400 border-slate-200 ml-1">
-                      {item.phase || "Soon"}
-                    </Badge>
-                  )}
-                  {item.badge && !item.comingSoon && (
-                    <Badge variant="teal" className="text-[9px] py-0 px-1 ml-1">
-                      {item.badge}
-                    </Badge>
-                  )}
+            <React.Fragment key={item.href || index}>
+              {showSectionHeading && (!collapsed || isMobile) && (
+                <div className="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                  {item.section}
                 </div>
               )}
-            </Link>
+              <Link
+                href={item.href}
+                onClick={() => isMobile && setMobileDrawerOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-all group relative",
+                  isActive
+                    ? "bg-teal-50 text-teal-900 font-bold border-l-3 border-teal-600 shadow-2xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                )}
+                title={collapsed && !isMobile ? item.label : undefined}
+              >
+                <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-teal-700" : "text-slate-500 group-hover:text-slate-700")} />
+                
+                {(!collapsed || isMobile) && (
+                  <div className="flex-1 flex items-center justify-between min-w-0">
+                    <span className="truncate">{item.label}</span>
+                    {item.badge && (
+                      <Badge variant="teal" className="text-[9px] py-0 px-1 ml-1">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </Link>
+            </React.Fragment>
           );
         })}
       </div>
@@ -158,7 +165,10 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
         </div>
       </header>
 
-      {/* 2. Workspace Body (Collapsible Sidebar + Main Content) */}
+      {/* 2. Global Doctor Context Header (Visible across all Doctor views) */}
+      {isDoctorRoute && <DoctorContextHeader />}
+
+      {/* 3. Workspace Body (Collapsible Sidebar + Main Content) */}
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Collapsible Sidebar */}
         <aside
@@ -253,6 +263,7 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
 
         {/* Main Operational Content Container */}
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+          {isDoctorRoute && <DoctorBreadcrumbs />}
           {children}
         </main>
       </div>

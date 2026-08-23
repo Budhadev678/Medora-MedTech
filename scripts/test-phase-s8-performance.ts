@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S8 PERFORMANCE & RELIABILITY TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S8 PERFORMANCE & RELIABILITY TEST SUITE
 // Benchmarks Response Speed, Database/Store Lookups, Large Dataset Handling,
 // Financial Waterfall Throughput, Idempotency & Zero-Leakage Caching
 // ============================================================
@@ -20,7 +20,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 async function runS8PerformanceTests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S8 PERFORMANCE & SPEED BENCHMARK SUITE");
+  console.log("MEDORA â€” STABILIZATION S8 PERFORMANCE & SPEED BENCHMARK SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -30,10 +30,10 @@ async function runS8PerformanceTests() {
     total++;
     const benchStr = benchmarkMs !== undefined ? ` [${benchmarkMs.toFixed(2)}ms]` : "";
     if (condition) {
-      console.log(`  ✓ PASS: ${description}${benchStr}`);
+      console.log(`  âœ“ PASS: ${description}${benchStr}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}${benchStr}`);
+      console.error(`  âœ• FAIL: ${description}${benchStr}`);
     }
   }
 

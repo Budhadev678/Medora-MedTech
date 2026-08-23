@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE B.4 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE B.4 TEST SUITE
 // Alternative Availability, Same-Doctor Options, Waitlist & Final Integration
 // ============================================================
 
@@ -16,10 +16,10 @@ let failedCount = 0;
 
 function assert(condition: boolean, testName: string, failureDetails?: string) {
   if (condition) {
-    console.log(`  ✓ [PASS] ${testName}`);
+    console.log(`  âœ“ [PASS] ${testName}`);
     passedCount++;
   } else {
-    console.error(`  ✗ [FAIL] ${testName}${failureDetails ? ` — ${failureDetails}` : ""}`);
+    console.error(`  âœ— [FAIL] ${testName}${failureDetails ? ` â€” ${failureDetails}` : ""}`);
     failedCount++;
   }
 }

@@ -133,9 +133,12 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
             <Stethoscope className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-sm font-bold text-slate-900 truncate">
-              {appointment.doctor_name}
-            </CardTitle>
+            <Link href={`/patient/appointments/${appointment.id}`} className="hover:text-teal-700 transition-colors">
+              <CardTitle className="text-sm font-bold text-slate-900 truncate hover:text-teal-700 flex items-center justify-between">
+                <span>{appointment.doctor_name}</span>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </CardTitle>
+            </Link>
             <CardDescription className="text-xs text-slate-500 font-medium truncate">
               {appointment.department_name} • {appointment.organization_name}
             </CardDescription>

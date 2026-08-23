@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MASTER PHASE 8 COMPREHENSIVE FINAL SUITE (8.1, 8.2, 8.3, 8.4)
+﻿// ============================================================
+// MEDORA â€” MASTER PHASE 8 COMPREHENSIVE FINAL SUITE (8.1, 8.2, 8.3, 8.4)
 // Master Phase 8: Connected Laboratory System
 // ============================================================
 
@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 
 async function runMasterPhase8Final() {
   console.log("============================================================");
-  console.log("MEDORA — MASTER PHASE 8 COMPREHENSIVE FINAL VERIFICATION");
+  console.log("MEDORA â€” MASTER PHASE 8 COMPREHENSIVE FINAL VERIFICATION");
   console.log("============================================================\n");
 
   const suites = [
@@ -18,12 +18,12 @@ async function runMasterPhase8Final() {
   ];
 
   for (const s of suites) {
-    console.log(`\n▶ EXECUTING: ${s.name}...`);
+    console.log(`\nâ–¶ EXECUTING: ${s.name}...`);
     try {
       const output = execSync(`npx tsx ${s.script}`, { encoding: "utf-8" });
       console.log(output);
     } catch (err: any) {
-      console.error(`❌ FAILURE IN SUITE: ${s.name}`);
+      console.error(`âŒ FAILURE IN SUITE: ${s.name}`);
       console.error(err.stdout || err.message);
       process.exit(1);
     }

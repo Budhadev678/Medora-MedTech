@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 6.4 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 6.4 TEST SUITE
 // ADVANCED QUEUE OPTIMIZATION, WAITLIST INTELLIGENCE,
 // CAPACITY OPTIMIZATION & FINAL PHASE-6 INTEGRATION
 // ============================================================
@@ -23,15 +23,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 6.4 TEST SUITE: OPTIMIZATION & FINAL INTEGRATION");
+console.log("MEDORA â€” PHASE 6.4 TEST SUITE: OPTIMIZATION & FINAL INTEGRATION");
 console.log("============================================================\n");
 
 // Reset stores
@@ -164,7 +164,7 @@ async function runPhase64TestSuite() {
   assert(waitEst2.people_ahead >= 0, `Accurately identified people ahead: ${waitEst2.people_ahead}`);
   assert(
     waitEst2.estimated_upper_minutes >= waitEst2.estimated_lower_minutes,
-    `Duration range is realistic and non-negative (${waitEst2.estimated_lower_minutes}–${waitEst2.estimated_upper_minutes} min)`
+    `Duration range is realistic and non-negative (${waitEst2.estimated_lower_minutes}â€“${waitEst2.estimated_upper_minutes} min)`
   );
   assert(
     waitEst2.display_text.includes("min") || waitEst2.display_text.includes("next") || waitEst2.display_text.includes("Ready"),

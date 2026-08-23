@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 5.4 COMPREHENSIVE TEST SUITE
+﻿// ============================================================
+// MEDORA â€” PHASE 5.4 COMPREHENSIVE TEST SUITE
 // FACILITY OPERATIONAL READINESS, CONNECTIVITY VALIDATION &
 // PHASE 6 INTEGRATION CONTRACT
 // ============================================================
@@ -23,15 +23,15 @@ function assert(condition: boolean, testName: string, details?: string) {
   totalAssertions++;
   if (condition) {
     passedAssertions++;
-    console.log(`  ✓ PASS: ${testName}`);
+    console.log(`  âœ“ PASS: ${testName}`);
   } else {
     failedAssertions++;
-    console.error(`  ✗ FAIL: ${testName}${details ? ` - ${details}` : ""}`);
+    console.error(`  âœ— FAIL: ${testName}${details ? ` - ${details}` : ""}`);
   }
 }
 
 console.log("============================================================");
-console.log("MEDORA — PHASE 5.4 TEST SUITE: OPERATIONAL READINESS & PHASE 6");
+console.log("MEDORA â€” PHASE 5.4 TEST SUITE: OPERATIONAL READINESS & PHASE 6");
 console.log("============================================================\n");
 
 // Reset all stores to canonical state

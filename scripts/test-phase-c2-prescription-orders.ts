@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE C.2 VERIFICATION TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE C.2 VERIFICATION TEST SUITE
 // PRESCRIPTION & MEDICAL ORDER ENGINE
 // ============================================================
 
@@ -37,17 +37,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
-    console.log(`  \x1b[32m✔ PASS:\x1b[0m ${testName}`);
+    console.log(`  \x1b[32mâœ” PASS:\x1b[0m ${testName}`);
     passedCount++;
   } else {
-    console.error(`  \x1b[31m✘ FAIL:\x1b[0m ${testName} ${detail ? `(${detail})` : ""}`);
+    console.error(`  \x1b[31mâœ˜ FAIL:\x1b[0m ${testName} ${detail ? `(${detail})` : ""}`);
     failedCount++;
   }
 }
 
 async function runPhaseC2Tests() {
   console.log("\n============================================================");
-  console.log("MEDORA — MODIFICATION PHASE C.2 AUTOMATED VERIFICATION SUITE");
+  console.log("MEDORA â€” MODIFICATION PHASE C.2 AUTOMATED VERIFICATION SUITE");
   console.log("PRESCRIPTION & MEDICAL ORDER ENGINE");
   console.log("============================================================\n");
 

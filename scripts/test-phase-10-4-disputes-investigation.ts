@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 10.4 TEST SUITE: DISPUTES, ANOMALY ENGINE & TRANSPARENCY
+﻿// ============================================================
+// MEDORA â€” PHASE 10.4 TEST SUITE: DISPUTES, ANOMALY ENGINE & TRANSPARENCY
 // ============================================================
 
 import { DisputeInvestigationService } from "../lib/services/dispute-investigation-service";
@@ -12,17 +12,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase104Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 10.4 TEST SUITE: DISPUTES & ANOMALIES");
+  console.log("MEDORA â€” PHASE 10.4 TEST SUITE: DISPUTES & ANOMALIES");
   console.log("============================================================\n");
 
   const patient = {
@@ -48,7 +48,7 @@ async function runPhase104Tests() {
     organizationId: "11111111-1111-1111-1111-111111111101",
     organizationName: "City Hospital",
     facilityId: "FAC-1001",
-    facilityName: "City Hospital — Rourkela Central",
+    facilityName: "City Hospital â€” Rourkela Central",
     billType: "FINAL",
     actor: investigator as any,
   });

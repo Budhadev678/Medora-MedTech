@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S5 NAVIGATION & WORKFLOW TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S5 NAVIGATION & WORKFLOW TEST SUITE
 // Validates Routing, Sidebars, Screen Connectivity, End-to-End Flows,
 // Loading/Error/Empty States & Workspace Isolation
 // ============================================================
@@ -14,7 +14,7 @@ import { getAllBills } from "@/lib/data/billing-store";
 
 async function runS5Tests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S5 NAVIGATION & USER FLOW SUITE");
+  console.log("MEDORA â€” STABILIZATION S5 NAVIGATION & USER FLOW SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -23,10 +23,10 @@ async function runS5Tests() {
   function assert(condition: boolean, description: string) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`);
+      console.error(`  âœ• FAIL: ${description}`);
     }
   }
 

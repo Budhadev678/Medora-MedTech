@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA TEST SUITE — PHASE 5.1
+﻿// ============================================================
+// MEDORA TEST SUITE â€” PHASE 5.1
 // ORGANIZATION & HEALTHCARE FACILITY FOUNDATION
 // ============================================================
 
@@ -139,7 +139,7 @@ console.log("\n--- SECTION 3: Multi-Branch Facility Creation & Parent Linking --
 const fac1Res = OrganizationService.createFacility(adminActor, {
   facility_code: "FAC-5001",
   organization_id: "HSP-5001",
-  name: "Kalinga Apex Super-Specialty Hospital — Bhubaneswar Hub",
+  name: "Kalinga Apex Super-Specialty Hospital â€” Bhubaneswar Hub",
   type: "HOSPITAL",
   license_no: "HSP-OD-2026-8801-A",
   phone: "+91 674 2990100",
@@ -161,7 +161,7 @@ assert(fac1Res.success, "Created Bhubaneswar Hub facility (FAC-5001) under HSP-5
 const fac2Res = OrganizationService.createFacility(adminActor, {
   facility_code: "FAC-5002",
   organization_id: "HSP-5001",
-  name: "Kalinga Apex Specialty Clinic — Berhampur Branch",
+  name: "Kalinga Apex Specialty Clinic â€” Berhampur Branch",
   type: "CLINIC",
   license_no: "HSP-OD-2026-8801-B",
   phone: "+91 680 2200100",

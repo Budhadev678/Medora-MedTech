@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S7 MASTER END-TO-END INTEGRATION SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S7 MASTER END-TO-END INTEGRATION SUITE
 // Validates Full Cross-Role Lifecycle: Phase 0 -> Phase 10
 // Patient -> Doctor -> Lab -> Pharmacy -> Billing -> Reconciliation
 // ============================================================
@@ -37,7 +37,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 async function runS7IntegrationTests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S7 END-TO-END INTEGRATION SUITE");
+  console.log("MEDORA â€” STABILIZATION S7 END-TO-END INTEGRATION SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -46,10 +46,10 @@ async function runS7IntegrationTests() {
   function assert(condition: boolean, description: string) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`);
+      console.error(`  âœ• FAIL: ${description}`);
     }
   }
 

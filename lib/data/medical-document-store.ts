@@ -434,7 +434,7 @@ export function generateSecureDocumentAccessToken(
   actorId: string,
   actorName: string,
   actorRole: string
-): { success: boolean; token?: string; error?: string } {
+): { success: boolean; token?: string; expires_at?: string; error?: string } {
   const doc = getMedicalDocumentById(documentId);
   if (!doc) {
     return { success: false, error: "Document not found." };
@@ -444,8 +444,18 @@ export function generateSecureDocumentAccessToken(
     return { success: false, error: "This medical document has been revoked and is unavailable." };
   }
 
+  // Anti-IDOR Authorization Check: If caller is a patient, they may only access their own documents
+  if (actorRole === "patient") {
+    const cleanActorId = actorId.toLowerCase();
+    const cleanDocPatientId = doc.patient_id.toLowerCase();
+    if (cleanDocPatientId !== cleanActorId) {
+      return { success: false, error: "You are not authorized to access this medical document." };
+    }
+  }
+
   const timestamp = Date.now();
   const token = `medora-signed-doc-${documentId}-${timestamp}-${Math.random().toString(36).substring(2, 9)}`;
+  const expires_at = new Date(timestamp + 3600000).toISOString(); // 1 hour expiration
 
   logAuditEvent({
     event_type: action === "DOWNLOAD" ? "DOCUMENT_DOWNLOADED" : "DOCUMENT_VIEWED",
@@ -462,5 +472,5 @@ export function generateSecureDocumentAccessToken(
     },
   });
 
-  return { success: true, token };
+  return { success: true, token, expires_at };
 }

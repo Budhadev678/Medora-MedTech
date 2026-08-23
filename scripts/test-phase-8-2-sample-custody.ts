@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — PHASE 8.2 TEST SUITE: PATIENT VERIFICATION, SAMPLE COLLECTION & CUSTODY
+﻿// ============================================================
+// MEDORA â€” PHASE 8.2 TEST SUITE: PATIENT VERIFICATION, SAMPLE COLLECTION & CUSTODY
 // ============================================================
 
 import { LabSampleService } from "../lib/services/lab-sample-service";
@@ -16,17 +16,17 @@ let failedCount = 0;
 
 function assert(condition: boolean, message: string) {
   if (condition) {
-    console.log(`  ✓ PASS: ${message}`);
+    console.log(`  âœ“ PASS: ${message}`);
     passedCount++;
   } else {
-    console.error(`  ❌ FAIL: ${message}`);
+    console.error(`  âŒ FAIL: ${message}`);
     failedCount++;
   }
 }
 
 async function runPhase82Tests() {
   console.log("============================================================");
-  console.log("MEDORA — PHASE 8.2 TEST SUITE: SAMPLE COLLECTION & CHAIN OF CUSTODY");
+  console.log("MEDORA â€” PHASE 8.2 TEST SUITE: SAMPLE COLLECTION & CHAIN OF CUSTODY");
   console.log("============================================================\n");
 
   const today = getTodayDateStr();

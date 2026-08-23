@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S4 SECURITY & ACCESS CONTROL TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S4 SECURITY & ACCESS CONTROL TEST SUITE
 // Validates Authentication, Role Permissions, Anti-IDOR, Organization
 // Isolation, Record-Level Access, and Privilege Escalation Protection
 // ============================================================
@@ -29,7 +29,7 @@ import { NextRequest } from "next/server";
 
 async function runS4Tests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S4 SECURITY & ACCESS CONTROL SUITE");
+  console.log("MEDORA â€” STABILIZATION S4 SECURITY & ACCESS CONTROL SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -38,10 +38,10 @@ async function runS4Tests() {
   function assert(condition: boolean, description: string) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`);
+      console.error(`  âœ• FAIL: ${description}`);
     }
   }
 

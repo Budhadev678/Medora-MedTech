@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — MODIFICATION PHASE C.4 TEST SUITE
+﻿// ============================================================
+// MEDORA â€” MODIFICATION PHASE C.4 TEST SUITE
 // UNIFIED CLINICAL RECORD & CONTINUITY LAYER
 // Tests: Dynamic Aggregation, Timestamp Semantics, Role Scoping,
 // Encounter Bundles, Patient Isolation, Cancellation & Audit
@@ -18,16 +18,16 @@ let failed = 0;
 
 function assert(condition: boolean, testName: string, detail?: string) {
   if (condition) {
-    console.log(`  ✔ PASS: ${testName}`);
+    console.log(`  âœ” PASS: ${testName}`);
     passed++;
   } else {
-    console.error(`  ✖ FAIL: ${testName}${detail ? ` -> ${detail}` : ""}`);
+    console.error(`  âœ– FAIL: ${testName}${detail ? ` -> ${detail}` : ""}`);
     failed++;
   }
 }
 
 console.log("\n============================================================");
-console.log("MEDORA — PHASE C.4: UNIFIED CLINICAL CONTINUITY TEST SUITE");
+console.log("MEDORA â€” PHASE C.4: UNIFIED CLINICAL CONTINUITY TEST SUITE");
 console.log("============================================================\n");
 
 // ------------------------------------------------------------

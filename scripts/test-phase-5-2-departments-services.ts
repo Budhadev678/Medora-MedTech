@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA TEST SUITE — PHASE 5.2
+﻿// ============================================================
+// MEDORA TEST SUITE â€” PHASE 5.2
 // DEPARTMENTS, SERVICES, DOCTOR & STAFF FACILITY RELATIONSHIPS
 // ============================================================
 
@@ -228,7 +228,7 @@ const nurseRes = OrganizationService.assignStaff(adminActor, {
   facility_id: "FAC-1001",
   department_id: "DEP-1001",
   department_name: "Cardiology & Cath Lab",
-  role_title: "Staff Nurse — Cath Recovery",
+  role_title: "Staff Nurse â€” Cath Recovery",
   staff_role: "NURSE",
   status: "ACTIVE",
 });

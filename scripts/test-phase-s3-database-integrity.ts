@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S3 DATABASE & RELATIONSHIP TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S3 DATABASE & RELATIONSHIP TEST SUITE
 // Validates Data Consistency, Relationships, FKs & Single Source of Truth
 // ============================================================
 
@@ -20,7 +20,7 @@ import { PaymentProcessingService } from "@/lib/services/payment-processing-serv
 
 async function runS3Tests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S3 DATABASE INTEGRITY SUITE");
+  console.log("MEDORA â€” STABILIZATION S3 DATABASE INTEGRITY SUITE");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -29,10 +29,10 @@ async function runS3Tests() {
   function assert(condition: boolean, description: string, details?: any) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
+      console.error(`  âœ• FAIL: ${description}`, details ? `\n    --> Details: ${JSON.stringify(details)}` : "");
       process.exitCode = 1;
     }
   }

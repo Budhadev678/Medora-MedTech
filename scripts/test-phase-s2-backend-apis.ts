@@ -1,5 +1,5 @@
-// ============================================================
-// MEDORA — STABILIZATION S2 BACKEND API TEST SUITE
+﻿// ============================================================
+// MEDORA â€” STABILIZATION S2 BACKEND API TEST SUITE
 // Tests all HTTP API Route Handlers under app/api/
 // ============================================================
 
@@ -43,7 +43,7 @@ function createReq(url: string, method: string = "GET", body?: any, role: string
 
 async function runS2Tests() {
   console.log("============================================================");
-  console.log("MEDORA — STABILIZATION S2 API SUITE VERIFICATION");
+  console.log("MEDORA â€” STABILIZATION S2 API SUITE VERIFICATION");
   console.log("============================================================\n");
 
   let passed = 0;
@@ -53,10 +53,10 @@ async function runS2Tests() {
   function assert(condition: boolean, description: string, jsonObj?: any) {
     total++;
     if (condition) {
-      console.log(`  ✓ PASS: ${description}`);
+      console.log(`  âœ“ PASS: ${description}`);
       passed++;
     } else {
-      console.error(`  ✕ FAIL: ${description}`, jsonObj ? `\n    --> Response: ${JSON.stringify(jsonObj)}` : "");
+      console.error(`  âœ• FAIL: ${description}`, jsonObj ? `\n    --> Response: ${JSON.stringify(jsonObj)}` : "");
       process.exitCode = 1;
     }
   }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -124,7 +124,7 @@ export default function PatientAppointmentsPage() {
           </section>
         )}
 
-        {/* PHASE B.4: ACTIVE WAITLISTS */}
+        {/* Active Waitlists */}
         {waitlists.length > 0 && (
           <section aria-label="My Active Waitlists" className="space-y-2">
             <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export default function PatientAppointmentsPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {isNotified ? (
                             <Badge variant="teal" className="text-[10px] font-black uppercase tracking-wider animate-pulse">
-                              ● Slot Available Now
+                              ● Slot Available Now
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px] font-bold border-slate-300 text-slate-700">
@@ -249,7 +249,6 @@ export default function PatientAppointmentsPage() {
                 ? "You do not have any upcoming doctor sessions booked. Schedule a specialist consultation across our connected network."
                 : `No ${activeTab} appointment records found in your medical history.`
             }
-            phase="Phase B.1 — Doctor Availability & Capacity Engine"
             actionHref="/patient/appointments/book"
             actionLabel="Book Specialist Session"
           />

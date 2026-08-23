@@ -20,6 +20,7 @@ import { getDepartmentById } from "@/lib/data/department-store";
 import { getServiceById, getAllDoctorServiceAssignments } from "@/lib/data/service-store";
 import { Phase6ContractService } from "@/lib/services/phase6-contract-service";
 import { AlternativeSearchService } from "@/lib/services/alternative-search-service";
+import { isDateWithinCurrentWeek } from "@/lib/utils";
 
 export interface DoctorCrossFacilityAvailability {
   doctor_id: string;
@@ -214,13 +215,12 @@ export class AppointmentBookingService {
       };
     }
 
-    // 5. Validate Date (No Past Dates)
-    const todayStr = new Date().toISOString().split("T")[0];
-    if (request.appointment_date < todayStr) {
+    // 5. Validate Date (Strict Current Calendar Week Enforcement: Today through Sunday only)
+    if (!isDateWithinCurrentWeek(request.appointment_date)) {
       return {
         success: false,
-        error_code: "PAST_SESSION",
-        message: "Appointments cannot be booked for past dates.",
+        error_code: "INVALID_BOOKING_WINDOW",
+        message: "Appointments can only be booked for the remaining days of this week.",
       };
     }
 
