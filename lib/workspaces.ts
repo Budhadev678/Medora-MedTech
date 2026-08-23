@@ -35,7 +35,7 @@ import {
 import { UserRole } from "@/lib/constants";
 import { StoredIdentity } from "@/lib/data/identity-store";
 import type { OrganizationMembership } from "@/types/database.types";
-import { NavItem, DOCTOR_NAV } from "@/lib/navigation";
+import { NavItem, DOCTOR_NAV, PHARMACY_NAV } from "@/lib/navigation";
 
 export type WorkspaceType =
   | "patient_mobile"
@@ -172,19 +172,9 @@ export const PHARMACY_WORKSPACE: WorkspaceDefinition = {
   displayName: "Pharmacy Dispensing Desk",
   workspaceType: "Prescription & Medication Operations",
   landingRoute: "/pharmacy",
-  allowedRoles: ["pharmacy_staff"],
+  allowedRoles: ["pharmacy_staff", "admin"],
   badgeText: "Pharmacy Operations",
-  navItems: [
-    { label: "Pharmacy Work Queue", href: "/pharmacy", icon: Pill, exact: true },
-    { label: "Prescriptions Queue", href: "/pharmacy/prescriptions", icon: ClipboardList, comingSoon: true, phase: "Phase 9" },
-    { label: "Orders", href: "/pharmacy/orders", icon: Package, comingSoon: true, phase: "Phase 9" },
-    { label: "Preparation", href: "/pharmacy/preparation", icon: Clock, comingSoon: true, phase: "Phase 9" },
-    { label: "Patient Pickup", href: "/pharmacy/pickup", icon: User, comingSoon: true, phase: "Phase 9" },
-    { label: "Dispensing Desk", href: "/pharmacy/dispensing", icon: CheckCircle2, comingSoon: true, phase: "Phase 9" },
-    { label: "Inventory", href: "/pharmacy/inventory", icon: Layers, comingSoon: true, phase: "Phase 9" },
-    { label: "Pharmacy Staff", href: "/pharmacy/staff", icon: Users },
-    { label: "Pharmacy Settings", href: "/pharmacy/settings", icon: Settings },
-  ],
+  navItems: PHARMACY_NAV,
 };
 
 // 8. Blood Coordination Workspace

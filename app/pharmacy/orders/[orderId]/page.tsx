@@ -146,7 +146,7 @@ export default function PharmacyOrderConsolePage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["admin", "doctor", "lab_staff"]}>
+    <RoleGuard allowedRoles={["pharmacy_staff", "admin"]}>
       <div className="min-h-screen bg-slate-50/50 p-4 sm:p-6 space-y-6 max-w-5xl mx-auto pb-24">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">

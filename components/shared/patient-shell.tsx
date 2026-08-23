@@ -155,7 +155,7 @@ export function PatientShell({ children }: PatientShellProps) {
 
             {/* Drawer Links List */}
             <div className="divide-y divide-slate-100 py-2">
-              {PATIENT_MORE_NAV.map((item) => {
+              {PATIENT_MORE_NAV.map((item: any) => {
                 const Icon = item.icon;
                 return (
                   <Link

@@ -168,7 +168,9 @@ export function DoctorContextHeader() {
                       <button
                         key={aff.id}
                         type="button"
-                        onClick={() => aff.id && handleSwitchFacility(aff.id)}
+                        onClick={() => {
+                          if (aff.id) handleSwitchFacility(aff.id);
+                        }}
                         className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors ${
                           isSelected ? "bg-teal-50/70 text-teal-900 font-bold" : "text-slate-700"
                         }`}

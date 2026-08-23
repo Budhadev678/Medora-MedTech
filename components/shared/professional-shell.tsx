@@ -23,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DoctorContextHeader } from "@/components/doctor/doctor-context-header";
 import { DoctorBreadcrumbs } from "@/components/doctor/doctor-breadcrumbs";
+import { PharmacyContextHeader } from "@/components/pharmacy/pharmacy-context-header";
+import { PharmacyBreadcrumbs } from "@/components/pharmacy/pharmacy-breadcrumbs";
 
 interface ProfessionalShellProps {
   children: React.ReactNode;
@@ -65,7 +67,8 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
 
   const navItems: NavItem[] = workspace.navItems;
   const roleTitle = workspace.displayName;
-  const isDoctorRoute = pathname.startsWith("/doctor") || role === "doctor";
+    const isDoctorRoute = pathname.startsWith("/doctor") || role === "doctor";
+  const isPharmacyRoute = pathname.startsWith("/pharmacy") || role === "pharmacy_staff";
 
   const renderNavLinks = (isMobile = false) => {
     let currentSection = "";
@@ -166,7 +169,8 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
       </header>
 
       {/* 2. Global Doctor Context Header (Visible across all Doctor views) */}
-      {isDoctorRoute && <DoctorContextHeader />}
+            {isDoctorRoute && <DoctorContextHeader />}
+      {isPharmacyRoute && <PharmacyContextHeader />}
 
       {/* 3. Workspace Body (Collapsible Sidebar + Main Content) */}
       <div className="flex flex-1 overflow-hidden">
@@ -263,7 +267,8 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
 
         {/* Main Operational Content Container */}
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-          {isDoctorRoute && <DoctorBreadcrumbs />}
+                    {isDoctorRoute && <DoctorBreadcrumbs />}
+          {isPharmacyRoute && <PharmacyBreadcrumbs />}
           {children}
         </main>
       </div>

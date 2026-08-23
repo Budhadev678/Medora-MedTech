@@ -61,13 +61,23 @@ export interface NavItem {
 // 1. Patient Primary Navigation (5 Canonical Workspaces)
 export const PATIENT_PRIMARY_NAV: NavItem[] = [
   { label: "Home", href: "/patient", icon: Home, exact: true },
-  { label: "Find Care", href: "/patient/care", icon: Stethoscope },
   { label: "Appointments", href: "/patient/appointments", icon: Calendar },
-  { label: "My Health", href: "/patient/health", icon: Activity },
+  { label: "My Health", href: "/patient/health", icon: HeartPulse },
   { label: "Bills & Payments", href: "/patient/billing", icon: Receipt },
+  { label: "Profile", href: "/patient/profile", icon: User },
 ];
 
-// 2. Patient Action Hub Navigation
+// 2. Patient Secondary / Utilities Navigation
+export const PATIENT_MORE_NAV: NavItem[] = [
+  { label: "Notifications", href: "/patient/notifications", icon: Bell, description: "Alerts, clinical updates & reminders" },
+  { label: "Help & Support", href: "/patient/help", icon: HelpCircle, description: "Patient guides, FAQs & assistance" },
+  { label: "Settings", href: "/patient/settings", icon: Settings, description: "Notification channels & account security" },
+  { label: "Privacy & Consent", href: "/patient/consent", icon: ShieldCheck, description: "Healthcare data sharing & authorization" },
+  { label: "Language", href: "/patient/language", icon: Globe, description: "Preferred communication & display language" },
+  { label: "About MEDORA", href: "/patient/about", icon: Activity, description: "Connected healthcare ecosystem" },
+];
+
+// 3. Patient Action Hub Navigation
 export const PATIENT_ACTION_NAV: NavItem[] = [
   { label: "Book Appointment", href: "/patient/appointments/book", icon: Calendar },
   { label: "Find Specialist", href: "/patient/care", icon: Stethoscope },
@@ -140,12 +150,22 @@ export const LAB_NAV: NavItem[] = [
   { label: "Diagnostic Catalog", href: "/lab", icon: Package },
 ];
 
-// 8. Pharmacy Operations Navigation
+// 8. Pharmacy Operations Navigation (9 Canonical Modules)
 export const PHARMACY_NAV: NavItem[] = [
-  { label: "Prescription Queue", href: "/pharmacy", icon: Pill, exact: true },
-  { label: "Dispensing Desk", href: "/pharmacy", icon: CheckCircle2 },
-  { label: "Drug Inventory (FEFO)", href: "/pharmacy/inventory", icon: Package },
-  { label: "Batch Master & Expiry", href: "/pharmacy/inventory", icon: Clock },
+  // OPERATIONS
+  { label: "Pharmacy Work Queue", href: "/pharmacy", icon: Pill, exact: true, section: "OPERATIONS" },
+  { label: "Prescriptions Queue", href: "/pharmacy/prescriptions", icon: ClipboardList, section: "OPERATIONS" },
+  { label: "Orders", href: "/pharmacy/orders", icon: Package, section: "OPERATIONS" },
+
+  // FULFILLMENT
+  { label: "Preparation", href: "/pharmacy/preparation", icon: Clock, section: "FULFILLMENT" },
+  { label: "Patient Pickup", href: "/pharmacy/pickup", icon: User, section: "FULFILLMENT" },
+  { label: "Dispensing Desk", href: "/pharmacy/dispensing", icon: CheckCircle2, section: "FULFILLMENT" },
+
+  // MANAGEMENT
+  { label: "Inventory", href: "/pharmacy/inventory", icon: Layers, section: "MANAGEMENT" },
+  { label: "Pharmacy Staff", href: "/pharmacy/staff", icon: Users, section: "MANAGEMENT" },
+  { label: "Pharmacy Settings", href: "/pharmacy/settings", icon: Settings, section: "MANAGEMENT" },
 ];
 
 // 9. Blood Coordination Navigation
@@ -164,4 +184,4 @@ export const ADMIN_NAV: NavItem[] = [
   { label: "Identity & Roles", href: "/admin/users", icon: ShieldCheck },
   { label: "Tamper-Evident Ledger", href: "/admin/telemetry", icon: Shield },
 ];
-export const PATIENT_MORE_NAV: NavItem[] = PATIENT_ACTION_NAV;
+

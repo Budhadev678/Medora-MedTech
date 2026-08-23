@@ -65,7 +65,7 @@ export function getDoctorContext(doctorIdentifierOrId: string): DoctorActiveCont
   let state = doctorContextMap[doctorId];
   if (!state || !affiliations.some((a) => a.id === state.activeAffiliationId)) {
     state = {
-      activeAffiliationId: affiliations[0].id || "",
+      activeAffiliationId: affiliations[0]?.id || "",
       dutyStatus: "AVAILABLE",
     };
     doctorContextMap[doctorId] = state;
@@ -78,13 +78,13 @@ export function getDoctorContext(doctorIdentifierOrId: string): DoctorActiveCont
     doctorName: identity.fullName || "Medical Doctor",
     specialization: identity.doctorData.specialization || "General Medicine",
     medicalRegNo: identity.doctorData.medicalRegNo || "MCI-PENDING",
-    activeAffiliationId: activeAff.id || "",
-    facilityId: activeAff.organizationIdentifier || activeAff.organizationId || "",
-    facilityName: activeAff.organizationName || "Healthcare Facility",
-    departmentName: activeAff.departmentName || "General OPD",
-    roleTitle: activeAff.roleTitle || "Specialist",
-    opdRoom: activeAff.opdRoom || "OPD Room 1",
-    scheduleNotes: activeAff.scheduleNotes,
+    activeAffiliationId: activeAff?.id || "",
+    facilityId: activeAff?.organizationIdentifier || activeAff?.organizationId || "",
+    facilityName: activeAff?.organizationName || "Healthcare Facility",
+    departmentName: activeAff?.departmentName || "General OPD",
+    roleTitle: activeAff?.roleTitle || "Specialist",
+    opdRoom: activeAff?.opdRoom || "OPD Room 1",
+    scheduleNotes: activeAff?.scheduleNotes,
     dutyStatus: state.dutyStatus,
     authorizedAffiliations: affiliations,
   };
@@ -114,10 +114,11 @@ export function setActiveDoctorAffiliation(
     };
   }
 
+  const targetId = targetAff.id || "";
   if (!doctorContextMap[doctorId]) {
-    doctorContextMap[doctorId] = { activeAffiliationId: targetAff.id || "", dutyStatus: "AVAILABLE" };
+    doctorContextMap[doctorId] = { activeAffiliationId: targetId, dutyStatus: "AVAILABLE" };
   } else {
-    doctorContextMap[doctorId].activeAffiliationId = targetAff.id || "";
+    doctorContextMap[doctorId].activeAffiliationId = targetId;
   }
 
   const updatedContext = getDoctorContext(doctorId);
