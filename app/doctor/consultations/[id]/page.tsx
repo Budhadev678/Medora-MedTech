@@ -76,12 +76,14 @@ import { LabOrderService } from "@/lib/services/lab-order-service";
 import { ReferralService } from "@/lib/services/referral-service";
 import { FollowUpService } from "@/lib/services/followup-service";
 import { ClinicalContinuityService } from "@/lib/services/clinical-continuity-service";
+import { DoctorConsultationWorkspace } from "@/components/doctor/DoctorConsultationWorkspace";
 
 export default function DedicatedConsultationWorkspacePage() {
   const params = useParams();
   const router = useRouter();
   const encounterId = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
   const { user } = useAuth();
+  const [workspaceMode, setWorkspaceMode] = useState<"digital_desk" | "classic_view">("digital_desk");
 
   const [contextData, setContextData] = useState<ConsultationContext | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -695,7 +697,28 @@ export default function DedicatedConsultationWorkspacePage() {
   return (
     <RoleGuard allowedRoles={["doctor", "admin"]}>
       <div className="space-y-6 pb-20 animate-in fade-in-50 duration-150">
-        
+        <div className="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs">
+          <span className="font-semibold text-slate-700">
+            Consultation View Mode: <strong>{workspaceMode === "digital_desk" ? "Digital Clinical Desk & Digital Exam Pad" : "Standard Multi-Tab Workspace"}</strong>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWorkspaceMode(workspaceMode === "digital_desk" ? "classic_view" : "digital_desk")}
+            className="text-xs h-7 font-bold border-blue-300 text-blue-700 hover:bg-blue-50"
+          >
+            {workspaceMode === "digital_desk" ? "Switch to Classic Multi-Tab View" : "Switch to Digital Clinical Desk & Exam Pad"}
+          </Button>
+        </div>
+
+        {workspaceMode === "digital_desk" && user ? (
+          <DoctorConsultationWorkspace
+            encounterId={encounterId}
+            currentDoctor={user as any}
+            onFinalized={() => loadContext()}
+          />
+        ) : (
+          <>
         {/* ============================================================ */}
         {/* 1. TOP PATIENT SAFETY & CONTEXT HEADER */}
         {/* ============================================================ */}
@@ -2208,6 +2231,8 @@ export default function DedicatedConsultationWorkspacePage() {
               </div>
             </Card>
           </div>
+        )}
+          </>
         )}
       </div>
     </RoleGuard>
