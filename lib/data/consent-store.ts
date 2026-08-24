@@ -338,3 +338,145 @@ export function revokeConsent(
 
   return { success: true, consent };
 }
+
+/**
+ * Checks if a practitioner has authorized access to a patient's historical records.
+ * Authorized if:
+ * 1. Active GRANTED consent exists
+ * 2. Or break-glass emergency access grant is active
+ */
+export function hasContextualAccess(
+  patientId: string,
+  requesterId: string,
+  organizationId?: string
+): boolean {
+  const consents = getPatientConsents(patientId);
+  const now = Date.now();
+
+  return consents.some((c) => {
+    if (c.status !== "GRANTED") return false;
+    if (new Date(c.expires_at).getTime() < now) return false;
+    if (c.requester_id === requesterId) return true;
+    if (organizationId && c.organization_id === organizationId) return true;
+    return false;
+  });
+}
+
+/**
+ * Contextual Record Sharing during active consultation:
+ * Patient taps [Share Records] to grant scoped, 24-hour access for this consultation session.
+ */
+export function grantContextualConsultationSharing(params: {
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
+  organizationId: string;
+  organizationName: string;
+  encounterId?: string;
+}): { success: boolean; consent: ConsentRecord } {
+  const now = new Date();
+  const expires = new Date(now.getTime() + 24 * 3600 * 1000); // 24 hours scoped grant
+
+  const newConsent: ConsentRecord = {
+    id: "CNS-CTX-" + Math.floor(1000 + Math.random() * 9000),
+    request_id: params.encounterId ? `REQ-ENC-${params.encounterId}` : undefined,
+    patient_id: params.patientId,
+    requester_id: params.doctorId,
+    requester_name: params.doctorName,
+    requester_role: "Attending Physician",
+    organization_id: params.organizationId,
+    organization_name: params.organizationName,
+    purpose: "treatment",
+    purpose_description: "Contextual record sharing for active consultation session",
+    granted_scopes: ["medical_history", "prescriptions", "lab_reports", "diagnostic_reports"],
+    status: "GRANTED",
+    granted_at: now.toISOString(),
+    expires_at: expires.toISOString(),
+    created_at: now.toISOString(),
+  };
+
+  const consents = getAllConsents();
+  consents.unshift(newConsent);
+  saveConsents(consents);
+
+  logAuditEvent({
+    event_type: "CONSENT_GRANTED",
+    actor_id: params.patientId,
+    actor_name: params.patientName,
+    actor_role: "patient",
+    patient_id: params.patientId,
+    organization_id: params.organizationId,
+    organization_name: params.organizationName,
+    summary: `Patient shared previous medical records with ${params.doctorName} for active consultation session`,
+    reference_id: newConsent.id,
+    metadata: {
+      encounter_id: params.encounterId || null,
+      valid_hours: 24,
+    },
+  });
+
+  return { success: true, consent: newConsent };
+}
+
+/**
+ * Break-Glass Emergency Medical Record Access:
+ * For critical trauma/ER encounters where patient is incapacitated.
+ * Mandatory clinical justification logged to immutable audit ledger.
+ */
+export function triggerBreakGlassEmergencyAccess(params: {
+  patientId: string;
+  patientName?: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  organizationId: string;
+  organizationName: string;
+  justificationReason: string;
+  emergencyCaseId?: string;
+}): { success: boolean; consent: ConsentRecord } {
+  const now = new Date();
+  const expires = new Date(now.getTime() + 12 * 3600 * 1000); // 12 hours emergency override
+
+  const emergencyConsent: ConsentRecord = {
+    id: "CNS-EMR-" + Math.floor(1000 + Math.random() * 9000),
+    request_id: params.emergencyCaseId ? `EMR-${params.emergencyCaseId}` : undefined,
+    patient_id: params.patientId,
+    requester_id: params.actorId,
+    requester_name: params.actorName,
+    requester_role: params.actorRole,
+    organization_id: params.organizationId,
+    organization_name: params.organizationName,
+    purpose: "emergency_access",
+    purpose_description: `Emergency Break-Glass Override: ${params.justificationReason}`,
+    granted_scopes: ["medical_history", "prescriptions", "lab_reports", "diagnostic_reports", "hospital_records"],
+    status: "GRANTED",
+    granted_at: now.toISOString(),
+    expires_at: expires.toISOString(),
+    created_at: now.toISOString(),
+  };
+
+  const consents = getAllConsents();
+  consents.unshift(emergencyConsent);
+  saveConsents(consents);
+
+  logAuditEvent({
+    event_type: "EMERGENCY_ACCESS_TRIGGERED",
+    actor_id: params.actorId,
+    actor_name: params.actorName,
+    actor_role: params.actorRole,
+    patient_id: params.patientId,
+    organization_id: params.organizationId,
+    organization_name: params.organizationName,
+    summary: `BREAK-GLASS EMERGENCY OVERRIDE: ${params.actorName} accessed medical records. Reason: "${params.justificationReason}"`,
+    reference_id: emergencyConsent.id,
+    metadata: {
+      emergencyCaseId: params.emergencyCaseId || null,
+      reason: params.justificationReason,
+      override_timestamp: now.toISOString(),
+    },
+  });
+
+  return { success: true, consent: emergencyConsent };
+}
+
