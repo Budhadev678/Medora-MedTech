@@ -19,11 +19,12 @@ import {
 import { DemoSwitcher } from "@/components/shared/demo-switcher";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, activePersona, logout } = useAuth();
-  const [currentLang, setCurrentLang] = useState<"EN" | "HI" | "OR">("EN");
+  const { language, changeLanguage } = useLocalization();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -67,27 +68,27 @@ export function Navbar() {
       {/* Right Action Tools */}
       <div className="ml-auto flex items-center gap-3">
         {/* Language Selector */}
-        <div className="hidden sm:flex items-center rounded-md border border-slate-200 bg-slate-50 p-0.5 text-xs font-medium text-slate-600">
+        <div className="flex items-center rounded-md border border-slate-200 bg-slate-50 p-0.5 text-xs font-medium text-slate-600">
           <button
-            onClick={() => setCurrentLang("EN")}
+            onClick={() => changeLanguage("en")}
             className={`px-2 py-1 rounded transition-colors ${
-              currentLang === "EN" ? "bg-white text-teal-700 shadow-xs font-semibold" : "hover:text-slate-900"
+              language === "en" ? "bg-white text-teal-700 shadow-xs font-bold" : "hover:text-slate-900"
             }`}
           >
             EN
           </button>
           <button
-            onClick={() => setCurrentLang("HI")}
+            onClick={() => changeLanguage("hi")}
             className={`px-2 py-1 rounded transition-colors ${
-              currentLang === "HI" ? "bg-white text-teal-700 shadow-xs font-semibold" : "hover:text-slate-900"
+              language === "hi" ? "bg-white text-teal-700 shadow-xs font-bold" : "hover:text-slate-900"
             }`}
           >
             हिन्दी
           </button>
           <button
-            onClick={() => setCurrentLang("OR")}
+            onClick={() => changeLanguage("or")}
             className={`px-2 py-1 rounded transition-colors ${
-              currentLang === "OR" ? "bg-white text-teal-700 shadow-xs font-semibold" : "hover:text-slate-900"
+              language === "or" ? "bg-white text-teal-700 shadow-xs font-bold" : "hover:text-slate-900"
             }`}
           >
             ଓଡ଼ିଆ
