@@ -241,13 +241,6 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickFillPreset("bloodbank@medora.health")}
-                      className="rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Blood Centre (City Blood)
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => quickFillPreset("admin@cityhospital.org")}
                       className="rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
@@ -273,13 +266,6 @@ export default function LoginPage() {
                       className="rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
                       Pharmacy (ABC Pharm)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickFillPreset("bloodbank@medora.health")}
-                      className="rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
-                    >
-                      Blood Centre
                     </button>
                     <button
                       type="button"
