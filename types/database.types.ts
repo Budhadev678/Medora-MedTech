@@ -2755,10 +2755,20 @@ export type DisputeStatus =
   | "SUBMITTED"
   | "RECEIVED"
   | "UNDER_REVIEW"
+  | "HOSPITAL_REVIEW_L1"
+  | "PATIENT_INFORMATION_REQUIRED"
+  | "HOSPITAL_RESPONSE_RECEIVED"
+  | "HOSPITAL_REVIEW_L2"
+  | "FINAL_HOSPITAL_REVIEW"
   | "WAITING_FOR_INFORMATION"
   | "EVIDENCE_COLLECTED"
   | "RESOLVED"
+  | "RESOLVED_BY_HOSPITAL"
+  | "PARTIALLY_RESOLVED"
   | "REJECTED"
+  | "ELIGIBLE_FOR_EXTERNAL_ESCALATION"
+  | "EXTERNAL_ESCALATION_REQUESTED"
+  | "EXTERNAL_CASE_CREATED"
   | "ESCALATED"
   | "CLOSED";
 
@@ -2909,13 +2919,89 @@ export interface FinancialDispute {
   facility_id: string;
   bill_id: string;
   bill_item_id?: string;
+  service_name?: string;
+  charged_amount?: number;
+  benchmark_amount?: number;
+  difference_amount?: number;
+  reference_rate_id?: string;
   category: DisputeCategory;
   description: string;
   status: DisputeStatus;
   priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  current_stage?: "HOSPITAL_L1" | "HOSPITAL_L2" | "HOSPITAL_L3" | "EXTERNAL_PROTOTYPE" | "RESOLVED" | "CLOSED";
+  l1_response?: {
+    action: "EXPLAIN" | "ADJUST" | "REFUND" | "REJECT" | "ESCALATE_L2";
+    explanation: string;
+    adjustment_amount?: number;
+    responder_name: string;
+    timestamp: string;
+  };
+  l2_response?: {
+    action: "RESOLVE" | "ESCALATE_L3";
+    explanation: string;
+    adjustment_amount?: number;
+    reviewer_name: string;
+    timestamp: string;
+  };
+  l3_response?: {
+    outcome: "FULLY_RESOLVED" | "PARTIALLY_RESOLVED" | "NOT_RESOLVED";
+    explanation: string;
+    adjustment_amount?: number;
+    reviewer_name: string;
+    timestamp: string;
+  };
+  external_case_id?: string;
   created_at: string;
   updated_at: string;
   resolved_at?: string;
+}
+
+export type ExternalDisputeStatus =
+  | "DRAFT"
+  | "SUBMITTED_DEMO"
+  | "UNDER_REVIEW_DEMO"
+  | "INFORMATION_REQUIRED_DEMO"
+  | "DECISION_ISSUED_DEMO"
+  | "CLOSED_DEMO";
+
+export interface ExternalDisputeCase {
+  external_case_id: string; // e.g. "EXT-2026-00123"
+  dispute_id: string;
+  patient_id: string;
+  patient_name: string;
+  hospital_id: string;
+  hospital_name: string;
+  bill_id: string;
+  bill_item_id?: string;
+  service_name: string;
+  charged_amount: number;
+  benchmark_amount: number;
+  difference_amount: number;
+  escalation_reason: string;
+  submitted_snapshot: {
+    dispute_number: string;
+    patient_id: string;
+    patient_name: string;
+    hospital_name: string;
+    bill_id: string;
+    service_name: string;
+    hospital_charge: number;
+    reference_rate: number;
+    difference: number;
+    patient_complaint: string;
+    l1_explanation?: string;
+    l2_explanation?: string;
+    l3_final_outcome?: string;
+    adjustments_applied: number;
+    evidence_nodes: EvidenceNode[];
+    dispute_timeline: { stage: string; timestamp: string; note: string }[];
+  };
+  status: ExternalDisputeStatus;
+  submitted_at: string;
+  updated_at: string;
+  outcome?: string;
+  is_prototype: boolean;
+  disclaimer: string;
 }
 
 export interface FinancialAnomaly {

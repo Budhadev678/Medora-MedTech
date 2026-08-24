@@ -172,6 +172,24 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "doc.revoked": "Revoked",
     "doc.version": "Version",
     "doc.no_documents": "No medical documents found.",
+
+    // Financial Transparency, Benchmark & Dispute Escalation
+    "fin.reference_rate": "Reference Benchmark Rate",
+    "fin.hospital_charge": "Hospital Charged Rate",
+    "fin.difference": "Difference",
+    "fin.question_charge": "Question Charge",
+    "fin.raise_dispute": "Raise Billing Dispute",
+    "fin.hospital_review": "Hospital Level 1 Review",
+    "fin.internal_escalation": "Internal Committee Escalation (L2)",
+    "fin.final_review": "Final Hospital Review (L3)",
+    "fin.external_escalation": "External / Government Escalation (Prototype)",
+    "fin.insurance": "Health Insurance",
+    "fin.government_schemes": "Government Health Schemes",
+    "fin.financial_assistance": "Hospital Relief & Charity Aid",
+    "fin.coverage": "Coverage Applied",
+    "fin.patient_responsibility": "Net Patient Responsibility",
+    "fin.refund": "Refund",
+    "fin.adjustment": "Accounting Adjustment",
   },
   hi: {
     // Navigation & Shell
@@ -331,6 +349,24 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "doc.revoked": "रद्द",
     "doc.version": "संस्करण",
     "doc.no_documents": "कोई दस्तावेज उपलब्ध नहीं है।",
+
+    // Financial Transparency, Benchmark & Dispute Escalation
+    "fin.reference_rate": "संदर्भ मानक दर (बेंचमार्क)",
+    "fin.hospital_charge": "अस्पताल द्वारा लगाया गया शुल्क",
+    "fin.difference": "अंतर",
+    "fin.question_charge": "शुल्क पर स्पष्टीकरण मांगें",
+    "fin.raise_dispute": "बिल विवाद दर्ज करें",
+    "fin.hospital_review": "अस्पताल स्तर 1 समीक्षा",
+    "fin.internal_escalation": "आंतरिक समिति समीक्षा (स्तर 2)",
+    "fin.final_review": "अस्पताल अंतिम समीक्षा (स्तर 3)",
+    "fin.external_escalation": "बाहरी / सरकारी शिकायत (प्रोटोटाइप)",
+    "fin.insurance": "स्वास्थ्य बीमा",
+    "fin.government_schemes": "सरकारी स्वास्थ्य योजनाएं (PM-JAY)",
+    "fin.financial_assistance": "अस्पताल सहायता एवं राहत कोष",
+    "fin.coverage": "कुल लागू कवरेज",
+    "fin.patient_responsibility": "मरीज की देय राशि",
+    "fin.refund": "रिफंड",
+    "fin.adjustment": "समायोजन (एडजस्टमेंट)",
   },
   or: {
     // Navigation & Shell
@@ -490,6 +526,24 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "doc.revoked": "ବାତିଲ",
     "doc.version": "ସଂସ୍କରଣ",
     "doc.no_documents": "କୌଣସି ଦଲିଲ ଉପଲବ୍ଧ ନାହିଁ।",
+
+    // Financial Transparency, Benchmark & Dispute Escalation
+    "fin.reference_rate": "ମାନକ ଦର (ବେଞ୍ଚମାର୍କ)",
+    "fin.hospital_charge": "ଡାକ୍ତରଖାନା ଶୁଳ୍କ",
+    "fin.difference": "ତାରତମ୍ୟ / ପାର୍ଥକ୍ୟ",
+    "fin.question_charge": "ଶୁଳ୍କ ସ୍ପଷ୍ଟୀକରଣ ଚାହାନ୍ତୁ",
+    "fin.raise_dispute": "ବିଲ୍ ଆପତ୍ତି ଦାଖଲ କରନ୍ତୁ",
+    "fin.hospital_review": "ଡାକ୍ତରଖାନା ସ୍ତର ୧ ସମୀକ୍ଷା",
+    "fin.internal_escalation": "ଆଭ୍ୟନ୍ତରୀଣ କମିଟି ସମୀକ୍ଷା (ସ୍ତର ୨)",
+    "fin.final_review": "ଚୂଡ଼ାନ୍ତ ସମୀକ୍ଷା (ସ୍ତର ୩)",
+    "fin.external_escalation": "ବାହ୍ୟ / ସରକାରୀ ଅଭିଯୋଗ (ପ୍ରୋଟୋଟାଇପ୍)",
+    "fin.insurance": "ସ୍ୱାସ୍ଥ୍ୟ ବୀମା",
+    "fin.government_schemes": "ସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ ଯୋଜନା (BSKY / PM-JAY)",
+    "fin.financial_assistance": "ଡାକ୍ତରଖାନା ସାହାଯ୍ୟ ଓ ରିହାତି",
+    "fin.coverage": "ମିଳିଥିବା କଭରେଜ୍",
+    "fin.patient_responsibility": "ରୋଗୀଙ୍କ ପ୍ରଦେୟ ରାଶି",
+    "fin.refund": "ଫେରସ୍ତ (ରିଫଣ୍ଡ)",
+    "fin.adjustment": "ସଂଶୋଧନ (ଏଡଜଷ୍ଟମେଣ୍ଟ)",
   },
 };
 

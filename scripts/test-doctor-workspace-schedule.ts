@@ -73,6 +73,7 @@ async function runDoctorWorkspaceSuite() {
     date: "2026-08-30",
     doctor_id: "DOC-1001",
     reason: "Attending National Cardiology Symposium",
+    is_closed: true,
     created_at: new Date().toISOString(),
   });
   assert(Boolean(override.id), "2.1 Doctor leave override recorded on specific date");
@@ -119,7 +120,7 @@ async function runDoctorWorkspaceSuite() {
     {
       chief_complaint: "Exertional dyspnea and atypical retrosternal tightness",
       symptoms: [
-        { name: "Chest discomfort", duration: "3 days", severity: "MODERATE" },
+        { id: "SYM-1", name: "Chest discomfort", duration: "3 days", severity: "MODERATE" },
       ],
       vitals: {
         systolic_bp_mmhg: 130,
@@ -157,9 +158,10 @@ async function runDoctorWorkspaceSuite() {
           dosage_form: "TABLET",
           route: "ORAL",
           frequency: "OD",
-          timing: "NIGHT",
+          timing: "AT_BEDTIME",
+          duration: "30 days",
           duration_days: 30,
-          quantity: 30,
+          quantity: "30",
           instructions: "Take once daily at bedtime after dinner.",
         },
       ],

@@ -24,7 +24,8 @@ import {
   Sparkles,
   QrCode,
   Package,
-  AlertCircle
+  AlertCircle,
+  Landmark,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -319,6 +320,40 @@ export default function PatientHomePage() {
               <span className="text-[11px] font-bold text-slate-800">Bills & Payments</span>
             </Link>
           </div>
+        </section>
+
+        {/* Financial Support & Coverage Summary Card */}
+        <section aria-label="Financial Support Summary">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Financial Support & Coverage
+            </h2>
+            <Link href="/patient/financial-support" className="text-xs font-bold text-indigo-700 hover:underline">
+              Manage Coverage →
+            </Link>
+          </div>
+          <Card className="bg-gradient-to-r from-indigo-900 to-indigo-800 text-white rounded-3xl p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-white/20 text-white border-white/30 text-[10px]">
+                    1 Active Policy
+                  </Badge>
+                  <Badge variant="outline" className="bg-white/20 text-white border-white/30 text-[10px]">
+                    1 Eligible Scheme
+                  </Badge>
+                </div>
+                <h3 className="text-base font-extrabold text-white mt-1">Health Insurance & Government Benefits</h3>
+                <p className="text-xs text-indigo-200">Star Health Inpatient Gold • Ayushman Bharat PM-JAY Linked</p>
+              </div>
+
+              <Link href="/patient/financial-support" className="self-start sm:self-center">
+                <Button size="sm" className="bg-white text-indigo-950 hover:bg-indigo-50 font-bold rounded-2xl text-xs shadow-xs">
+                  View Financial Support
+                </Button>
+              </Link>
+            </div>
+          </Card>
         </section>
 
         {/* 6. Recent Healthcare Activity Preview */}

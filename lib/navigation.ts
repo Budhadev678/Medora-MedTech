@@ -69,6 +69,7 @@ export const PATIENT_PRIMARY_NAV: NavItem[] = [
 
 // 2. Patient Secondary / Utilities Navigation
 export const PATIENT_MORE_NAV: NavItem[] = [
+  { label: "Financial Support", href: "/patient/financial-support", icon: Landmark, description: "Insurance, government health schemes & relief aid" },
   { label: "Notifications", href: "/patient/notifications", icon: Bell, description: "Alerts, clinical updates & reminders" },
   { label: "Help & Support", href: "/patient/help", icon: HelpCircle, description: "Patient guides, FAQs & assistance" },
   { label: "Settings", href: "/patient/settings", icon: Settings, description: "Notification channels & account security" },
@@ -82,6 +83,7 @@ export const PATIENT_ACTION_NAV: NavItem[] = [
   { label: "Book Appointment", href: "/patient/appointments/book", icon: Calendar },
   { label: "Find Specialist", href: "/patient/care", icon: Stethoscope },
   { label: "Emergency Assist", href: "/patient/emergency", icon: AlertTriangle },
+  { label: "Financial Support", href: "/patient/financial-support", icon: Landmark },
   { label: "Medical Timeline", href: "/patient/health", icon: Activity },
   { label: "Digital Prescriptions", href: "/patient/health", icon: Pill },
   { label: "Diagnostic Lab Reports", href: "/patient/health", icon: FlaskConical },

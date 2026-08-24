@@ -61,7 +61,7 @@ async function runHospitalStep5Suite() {
 
   assert(disputeRes.success === true, "2.1 Financial dispute filed successfully");
   const dispute = disputeRes.dispute!;
-  assert(dispute.status === "SUBMITTED" || dispute.status === "UNDER_REVIEW", "2.2 Initial dispute status is active");
+  assert(dispute.status === "SUBMITTED" || dispute.status === "UNDER_REVIEW" || dispute.status === "HOSPITAL_REVIEW_L1", "2.2 Initial dispute status is active");
   assert(dispute.bill_id === targetBill.id, "2.3 Dispute bound to target bill ID");
 
   // ------------------------------------------------------------
