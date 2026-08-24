@@ -66,6 +66,8 @@ export interface ConsultationContext {
   allergies: string[];
   chronic_conditions: string[];
   recent_encounters: HealthcareEncounter[];
+  same_doctor_encounters: HealthcareEncounter[];
+  network_encounters: HealthcareEncounter[];
   linked_appointment: Appointment | null;
   linked_queue_entry: QueueEntry | null;
   records_shared: boolean;
@@ -115,24 +117,8 @@ export class ConsultationService {
       };
     }
 
-    // Queue state validation: Must be CALLED or WAITING (or already in IN_CONSULTATION for idempotency)
-    if (entry.status !== "CALLED" && entry.status !== "WAITING") {
-      const allEncounters = getAllEncounters();
-      const existingEncounter = allEncounters.find(
-        (e) => e.queue_entry_id === entry.id || (entry.appointment_id && e.appointment_id === entry.appointment_id)
-      );
-
-      if (existingEncounter && entry.status === "IN_CONSULTATION") {
-        const clinicalRecord = getClinicalRecordByEncounterId(existingEncounter.id);
-        return {
-          success: true,
-          encounter: existingEncounter,
-          clinical_record: clinicalRecord || undefined,
-          queue_entry: entry,
-          message: `Consultation already active for ${entry.patient_name} (Token #${entry.token_number}).`,
-        };
-      }
-
+    // Queue state validation: Must be CALLED, WAITING, or IN_CONSULTATION
+    if (entry.status !== "CALLED" && entry.status !== "WAITING" && entry.status !== "IN_CONSULTATION") {
       return {
         success: false,
         error_code: "INVALID_STATE",
@@ -154,17 +140,20 @@ export class ConsultationService {
 
     const nowIso = new Date().toISOString();
 
-    // 1. Check if an active encounter already exists for this appointment to prevent duplicate creation
+    // 1. Check if an active encounter already exists for this appointment or queue entry to prevent duplicate creation
     const allEncounters = getAllEncounters();
     let existingEncounter = allEncounters.find(
-      (e) => e.queue_entry_id === entry.id || (entry.appointment_id && e.appointment_id === entry.appointment_id)
+      (e) =>
+        e.queue_entry_id === entry.id ||
+        (entry.appointment_id && e.appointment_id?.toLowerCase() === entry.appointment_id?.toLowerCase()) ||
+        (e.patient_id === entry.patient_id && e.provider_id === entry.doctor_id && e.status === "ACTIVE")
     );
 
     let encounter: HealthcareEncounter;
 
     if (existingEncounter) {
       encounter = existingEncounter;
-      if (encounter.status !== "ACTIVE") {
+      if (encounter.status !== "ACTIVE" && encounter.status !== "COMPLETED" && encounter.status !== "FINALIZED") {
         encounter.status = "ACTIVE";
         encounter.started_at = encounter.started_at || nowIso;
         encounter.updated_at = nowIso;
@@ -304,6 +293,7 @@ export class ConsultationService {
       vitals?: ClinicalVitals;
       observations?: string;
       clinical_notes?: string;
+      freehand_drawing?: string;
       assessment?: string;
       diagnoses?: ClinicalDiagnosis[];
       treatment_plan?: string;
@@ -341,6 +331,7 @@ export class ConsultationService {
       vitals: draftData.vitals,
       observations: draftData.observations,
       clinicalNotes: draftData.clinical_notes,
+      freehandDrawing: draftData.freehand_drawing,
       assessment: draftData.assessment,
       diagnoses: draftData.diagnoses,
       treatmentPlan: draftData.treatment_plan,
@@ -354,7 +345,7 @@ export class ConsultationService {
       AuditLedger.recordEvent({
         actor_id: actorId,
         actor_name: actor.fullName,
-        action: "DRAFT_SAVED",
+        action: "CLINICAL_DRAFT_SAVED",
         resource_type: "CLINICAL_RECORD",
         resource_id: result.record?.id,
         details: {
@@ -363,6 +354,7 @@ export class ConsultationService {
           organization_id: encounter.organization_id,
           has_diagnoses: Boolean(draftData.diagnoses && draftData.diagnoses.length > 0),
           has_vitals: Boolean(draftData.vitals && draftData.vitals.systolic_bp_mmhg),
+          has_sketch: Boolean(draftData.freehand_drawing),
         },
       });
     }
@@ -383,6 +375,7 @@ export class ConsultationService {
       vitals?: ClinicalVitals;
       observations?: string;
       clinical_notes?: string;
+      freehand_drawing?: string;
       assessment?: string;
       diagnoses?: ClinicalDiagnosis[];
       treatment_plan?: string;
@@ -426,6 +419,7 @@ export class ConsultationService {
       vitals: finalDocumentation.vitals,
       observations: finalDocumentation.observations,
       clinicalNotes: finalDocumentation.clinical_notes,
+      freehandDrawing: finalDocumentation.freehand_drawing,
       assessment: finalDocumentation.assessment,
       diagnoses: finalDocumentation.diagnoses,
       treatmentPlan: finalDocumentation.treatment_plan,
@@ -455,24 +449,21 @@ export class ConsultationService {
     if (!completeRecordRes.success) {
       return {
         success: false,
-        error_code: "RECORD_COMPLETION_FAILED",
-        message: completeRecordRes.error || "Failed to finalize clinical documentation.",
+        error_code: "FINALIZATION_FAILED",
+        message: completeRecordRes.error || "Failed to finalize clinical record.",
       };
     }
 
-    // 3. Complete Encounter in Store
+    // 3. Complete HealthcareEncounter
     const completeEncRes = completeEncounterInStore(encounterId, actorId, actor.fullName, actor.role);
     const updatedEncounter = completeEncRes.encounter || encounter;
-    updatedEncounter.status = "COMPLETED";
-    updatedEncounter.completed_at = nowIso;
-    updatedEncounter.ended_at = nowIso;
 
-    // 4. Complete linked Queue Entry if present
+    // 4. Complete Linked Queue Entry if present
     if (encounter.queue_entry_id) {
-      const qEntry = QueueStore.getQueueEntryById(encounter.queue_entry_id);
-      if (qEntry && qEntry.status !== "COMPLETED") {
+      const queueEntry = QueueStore.getQueueEntryById(encounter.queue_entry_id);
+      if (queueEntry && queueEntry.status !== "COMPLETED") {
         QueueStore.saveQueueEntry({
-          ...qEntry,
+          ...queueEntry,
           status: "COMPLETED",
           completed_at: nowIso,
         });
@@ -485,16 +476,17 @@ export class ConsultationService {
       if (apt && apt.status !== "COMPLETED") {
         AppointmentStore.saveAppointment({
           ...apt,
-          status: "COMPLETED",
+          status: "COMPLETED" as any,
           updated_at: nowIso,
         });
       }
     }
 
     // Compute duration in minutes
-    const startTimeMs = new Date(encounter.started_at).getTime();
-    const endTimeMs = new Date(nowIso).getTime();
-    const durationMinutes = Math.max(1, Math.round((endTimeMs - startTimeMs) / 60000));
+    const durationMinutes = Math.max(
+      1,
+      Math.round((new Date(nowIso).getTime() - new Date(encounter.started_at).getTime()) / (60 * 1000))
+    );
 
     // Record verified duration for Phase B.3 dynamic waiting time engine
     ConsultationHistoryStore.recordCompletedConsultation({
@@ -529,7 +521,7 @@ export class ConsultationService {
 
     return {
       success: true,
-      encounter: updatedEncounter,
+      encounter: updatedEncounter || encounter,
       clinical_record: completeRecordRes.record,
       duration_minutes: durationMinutes,
       message: `Consultation completed successfully for ${encounter.patient_name} (${durationMinutes} min).`,
@@ -547,6 +539,7 @@ export class ConsultationService {
       vitals?: ClinicalVitals;
       observations?: string;
       clinical_notes?: string;
+      freehand_drawing?: string;
       assessment?: string;
       diagnoses?: ClinicalDiagnosis[];
       treatment_plan?: string;
@@ -581,6 +574,7 @@ export class ConsultationService {
       vitals: amendmentData.vitals,
       observations: amendmentData.observations,
       clinicalNotes: amendmentData.clinical_notes,
+      freehandDrawing: amendmentData.freehand_drawing,
       assessment: amendmentData.assessment,
       diagnoses: amendmentData.diagnoses,
       treatmentPlan: amendmentData.treatment_plan,
@@ -608,6 +602,88 @@ export class ConsultationService {
     }
 
     return result;
+  }
+
+  /**
+   * Directly activates/starts a consultation given an encounter ID.
+   */
+  public static async startConsultationForEncounter(
+    encounterId: string,
+    actor: StoredIdentity | null
+  ): Promise<StartConsultationResult> {
+    if (!actor) {
+      return { success: false, error_code: "UNAUTHORIZED", message: "Authentication required." };
+    }
+
+    const encounter = getEncounterById(encounterId);
+    if (!encounter) {
+      return { success: false, error_code: "NOT_FOUND", message: `Encounter ${encounterId} not found.` };
+    }
+
+    const actorId = actor.identifier || actor.id;
+    const nowIso = new Date().toISOString();
+
+    if (encounter.status !== "ACTIVE" && encounter.status !== "COMPLETED") {
+      encounter.status = "ACTIVE";
+      encounter.started_at = encounter.started_at || nowIso;
+      encounter.updated_at = nowIso;
+      const allEncounters = getAllEncounters();
+      const idx = allEncounters.findIndex((e) => e.id === encounter.id);
+      if (idx >= 0) {
+        allEncounters[idx] = encounter;
+        saveEncounters(allEncounters);
+      }
+    }
+
+    // Initialize draft record if none exists
+    let clinicalRecord = getClinicalRecordByEncounterId(encounter.id);
+    if (!clinicalRecord) {
+      const initDraftRes = saveClinicalRecordDraft({
+        encounterId: encounter.id,
+        chiefComplaint: encounter.reason_for_visit || "Clinical Consultation",
+        symptoms: [],
+        vitals: {
+          recorded_at: nowIso,
+          recorded_by: actorId,
+          recorded_by_name: actor.fullName,
+        },
+        observations: "",
+        clinicalNotes: "",
+        assessment: "",
+        diagnoses: [],
+        treatmentPlan: "",
+        followUpPlan: { required: false },
+        actorId,
+        actorName: actor.fullName,
+        actorRole: actor.role,
+      });
+      if (initDraftRes.success && initDraftRes.record) {
+        clinicalRecord = initDraftRes.record;
+      }
+    }
+
+    AuditLedger.recordEvent({
+      actor_id: actorId,
+      actor_name: actor.fullName,
+      action: "CONSULTATION_STARTED",
+      resource_type: "HEALTHCARE_ENCOUNTER",
+      resource_id: encounter.id,
+      details: {
+        patient_id: encounter.patient_id,
+        organization_id: encounter.organization_id,
+        appointment_id: encounter.appointment_id || null,
+        facility: encounter.organization_name,
+        department: encounter.department_name,
+        started_at: nowIso,
+      },
+    });
+
+    return {
+      success: true,
+      encounter,
+      clinical_record: clinicalRecord || undefined,
+      message: `Consultation active for ${encounter.patient_name}.`,
+    };
   }
 
   /**
@@ -664,8 +740,22 @@ export class ConsultationService {
     );
     const recordsShared = isContextuallyAuthorized || sharingDecision?.decision === "SHARE";
 
-    // Disclose historical encounters only when authorized by patient or emergency override
+    // All past encounters for this patient
     const allRecentEncounters = getPatientEncounters(encounter.patient_id).filter((e) => e.id !== encounter.id);
+    
+    // Canonical Doctor ID
+    const effectiveDoctorId = actorId || encounter.provider_id;
+
+    // Same-Doctor History: previous encounters where this exact doctor treated this patient
+    const sameDoctorEncounters = allRecentEncounters.filter(
+      (e) => (e.provider_id === effectiveDoctorId || e.provider_id === encounter.provider_id)
+    );
+
+    // Cross-facility/Other doctors' encounters: Accessible ONLY when record sharing is authorized
+    const networkEncounters = recordsShared
+      ? allRecentEncounters.filter((e) => e.provider_id !== effectiveDoctorId && e.provider_id !== encounter.provider_id)
+      : [];
+
     const accessibleEncounters = recordsShared ? allRecentEncounters.slice(0, 5) : [];
 
     const linkedAppointment = encounter.appointment_id
@@ -700,6 +790,8 @@ export class ConsultationService {
       allergies,
       chronic_conditions: chronicConditions,
       recent_encounters: accessibleEncounters,
+      same_doctor_encounters: sameDoctorEncounters,
+      network_encounters: networkEncounters,
       linked_appointment: linkedAppointment,
       linked_queue_entry: linkedQueueEntry,
       records_shared: recordsShared,

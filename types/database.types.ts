@@ -1332,6 +1332,7 @@ export interface ClinicalRecordVersionSnapshot {
   vitals?: ClinicalVitals;
   observations?: string;
   clinical_notes?: string;
+  freehand_drawing?: string;
   assessment?: string;
   diagnoses: ClinicalDiagnosis[];
   treatment_plan?: string;
@@ -1361,6 +1362,7 @@ export interface ClinicalRecord {
   vitals?: ClinicalVitals;
   observations?: string;
   clinical_notes?: string;
+  freehand_drawing?: string;
   assessment?: string;
   diagnoses: ClinicalDiagnosis[];
   treatment_plan?: string;

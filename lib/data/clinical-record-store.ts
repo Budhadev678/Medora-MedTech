@@ -376,6 +376,7 @@ export interface SaveClinicalRecordDraftParams {
   vitals?: ClinicalVitals;
   observations?: string;
   clinicalNotes?: string;
+  freehandDrawing?: string;
   assessment?: string;
   diagnoses?: ClinicalDiagnosis[];
   treatmentPlan?: string;
@@ -399,6 +400,7 @@ export function saveClinicalRecordDraft(
     vitals,
     observations,
     clinicalNotes,
+    freehandDrawing,
     assessment,
     diagnoses = [],
     treatmentPlan,
@@ -409,8 +411,6 @@ export function saveClinicalRecordDraft(
   } = params;
 
   // 1. Validate Encounter Exists & Is Not Cancelled
-
-  // 2. Validate Encounter Exists & Is Not Cancelled
   const encounter = getEncounterById(encounterId);
   if (!encounter) {
     return { success: false, error: `Parent Healthcare Encounter ${encounterId} not found.` };
@@ -467,6 +467,9 @@ export function saveClinicalRecordDraft(
     existing.vitals = vitals;
     existing.observations = observations?.trim();
     existing.clinical_notes = clinicalNotes?.trim();
+    if (freehandDrawing !== undefined) {
+      existing.freehand_drawing = freehandDrawing;
+    }
     existing.assessment = assessment?.trim();
     existing.diagnoses = diagnoses;
     existing.treatment_plan = treatmentPlan?.trim();
@@ -518,6 +521,7 @@ export function saveClinicalRecordDraft(
     vitals,
     observations: observations?.trim(),
     clinical_notes: clinicalNotes?.trim(),
+    freehand_drawing: freehandDrawing,
     assessment: assessment?.trim(),
     diagnoses,
     treatment_plan: treatmentPlan?.trim(),
@@ -626,6 +630,7 @@ export interface AmendClinicalRecordParams {
   vitals?: ClinicalVitals;
   observations?: string;
   clinicalNotes?: string;
+  freehandDrawing?: string;
   assessment?: string;
   diagnoses?: ClinicalDiagnosis[];
   treatmentPlan?: string;
@@ -651,6 +656,7 @@ export function amendClinicalRecord(
     vitals,
     observations,
     clinicalNotes,
+    freehandDrawing,
     assessment,
     diagnoses,
     treatmentPlan,
@@ -693,6 +699,7 @@ export function amendClinicalRecord(
     vitals: record.vitals ? { ...record.vitals } : undefined,
     observations: record.observations,
     clinical_notes: record.clinical_notes,
+    freehand_drawing: record.freehand_drawing,
     assessment: record.assessment,
     diagnoses: [...record.diagnoses],
     treatment_plan: record.treatment_plan,
@@ -712,6 +719,7 @@ export function amendClinicalRecord(
   if (vitals !== undefined) record.vitals = vitals;
   if (observations !== undefined) record.observations = observations.trim();
   if (clinicalNotes !== undefined) record.clinical_notes = clinicalNotes.trim();
+  if (freehandDrawing !== undefined) record.freehand_drawing = freehandDrawing;
   if (assessment !== undefined) record.assessment = assessment.trim();
   if (diagnoses !== undefined) record.diagnoses = diagnoses;
   if (treatmentPlan !== undefined) record.treatment_plan = treatmentPlan.trim();

@@ -196,18 +196,17 @@ export const AuditLedger = {
     resource_id?: string;
     details?: Record<string, any>;
   }) {
-    return appendAuditEvent(
-      (event.action as any) || "DATA_VIEWED",
-      event.actor_id,
-      event.actor_name || "Authorized User",
-      "system",
-      `Audit Action: ${event.action} on ${event.resource_type || "RESOURCE"}:${event.resource_id || ""}`,
-      undefined,
-      undefined,
-      undefined,
-      event.resource_id,
-      event.details as any
-    );
+    return logAuditEvent({
+      event_type: (event.action as any) || "DATA_VIEWED",
+      actor_id: event.actor_id,
+      actor_name: event.actor_name || "Authorized User",
+      actor_role: "doctor",
+      summary: `Action: ${event.action} on ${event.resource_type || "RESOURCE"}:${event.resource_id || ""}`,
+      patient_id: event.details?.patient_id,
+      organization_id: event.details?.organization_id,
+      reference_id: event.resource_id,
+      metadata: event.details as any,
+    });
   },
   getEvents(filter?: { resourceId?: string; patientId?: string }): StoredAuditEvent[] {
     const ledger = getAuditLedger();

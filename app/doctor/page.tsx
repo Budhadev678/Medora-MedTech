@@ -478,7 +478,7 @@ export default function DoctorWorkspacePage() {
                     {/* Operational Actions for Current Patient */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                       <div className="flex items-center gap-2">
-                        <Link href={`/doctor/consultations?encounterId=ENC-1001&patientId=${currentPatient.patient_id}`}>
+                        <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
                           <Button className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-9 rounded-xl gap-1.5 shadow-xs">
                             <Stethoscope className="h-4 w-4" />
                             <span>Open Clinical Workbench</span>
@@ -681,7 +681,7 @@ export default function DoctorWorkspacePage() {
                         <Badge className="bg-teal-700 text-white text-[10px]">IN CONSULTATION</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/doctor/consultations?encounterId=ENC-1001&patientId=${currentPatient.patient_id}`}>
+                        <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
                           <Button size="sm" className="h-7 text-xs bg-teal-700 text-white font-bold rounded-lg gap-1">
                             <span>Open</span>
                             <ArrowRight className="h-3 w-3" />
