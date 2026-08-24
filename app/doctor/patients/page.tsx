@@ -159,12 +159,19 @@ export default function DoctorPatientsPage() {
                       )}
                     </div>
 
-                    <Link href="/doctor/consultations">
-                      <Button size="sm" variant="ghost" className="text-xs text-teal-700 hover:text-teal-800 font-bold p-0 h-auto gap-1">
-                        <span>Open Workbench</span>
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/doctor/patients/${patient.identifier || patient.id}`}>
+                        <Button size="sm" variant="outline" className="text-xs text-slate-700 hover:bg-slate-50 font-bold h-7 px-2.5">
+                          View Medical Record
+                        </Button>
+                      </Link>
+                      <Link href={`/doctor/consultations?patientId=${patient.identifier || patient.id}`}>
+                        <Button size="sm" variant="ghost" className="text-xs text-teal-700 hover:text-teal-800 font-bold p-0 h-auto gap-1">
+                          <span>Workbench</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

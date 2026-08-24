@@ -713,6 +713,12 @@ export function cancelLabOrder(
   }
 
   const order = orders[orderIndex];
+
+  // Authorization guard: Doctor B cannot cancel Doctor A's lab order
+  if (actorRole === "doctor" && actorId && order.ordering_provider_id && actorId.toLowerCase() !== order.ordering_provider_id.toLowerCase()) {
+    return { success: false, error: "Only the ordering doctor can cancel this laboratory order." };
+  }
+
   const now = new Date().toISOString();
   const updatedOrder: HealthcareLabOrder = {
     ...order,
