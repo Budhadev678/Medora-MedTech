@@ -1217,7 +1217,7 @@ export default function DedicatedConsultationWorkspacePage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-bold text-emerald-950 flex items-center gap-2">
                     <Pill className="h-4 w-4 text-emerald-700" />
-                    6. Digital Prescription Composer (Phase C.2)
+                    6. Digital Prescription Composer
                   </CardTitle>
                   {issuedPrescription ? (
                     <Badge className="bg-emerald-100 text-emerald-800 font-mono text-xs">
@@ -1505,7 +1505,7 @@ export default function DedicatedConsultationWorkspacePage() {
                     <Layers className="h-4 w-4 text-purple-600" />
                     7. Medical Orders (Diagnostic, Radiology & Referral)
                   </CardTitle>
-                  <Badge variant="outline" className="text-[10px]">Phase C.2</Badge>
+                  <Badge variant="outline" className="text-[10px]">Clinical Orders</Badge>
                 </div>
               </CardHeader>
 

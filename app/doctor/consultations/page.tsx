@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { 
   Stethoscope, 
   Plus, 
@@ -82,9 +83,12 @@ import { getPatientHealthJourney } from "@/lib/services/health-journey-service";
 import { AccessEngine } from "@/lib/services/access-engine";
 import { useLocalization } from "@/lib/localization";
 
-export default function DoctorConsultationsPage() {
+function DoctorConsultationsContent() {
   const { user } = useAuth();
   const { t } = useLocalization();
+  const searchParams = useSearchParams();
+  const paramEncounterId = searchParams?.get("encounterId");
+  const paramPatientId = searchParams?.get("patientId");
 
   // Selected organization context from doctor's affiliations
   const doctorAffiliations = user?.doctorData?.affiliations?.filter(a => a.status === "active") || [];
@@ -210,6 +214,22 @@ export default function DoctorConsultationsPage() {
       window.removeEventListener("medora-lab-orders-updated", handleUpdate);
     };
   }, [user, selectedOrgId, activeEncounterForRecord]);
+
+  // Auto-open encounter if query params are provided from Queue/Appointments
+  useEffect(() => {
+    if (encounters.length === 0) return;
+    if (paramEncounterId) {
+      const match = encounters.find(e => e.id === paramEncounterId);
+      if (match && activeEncounterForRecord?.id !== match.id) {
+        handleOpenRecordEditor(match);
+      }
+    } else if (paramPatientId) {
+      const match = encounters.find(e => e.patient_id === paramPatientId && e.status !== "CANCELLED");
+      if (match && activeEncounterForRecord?.id !== match.id) {
+        handleOpenRecordEditor(match);
+      }
+    }
+  }, [paramEncounterId, paramPatientId, encounters]);
 
   // Open Clinical Record Editor
   const handleOpenRecordEditor = (encounter: HealthcareEncounter) => {
@@ -1387,5 +1407,13 @@ export default function DoctorConsultationsPage() {
         )}
       </div>
     </RoleGuard>
+  );
+}
+
+export default function DoctorConsultationsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500 font-semibold">Loading clinical workspace...</div>}>
+      <DoctorConsultationsContent />
+    </Suspense>
   );
 }
