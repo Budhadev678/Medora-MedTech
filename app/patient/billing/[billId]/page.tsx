@@ -28,6 +28,7 @@ import {
   ExternalLink,
   Clock,
   ShieldAlert,
+  Activity,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -283,7 +284,10 @@ export default function PatientBillDetailPage() {
               </Button>
             </Link>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-extrabold tracking-wider uppercase font-mono">
+                  <Activity className="h-3 w-3 text-teal-600" /> MEDORA TRACE
+                </span>
                 <h1 className="text-base font-bold text-slate-900 font-mono">
                   {bill.bill_number}
                 </h1>

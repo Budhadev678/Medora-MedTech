@@ -78,7 +78,10 @@ export default function PatientBillingDashboardPage() {
               <Card key={item.id} className="bg-white rounded-2xl shadow-xs border-slate-200 hover:border-emerald-300 transition-colors">
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-teal-200 text-teal-800 text-[9px] font-extrabold tracking-wider uppercase font-mono">
+                        MEDORA TRACE
+                      </span>
                       <span className="font-mono font-bold text-emerald-950 text-xs">{item.bill_number}</span>
                       <Badge variant="outline" className="text-[10px] font-mono">V{item.current_version}</Badge>
                       <StatusBadge status={item.status} />
