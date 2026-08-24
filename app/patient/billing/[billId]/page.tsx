@@ -285,9 +285,10 @@ export default function PatientBillDetailPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-extrabold tracking-wider uppercase font-mono">
-                  <Activity className="h-3 w-3 text-teal-600" /> MEDORA TRACE
+                <span className="text-base font-extrabold text-teal-800 tracking-tight">
+                  medora trace
                 </span>
+                <span className="text-slate-400 font-normal">/</span>
                 <h1 className="text-base font-bold text-slate-900 font-mono">
                   {bill.bill_number}
                 </h1>
