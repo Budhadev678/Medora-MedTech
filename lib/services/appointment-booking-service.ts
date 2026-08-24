@@ -15,12 +15,50 @@ import { StoredIdentity, findIdentityById } from "@/lib/data/identity-store";
 import { AuditLedger } from "@/lib/data/audit-store";
 import { WaitlistStore } from "@/lib/data/waitlist-store";
 import { getDoctorAffiliations } from "@/lib/data/affiliation-store";
-import { getFacilityById } from "@/lib/data/facility-store";
+import { getFacilityById, getAllFacilities } from "@/lib/data/facility-store";
 import { getDepartmentById } from "@/lib/data/department-store";
 import { getServiceById, getAllDoctorServiceAssignments } from "@/lib/data/service-store";
 import { Phase6ContractService } from "@/lib/services/phase6-contract-service";
 import { AlternativeSearchService } from "@/lib/services/alternative-search-service";
 import { isDateWithinCurrentWeek } from "@/lib/utils";
+
+export interface FilteredSlot {
+  slot_time: string; // e.g. "08:00 AM", "08:30 AM", "09:00 AM"
+  scheduled_time: string; // e.g. "08:00", "08:30"
+  session_id: string;
+  session_name: string;
+  is_available: boolean;
+  status: CapacityAvailabilityStatus;
+}
+
+export interface DoctorHospitalMatch {
+  doctor_id: string;
+  doctor_name: string;
+  specialization: string;
+  qualifications: string;
+  experience_years: number;
+  avatar_url?: string;
+  hospital_id: string;
+  hospital_name: string;
+  organization_identifier: string;
+  facility_id: string;
+  facility_name: string;
+  city: string;
+  department_id: string;
+  department_name: string;
+  opd_room: string;
+  consultation_fee: number;
+  session_id: string;
+  session_name: string;
+  slot_display_time: string;
+  date: string;
+  total_capacity: number;
+  booked_count: number;
+  remaining_capacity: number;
+  status: CapacityAvailabilityStatus;
+  status_reason?: string;
+  slots: FilteredSlot[];
+}
 
 export interface DoctorCrossFacilityAvailability {
   doctor_id: string;
@@ -1037,5 +1075,187 @@ export class AppointmentBookingService {
       affiliations_count: affiliations.length,
       facilities,
     };
+  }
+
+  /**
+   * Universal, backend-driven search for doctors, hospital affiliations, and real appointment slots.
+   */
+  public static async searchDoctorHospitalSlots(filter: {
+    specialty?: string;
+    location?: string;
+    hospitalId?: string;
+    doctorId?: string;
+    date: string;
+    availableOnly?: boolean;
+    searchQuery?: string;
+  }): Promise<DoctorHospitalMatch[]> {
+    const targetDateStr = filter.date || new Date().toISOString().split("T")[0];
+    const [year, month, day] = targetDateStr.split("-").map(Number);
+    const targetDate = new Date(Date.UTC(year, month - 1, day));
+    const dayOfWeek = targetDate.getUTCDay();
+
+    // 1. Fetch all facilities
+    const facilities = getAllFacilities();
+    
+    // 2. Fetch all active doctor working sessions for this day of week
+    const allSessions = AppointmentStore.getAllSessions().filter(
+      (s) => s.is_active && s.day_of_week === dayOfWeek
+    );
+
+    const matches: DoctorHospitalMatch[] = [];
+
+    for (const session of allSessions) {
+      // Find facility by facility_id first, then fallback to organization_identifier
+      const fac =
+        facilities.find(
+          (f) =>
+            (f.facility_code || "").toLowerCase() === (session.facility_id || "").toLowerCase() ||
+            (f.id || "").toLowerCase() === (session.facility_id || "").toLowerCase()
+        ) ||
+        facilities.find(
+          (f) =>
+            (f.organization_identifier || "").toLowerCase() === (session.organization_identifier || "").toLowerCase()
+        );
+
+      const doctorId = session.doctor_id;
+      const doctorUser = findIdentityById(doctorId);
+      const doctorData = doctorUser?.doctorData;
+
+      const spec = doctorData?.specialization || session.department_name || "General Medicine";
+      const qual = doctorData?.qualifications || "MBBS, MD";
+      const exp = doctorData?.experienceYears || 8;
+      const avatar = doctorUser?.avatarUrl || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80";
+      const cityName = fac?.city || (session.organization_name.includes("Cuttack") ? "Cuttack" : session.organization_name.includes("Rourkela") ? "Rourkela" : "Bhubaneswar");
+      const facName = fac?.name || session.organization_name;
+
+      // Filter by Specialty
+      if (filter.specialty && filter.specialty !== "all") {
+        const cleanSpec = filter.specialty.toLowerCase().replace(/_/g, " ");
+        const docSpec = spec.toLowerCase();
+        const deptName = (session.department_name || "").toLowerCase();
+        if (!docSpec.includes(cleanSpec) && !deptName.includes(cleanSpec)) {
+          continue;
+        }
+      }
+
+      // Filter by Location
+      if (filter.location && filter.location !== "all" && filter.location !== "All Locations") {
+        const cleanLoc = filter.location.toLowerCase();
+        if (!cityName.toLowerCase().includes(cleanLoc) && !(fac?.address || "").toLowerCase().includes(cleanLoc)) {
+          continue;
+        }
+      }
+
+      // Filter by Hospital ID / Facility
+      if (filter.hospitalId && filter.hospitalId !== "all" && filter.hospitalId !== "Any Hospital") {
+        const cleanHsp = filter.hospitalId.toLowerCase();
+        const matchHsp =
+          (session.organization_identifier || "").toLowerCase() === cleanHsp ||
+          (session.facility_id || "").toLowerCase() === cleanHsp ||
+          (fac?.facility_code || "").toLowerCase() === cleanHsp ||
+          (fac?.id || "").toLowerCase() === cleanHsp;
+        if (!matchHsp) {
+          continue;
+        }
+      }
+
+      // Filter by Doctor ID
+      if (filter.doctorId && filter.doctorId !== "all") {
+        if (session.doctor_id.toLowerCase() !== filter.doctorId.toLowerCase()) {
+          continue;
+        }
+      }
+
+      // Filter by Text Search Query
+      if (filter.searchQuery && filter.searchQuery.trim()) {
+        const q = filter.searchQuery.trim().toLowerCase();
+        const str = `${session.doctor_name} ${facName} ${cityName} ${spec} ${session.department_name}`.toLowerCase();
+        if (!str.includes(q)) {
+          continue;
+        }
+      }
+
+      // Check Real Availability
+      const availabilityList = await this.getDoctorAvailability(
+        session.doctor_id,
+        session.organization_identifier,
+        session.facility_id,
+        targetDateStr
+      );
+      const avail = availabilityList.find((a) => a.session_id === session.id);
+
+      const status: CapacityAvailabilityStatus = avail ? avail.status : "PAST_SESSION";
+      const remainingCap = avail ? avail.remaining_capacity : 0;
+      const bookedCount = avail ? avail.booked_count : 0;
+      const totalCap = avail ? avail.capacity : session.capacity;
+      const statusReason = avail?.status_reason;
+
+      if (filter.availableOnly && (status !== "AVAILABLE" && status !== "LIMITED")) {
+        continue;
+      }
+
+      // Generate Slots
+      const slots: FilteredSlot[] = [];
+      const [startHour, startMin] = session.start_time.split(":").map(Number);
+      const [endHour, endMin] = session.end_time.split(":").map(Number);
+      const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+      const slotCount = Math.max(1, Math.min(totalCap, Math.floor(durationMinutes / 15)));
+      const stepMins = Math.floor(durationMinutes / slotCount);
+
+      const activeBookings = AppointmentStore.getAppointmentsForSessionDate(session.id, targetDateStr);
+
+      for (let i = 0; i < slotCount; i++) {
+        const totalM = startHour * 60 + startMin + i * stepMins;
+        const h = Math.floor(totalM / 60);
+        const m = totalM % 60;
+        const time24 = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        const ampm = h >= 12 ? "PM" : "AM";
+        const h12 = h % 12 === 0 ? 12 : h % 12;
+        const timeFormatted = `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+
+        const isSlotBooked = i < bookedCount || activeBookings.some((b) => b.scheduled_time === time24);
+        const isAvailable = (status === "AVAILABLE" || status === "LIMITED") && !isSlotBooked;
+
+        slots.push({
+          slot_time: timeFormatted,
+          scheduled_time: time24,
+          session_id: session.id,
+          session_name: session.session_name || "Specialist Clinic",
+          is_available: isAvailable,
+          status: isAvailable ? "AVAILABLE" : isSlotBooked ? "FULL" : status,
+        });
+      }
+
+      matches.push({
+        doctor_id: session.doctor_id,
+        doctor_name: session.doctor_name,
+        specialization: spec,
+        qualifications: qual,
+        experience_years: exp,
+        avatar_url: avatar,
+        hospital_id: session.organization_identifier || "HSP-1001",
+        hospital_name: facName,
+        organization_identifier: session.organization_identifier,
+        facility_id: session.facility_id,
+        facility_name: facName,
+        city: cityName,
+        department_id: session.department_id,
+        department_name: session.department_name,
+        opd_room: session.room_number || "Room 102",
+        consultation_fee: 500,
+        session_id: session.id,
+        session_name: session.session_name || "Specialist Clinic",
+        slot_display_time: session.slot_display_time || `${session.start_time} - ${session.end_time}`,
+        date: targetDateStr,
+        total_capacity: totalCap,
+        booked_count: bookedCount,
+        remaining_capacity: remainingCap,
+        status,
+        status_reason: statusReason,
+        slots,
+      });
+    }
+
+    return matches;
   }
 }
