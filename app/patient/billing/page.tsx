@@ -20,11 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 import { getBillsByPatient } from "@/lib/data/billing-store";
 import { HealthcareBill } from "@/types/database.types";
 
 export default function PatientBillingDashboardPage() {
   const { user } = useAuth();
+  const { t, formatCurrency } = useLocalization();
   const [bills, setBills] = useState<HealthcareBill[]>([]);
 
   useEffect(() => {
@@ -41,26 +43,26 @@ export default function PatientBillingDashboardPage() {
           <div className="flex items-center gap-3">
             <Link href="/patient">
               <Button variant="ghost" size="sm" className="rounded-xl">
-                <ArrowLeft className="h-4 w-4 mr-1" /> Portal
+                <ArrowLeft className="h-4 w-4 mr-1" /> {t("nav.home")}
               </Button>
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-emerald-600" /> Bills & Payments
+                <Receipt className="h-5 w-5 text-emerald-600" /> {t("billing.title")}
               </h1>
-              <p className="text-xs text-slate-500">Transparent itemized charges, "Why Was I Charged?", and financial assistance</p>
+              <p className="text-xs text-slate-500">{t("billing.why_charged")}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/patient/billing/payments">
               <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
-                Payment History
+                {t("billing.payment_history")}
               </Button>
             </Link>
             <Link href="/patient/insurance">
               <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
-                Insurance
+                {t("nav.insurance")}
               </Button>
             </Link>
           </div>
@@ -68,10 +70,10 @@ export default function PatientBillingDashboardPage() {
 
         {/* Bills List */}
         <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Your Healthcare Bills</h2>
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t("billing.your_bills")}</h2>
           {bills.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-slate-400 text-xs">
-              No medical bills found for your account.
+              {t("common.no_records")}
             </div>
           ) : (
             bills.map((item) => (
@@ -89,15 +91,15 @@ export default function PatientBillingDashboardPage() {
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-0.5">
                       <span>Hospital: <strong className="text-slate-900">{item.facility_name}</strong></span>
                       <span>•</span>
-                      <span>Gross Charges: <strong className="text-slate-900 font-mono">₹{item.gross_total.toFixed(2)}</strong></span>
+                      <span>{t("billing.gross_total")}: <strong className="text-slate-900 font-mono">{formatCurrency(item.gross_total)}</strong></span>
                       <span>•</span>
-                      <span>Your Due: <strong className="text-purple-950 font-mono font-extrabold">₹{item.patient_responsibility.toFixed(2)}</strong></span>
+                      <span>{t("billing.patient_due")}: <strong className="text-purple-950 font-mono font-extrabold">{formatCurrency(item.patient_responsibility)}</strong></span>
                     </div>
                   </div>
 
                   <Link href={`/patient/billing/${item.id}`}>
                     <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs">
-                      View Itemized Bill & Waterfall <ArrowRight className="h-4 w-4 ml-1" />
+                      {t("billing.itemized_breakdown")} <ArrowRight className="h-4 w-4 ml-1" />
                     </Button>
                   </Link>
                 </CardContent>

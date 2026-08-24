@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileText, Calendar, Building2, Stethoscope, FlaskConical, Pill, ChevronRight, ShieldCheck } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLocalization } from "@/lib/localization";
 
 export type RecordCategory = "consultation" | "prescription" | "report" | "admission" | "emergency";
 
@@ -30,26 +31,29 @@ export function RecordCard({
   date,
   summary,
   actionHref,
-  actionLabel = "View Details",
+  actionLabel,
   status = "Verified",
 }: PatientRecordProps) {
+  const { t, formatDate, formatStatus } = useLocalization();
+
   const getCategoryMeta = () => {
     switch (category) {
       case "consultation":
-        return { icon: Stethoscope, label: "Consultation", color: "bg-teal-50 text-teal-700 border-teal-100" };
+        return { icon: Stethoscope, label: t("records.consultation"), color: "bg-teal-50 text-teal-700 border-teal-100" };
       case "prescription":
-        return { icon: Pill, label: "Prescription", color: "bg-emerald-50 text-emerald-700 border-emerald-100" };
+        return { icon: Pill, label: t("records.prescription"), color: "bg-emerald-50 text-emerald-700 border-emerald-100" };
       case "report":
-        return { icon: FlaskConical, label: "Lab Report", color: "bg-blue-50 text-blue-700 border-blue-100" };
+        return { icon: FlaskConical, label: t("records.report"), color: "bg-blue-50 text-blue-700 border-blue-100" };
       case "emergency":
-        return { icon: FileText, label: "Emergency Case", color: "bg-red-50 text-red-700 border-red-100" };
+        return { icon: FileText, label: t("records.emergency"), color: "bg-red-50 text-red-700 border-red-100" };
       default:
-        return { icon: FileText, label: "Medical Record", color: "bg-slate-50 text-slate-700 border-slate-100" };
+        return { icon: FileText, label: t("records.medical"), color: "bg-slate-50 text-slate-700 border-slate-100" };
     }
   };
 
   const meta = getCategoryMeta();
   const Icon = meta.icon;
+  const displayActionLabel = actionLabel || t("records.view_details");
 
   return (
     <Card className="bg-white border-slate-200 hover:border-teal-300 transition-all shadow-2xs">
@@ -63,7 +67,7 @@ export function RecordCard({
             <span className="text-[10px] font-mono text-slate-400">{id}</span>
           </div>
           <Badge variant="outline" className="text-[9px] py-0 text-slate-500 border-slate-200">
-            {status}
+            {formatStatus(status)}
           </Badge>
         </div>
 
@@ -87,7 +91,7 @@ export function RecordCard({
         <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
           <div className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 text-slate-400" />
-            <span>{date}</span>
+            <span>{formatDate(date)}</span>
           </div>
 
           {actionHref && (
@@ -95,7 +99,7 @@ export function RecordCard({
               href={actionHref} 
               className="flex items-center gap-1 text-teal-700 font-bold hover:underline group"
             >
-              <span>{actionLabel}</span>
+              <span>{displayActionLabel}</span>
               <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           )}

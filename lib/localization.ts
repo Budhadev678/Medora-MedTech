@@ -232,6 +232,88 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "emergency.title": "Emergency & Trauma Command",
     "emergency.triage_board": "Triage Command Board",
     "emergency.break_glass": "Emergency Break-Glass Override",
+
+    // Statuses
+    "status.confirmed": "Confirmed",
+    "status.completed": "Completed",
+    "status.cancelled": "Cancelled",
+    "status.rescheduled": "Rescheduled",
+    "status.checked_in": "Checked In",
+    "status.waiting": "In Queue",
+    "status.in_consultation": "In Consultation",
+    "status.called": "Called to Cabin",
+    "status.paid": "Paid in Full",
+    "status.disputed": "Disputed",
+    "status.draft": "Draft",
+    "status.issued": "Issued",
+    "status.partially_paid": "Partially Paid",
+    "status.ordered": "Ordered",
+    "status.sample_collected": "Sample Collected",
+    "status.testing": "In Testing",
+    "status.report_ready": "Report Approved",
+    "status.verified": "Verified",
+    "status.preparing": "Medication Packaging",
+    "status.ready_for_pickup": "Ready for Pickup",
+    "status.dispensed": "Dispensed",
+    "status.critical": "Critical",
+    "status.high": "High Priority",
+    "status.moderate": "Moderate",
+    "status.low": "Low Priority",
+    "status.available": "Available",
+    "status.busy": "Busy",
+    "status.on_call": "On Call",
+    "status.off_duty": "Off Duty",
+
+    // Queue & Token
+    "queue.live_queue": "Live OPD Queue",
+    "queue.your_token": "Your Token",
+    "queue.estimated_wait": "Estimated Waiting Time",
+    "queue.patients_ahead": "Patients Ahead",
+    "queue.assigned_doctor": "Assigned Doctor",
+    "queue.room": "Room / Cabin",
+    "queue.mins": "mins",
+
+    // Appointments
+    "appointments.title": "My Consultations & Appointments",
+    "appointments.book": "Book Doctor Appointment",
+    "appointments.self_checkin": "Self Check-In (Queue Token)",
+    "appointments.cancel_btn": "Cancel Appointment",
+    "appointments.reschedule_btn": "Reschedule",
+    "appointments.cancel_confirm": "Are you sure you want to cancel this appointment?",
+    "appointments.reason_placeholder": "Please enter reason for cancellation...",
+    "appointments.checked_in_success": "Checked in successfully! Your token has been generated.",
+    "appointments.no_appointments": "No consultations scheduled.",
+
+    // Billing
+    "billing.title": "Bills & Payments",
+    "billing.your_bills": "Your Healthcare Bills",
+    "billing.gross_total": "Gross Charges",
+    "billing.patient_due": "Your Due",
+    "billing.insurance_coverage": "Insurance Coverage",
+    "billing.scheme_coverage": "Scheme Coverage",
+    "billing.how_calculated": "How was my payable amount calculated?",
+    "billing.pay_due": "Pay Due Amount",
+    "billing.itemized_breakdown": "Itemized Bill Breakdown",
+    "billing.reference_benchmark": "Benchmark Rate Comparison",
+    "billing.why_charged": "Why Was I Charged? (Clinical Lineage)",
+    "billing.payment_history": "Payment History",
+    "billing.manage_coverage": "Manage Coverage",
+
+    // Records
+    "records.consultation": "Consultation",
+    "records.prescription": "Prescription",
+    "records.report": "Lab Report",
+    "records.emergency": "Emergency Case",
+    "records.medical": "Medical Record",
+    "records.view_details": "View Details",
+    "records.timeline": "Health Timeline",
+
+    // Errors & Toasts
+    "errors.generic": "An unexpected error occurred. Please try again.",
+    "errors.unauthorized": "You do not have permission to perform this action.",
+    "errors.not_found": "The requested healthcare record could not be found.",
+    "toast.saved": "Changes saved successfully.",
+    "toast.cancelled": "Operation cancelled.",
   },
   hi: {
     // Navigation & Shell
@@ -451,6 +533,88 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "emergency.title": "आपातकालीन एवं ट्रॉमा कमांड",
     "emergency.triage_board": "ट्राइएज कमांड बोर्ड",
     "emergency.break_glass": "आपातकालीन ब्रेक-ग्लास पहुंच",
+
+    // Statuses
+    "status.confirmed": "पुष्ट",
+    "status.completed": "पूर्ण",
+    "status.cancelled": "रद्द",
+    "status.rescheduled": "समय परिवर्तित",
+    "status.checked_in": "चेक-इन पूर्ण",
+    "status.waiting": "कतार में",
+    "status.in_consultation": "परामर्श जारी",
+    "status.called": "कक्ष में बुलाया गया",
+    "status.paid": "पूर्ण भुगतान",
+    "status.disputed": "विवादित",
+    "status.draft": "प्रारूप (ड्राफ्ट)",
+    "status.issued": "जारी किया गया",
+    "status.partially_paid": "आंशिक भुगतान",
+    "status.ordered": "आदेशित",
+    "status.sample_collected": "सैंपल लिया गया",
+    "status.testing": "जांच जारी",
+    "status.report_ready": "रिपोर्ट स्वीकृत",
+    "status.verified": "सत्यापित",
+    "status.preparing": "दवा तैयार हो रही है",
+    "status.ready_for_pickup": "दवा लेने के लिए तैयार",
+    "status.dispensed": "दवा वितरित",
+    "status.critical": "अति गंभीर",
+    "status.high": "उच्च प्राथमिकता",
+    "status.moderate": "मध्यम",
+    "status.low": "सामान्य",
+    "status.available": "उपलब्ध",
+    "status.busy": "व्यस्त",
+    "status.on_call": "ऑन-कॉल",
+    "status.off_duty": "ड्यूटी समाप्त",
+
+    // Queue & Token
+    "queue.live_queue": "लाइव ओपीडी कतार",
+    "queue.your_token": "आपका टोकन",
+    "queue.estimated_wait": "अनुमानित प्रतीक्षा समय",
+    "queue.patients_ahead": "आगे मरीज",
+    "queue.assigned_doctor": "नियुक्त डॉक्टर",
+    "queue.room": "कक्ष संख्या",
+    "queue.mins": "मिनट",
+
+    // Appointments
+    "appointments.title": "मेरे परामर्श एवं अपॉइंटमेंट",
+    "appointments.book": "डॉक्टर अपॉइंटमेंट बुक करें",
+    "appointments.self_checkin": "स्वयं चेक-इन (टोकन लें)",
+    "appointments.cancel_btn": "अपॉइंटमेंट रद्द करें",
+    "appointments.reschedule_btn": "समय बदलें",
+    "appointments.cancel_confirm": "क्या आप वाकई यह अपॉइंटमेंट रद्द करना चाहते हैं?",
+    "appointments.reason_placeholder": "कृपया रद्द करने का कारण दर्ज करें...",
+    "appointments.checked_in_success": "चेक-इन सफल! आपका टोकन जारी कर दिया गया है।",
+    "appointments.no_appointments": "कोई परामर्श निर्धारित नहीं है।",
+
+    // Billing
+    "billing.title": "बिल और भुगतान",
+    "billing.your_bills": "आपके मेडिकल बिल",
+    "billing.gross_total": "कुल शुल्क",
+    "billing.patient_due": "आपकी देय राशि",
+    "billing.insurance_coverage": "बीमा कवरेज",
+    "billing.scheme_coverage": "सरकारी योजना कवरेज",
+    "billing.how_calculated": "मेरी देय राशि की गणना कैसे की गई?",
+    "billing.pay_due": "बकाया राशि का भुगतान करें",
+    "billing.itemized_breakdown": "मदवार बिल विवरण",
+    "billing.reference_benchmark": "मानक दर तुलना",
+    "billing.why_charged": "मुझसे यह शुल्क क्यों लिया गया? (कारण)",
+    "billing.payment_history": "भुगतान इतिहास",
+    "billing.manage_coverage": "कवरेज प्रबंधित करें",
+
+    // Records
+    "records.consultation": "परामर्श",
+    "records.prescription": "दवा पर्ची (Rx)",
+    "records.report": "लैब रिपोर्ट",
+    "records.emergency": "आपातकालीन केस",
+    "records.medical": "स्वास्थ्य रिकॉर्ड",
+    "records.view_details": "विवरण देखें",
+    "records.timeline": "स्वास्थ्य इतिहास",
+
+    // Errors & Toasts
+    "errors.generic": "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    "errors.unauthorized": "आपको यह क्रिया करने की अनुमति नहीं है।",
+    "errors.not_found": "अनुरोधित मेडिकल रिकॉर्ड नहीं मिला।",
+    "toast.saved": "सफलतापूर्वक सुरक्षित किया गया।",
+    "toast.cancelled": "क्रिया रद्द कर दी गई।",
   },
   or: {
     // Navigation & Shell
@@ -670,10 +834,133 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "emergency.title": "ଜରୁରୀକାଳୀନ ଓ ଟ୍ରମା କମାଣ୍ଡ",
     "emergency.triage_board": "ଟ୍ରାଏଜ୍ କମାଣ୍ଡ ବୋର୍ଡ",
     "emergency.break_glass": "ଜରୁରୀକାଳୀନ ବ୍ରେକ୍-ଗ୍ଲାସ୍ ପ୍ରବେଶ",
+
+    // Statuses
+    "status.confirmed": "ନିଶ୍ଚିତ",
+    "status.completed": "ସମ୍ପୂର୍ଣ୍ଣ",
+    "status.cancelled": "ବାତିଲ୍",
+    "status.rescheduled": "ସମୟ ପରିବର୍ତ୍ତିତ",
+    "status.checked_in": "ଚେକ୍-ଇନ୍ ହୋଇଛି",
+    "status.waiting": "ଧାଡ଼ିରେ ଅଛନ୍ତି",
+    "status.in_consultation": "ପରାମର୍ଶ ଚାଲିଛି",
+    "status.called": "କ୍ୟାବିନକୁ ଡକାଯାଇଛି",
+    "status.paid": "ସମ୍ପୂର୍ଣ୍ଣ ପଇଠ",
+    "status.disputed": "ବିବାଦିତ",
+    "status.draft": "ଖସଡ଼ା (ଡ୍ରାଫ୍ଟ)",
+    "status.issued": "ଜାରି ହୋଇଛି",
+    "status.partially_paid": "ଆଂଶିକ ପଇଠ",
+    "status.ordered": "ଅର୍ଡର ହୋଇଛି",
+    "status.sample_collected": "ନମୁନା ସଂଗୃହୀତ",
+    "status.testing": "ପରୀକ୍ଷଣ ଚାଲିଛି",
+    "status.report_ready": "ରିପୋର୍ଟ ପ୍ରସ୍ତୁତ",
+    "status.verified": "ଯାଞ୍ଚ ହୋଇଛି",
+    "status.preparing": "ଔଷଧ ପ୍ରସ୍ତୁତ ହେଉଛି",
+    "status.ready_for_pickup": "ନେବା ପାଇଁ ପ୍ରସ୍ତୁତ",
+    "status.dispensed": "ଔଷଧ ପ୍ରଦାନ କରାଗଲା",
+    "status.critical": "ଅତ୍ୟନ୍ତ ଗୁରୁତର",
+    "status.high": "ଉଚ୍ଚ ପ୍ରାଥମିକତା",
+    "status.moderate": "ମଧ୍ୟମ",
+    "status.low": "ସାଧାରଣ",
+    "status.available": "ଉପଲବ୍ଧ",
+    "status.busy": "ବ୍ୟସ୍ତ",
+    "status.on_call": "ଅନ୍-କଲ୍",
+    "status.off_duty": "ଡ୍ୟୁଟି ଶେଷ",
+
+    // Queue & Token
+    "queue.live_queue": "ଲାଇଭ୍ ଓପିଡି ଧାଡ଼ି",
+    "queue.your_token": "ଆପଣଙ୍କ ଟୋକନ୍",
+    "queue.estimated_wait": "ଆନୁମାନିକ ଅପେକ୍ଷା ସମୟ",
+    "queue.patients_ahead": "ଆଗରେ ଥିବା ରୋଗୀ",
+    "queue.assigned_doctor": "ନିଯୁକ୍ତ ଡାକ୍ତର",
+    "queue.room": "କ୍ୟାବିନ୍ ନମ୍ବର",
+    "queue.mins": "ମିନିଟ୍",
+
+    // Appointments
+    "appointments.title": "ମୋର ପରାମର୍ଶ ଏବଂ ସାକ୍ଷାତ",
+    "appointments.book": "ଡାକ୍ତର ଆପଏଣ୍ଟମେଣ୍ଟ ବୁକ୍ କରନ୍ତୁ",
+    "appointments.self_checkin": "ନିଜେ ଚେକ୍-ଇନ୍ କରନ୍ତୁ",
+    "appointments.cancel_btn": "ଆପଏଣ୍ଟମେଣ୍ଟ ବାତିଲ କରନ୍ତୁ",
+    "appointments.reschedule_btn": "ସମୟ ପରିବର୍ତ୍ତନ କରନ୍ତୁ",
+    "appointments.cancel_confirm": "ଆପଣ କ'ଣ ନିଶ୍ଚିତ ଭାବରେ ଏହି ଆପଏଣ୍ଟମେଣ୍ଟ ବାତିଲ କରିବାକୁ ଚାହାଁନ୍ତି?",
+    "appointments.reason_placeholder": "ଦୟାକରି ବାତିଲ କରିବାର କାରଣ ଲେଖନ୍ତୁ...",
+    "appointments.checked_in_success": "ସଫଳତାର ସହ ଚେକ୍-ଇନ୍ ହୋଇଛି! ଆପଣଙ୍କ ଟୋକନ୍ ପ୍ରଦାନ କରାଗଲା।",
+    "appointments.no_appointments": "କୌଣସି ପରାମର୍ଶ ନିର୍ଦ୍ଧାରିତ ହୋଇନାହିଁ।",
+
+    // Billing
+    "billing.title": "ବିଲ୍ ଏବଂ ଦେୟ",
+    "billing.your_bills": "ଆପଣଙ୍କ ଚିକିତ୍ସା ବିଲ୍",
+    "billing.gross_total": "ମୋଟ ଚାର୍ଜ",
+    "billing.patient_due": "ଆପଣଙ୍କ ଦେୟ ରାଶି",
+    "billing.insurance_coverage": "ବୀମା କଭରେଜ୍",
+    "billing.scheme_coverage": "ସରକାରୀ ଯୋଜନା କଭରେଜ୍",
+    "billing.how_calculated": "ମୋର ଦେୟ ରାଶି କିପରି ହିସାବ କରାଗଲା?",
+    "billing.pay_due": "ବକେୟା ରାଶି ପଇଠ କରନ୍ତୁ",
+    "billing.itemized_breakdown": "ପ୍ରତ୍ୟେକ ସେବାର ବିସ୍ତୃତ ହିସାବ",
+    "billing.reference_benchmark": "ମାନକ ମୂଲ୍ୟ ତୁଳନା",
+    "billing.why_charged": "ମୋତେ ଏହି ଶୁଳ୍କ କାହିଁକି ଦିଆଗଲା? (ଚିକିତ୍ସା କାରଣ)",
+    "billing.payment_history": "ପୂର୍ବ ଦେୟ ଇତିହାସ",
+    "billing.manage_coverage": "ଯୋଜନା ପରିଚାଳନା କରନ୍ତୁ",
+
+    // Records
+    "records.consultation": "ଡାକ୍ତର ପରାମର୍ଶ",
+    "records.prescription": "ଔଷଧ ପର୍ଚି (Rx)",
+    "records.report": "ପରୀକ୍ଷା ରିପୋର୍ଟ",
+    "records.emergency": "ଜରୁରୀକାଳୀନ କେସ୍",
+    "records.medical": "ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡ",
+    "records.view_details": "ବିସ୍ତୃତ ଦେଖନ୍ତୁ",
+    "records.timeline": "ସ୍ୱାସ୍ଥ୍ୟ ଇତିହାସ",
+
+    // Errors & Toasts
+    "errors.generic": "ଏକ ଅପ୍ରତ୍ୟାଶିତ ତ୍ରୁଟି ଘଟିଛି। ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ।",
+    "errors.unauthorized": "ଆପଣଙ୍କ ପାଖରେ ଏହି କାର୍ଯ୍ୟ କରିବାକୁ ଅନୁମତି ନାହିଁ।",
+    "errors.not_found": "ଅନୁରୋଧିତ ମେଡିକାଲ୍ ରେକର୍ଡ ମିଳିଲା ନାହିଁ।",
+    "toast.saved": "ସଫଳତାର ସହ ସଂରକ୍ଷଣ କରାଗଲା।",
+    "toast.cancelled": "କାର୍ଯ୍ୟ ବାତିଲ କରାଗଲା।",
   },
 };
 
 const STORAGE_KEY = "medora_preferred_language";
+
+const MONTHS_HI = ["जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितम्बर", "अक्टूबर", "नवम्बर", "दिसम्बर"];
+const MONTHS_OR = ["ଜାନୁଆରୀ", "ଫେବୃଆରୀ", "ମାର୍ଚ୍ଚ", "ଏପ୍ରିଲ", "ମେ", "ଜୁନ", "ଜୁଲାଇ", "ଅଗଷ୍ଟ", "ସେପ୍ଟେମ୍ବର", "ଅକ୍ଟୋବର", "ନଭେମ୍ବର", "ଡିସେମ୍ବର"];
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+export function formatLocalizedDate(dateInput: string | Date | number | undefined | null, lang: LanguageCode = "en"): string {
+  if (!dateInput) return "";
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return String(dateInput);
+  
+  const day = d.getDate();
+  const monthIdx = d.getMonth();
+  const year = d.getFullYear();
+
+  if (lang === "or") {
+    return `${day} ${MONTHS_OR[monthIdx]} ${year}`;
+  }
+  if (lang === "hi") {
+    return `${day} ${MONTHS_HI[monthIdx]} ${year}`;
+  }
+  return `${day} ${MONTHS_EN[monthIdx]} ${year}`;
+}
+
+export function formatLocalizedCurrency(amount: number, lang: LanguageCode = "en"): string {
+  if (typeof amount !== "number" || isNaN(amount)) return "₹0.00";
+  return `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export function formatLocalizedStatus(status: string, lang: LanguageCode = "en"): string {
+  if (!status) return "";
+  const normalized = status.toLowerCase().trim().replace(/[\s-]+/g, "_");
+  const key = `status.${normalized}`;
+  const translated = t(key, lang);
+  if (translated !== key) return translated;
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function formatLocalizedPlural(count: number, keySingular: string, keyPlural: string, lang: LanguageCode = "en"): string {
+  const selectedKey = count === 1 ? keySingular : keyPlural;
+  return `${count} ${t(selectedKey, lang)}`;
+}
 
 export function getStoredLanguage(): LanguageCode {
   if (typeof window === "undefined") return "en";
@@ -727,11 +1014,19 @@ export function useLocalization() {
   };
 
   const translate = (key: string) => t(key, currentLang);
+  const formatDate = (date: string | Date | number | undefined | null) => formatLocalizedDate(date, currentLang);
+  const formatCurrency = (amount: number) => formatLocalizedCurrency(amount, currentLang);
+  const formatStatus = (status: string) => formatLocalizedStatus(status, currentLang);
+  const formatPlural = (count: number, keySingular: string, keyPlural: string) => formatLocalizedPlural(count, keySingular, keyPlural, currentLang);
 
   return {
     language: currentLang,
     changeLanguage,
     t: translate,
+    formatDate,
+    formatCurrency,
+    formatStatus,
+    formatPlural,
     languages: SUPPORTED_LANGUAGES,
   };
 }

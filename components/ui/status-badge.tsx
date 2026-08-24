@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { 
   CheckCircle2, 
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useLocalization } from "@/lib/localization";
 
 export type StatusType = 
   // General
@@ -57,7 +60,9 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, customLabel, className, size = "default" }: StatusBadgeProps) {
+  const { formatStatus } = useLocalization();
   const normalized = status?.toLowerCase() || "";
+  const localizedDefault = formatStatus(normalized);
 
   // Dynamic status mapping ensuring: Color + Icon + Clear Label
   const getStatusConfig = () => {
@@ -70,14 +75,14 @@ export function StatusBadge({ status, customLabel, className, size = "default" }
         return {
           variant: "success" as const,
           icon: <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-600" />,
-          label: customLabel || (normalized === "paid" ? "Paid in Full" : normalized === "dispensed" ? "Dispensed" : "Completed"),
+          label: customLabel || localizedDefault,
         };
 
       case "report_ready":
         return {
           variant: "success" as const,
           icon: <FileCheck className="h-3 w-3 mr-1 text-emerald-600" />,
-          label: customLabel || "Report Approved",
+          label: customLabel || localizedDefault,
         };
 
       // In-Progress / Warnings
@@ -89,21 +94,21 @@ export function StatusBadge({ status, customLabel, className, size = "default" }
         return {
           variant: "warning" as const,
           icon: <Clock className="h-3 w-3 mr-1 text-amber-600" />,
-          label: customLabel || (normalized === "sample_collected" ? "Sample Collected" : normalized === "preparing" ? "Medication Packaging" : "In Queue"),
+          label: customLabel || localizedDefault,
         };
 
       case "testing":
         return {
           variant: "info" as const,
           icon: <Loader2 className="h-3 w-3 mr-1 animate-spin text-blue-600" />,
-          label: customLabel || "In Testing",
+          label: customLabel || localizedDefault,
         };
 
       case "ready_for_pickup":
         return {
           variant: "teal" as const,
           icon: <Package className="h-3 w-3 mr-1 text-teal-700" />,
-          label: customLabel || "Ready for Pickup",
+          label: customLabel || localizedDefault,
         };
 
       case "booked":
@@ -111,7 +116,7 @@ export function StatusBadge({ status, customLabel, className, size = "default" }
         return {
           variant: "info" as const,
           icon: <Activity className="h-3 w-3 mr-1 text-blue-600" />,
-          label: customLabel || (normalized === "in_consultation" ? "In Consultation" : "Confirmed"),
+          label: customLabel || localizedDefault,
         };
 
       // Emergency Triage
@@ -119,25 +124,25 @@ export function StatusBadge({ status, customLabel, className, size = "default" }
         return {
           variant: "emergency" as const,
           icon: <AlertTriangle className="h-3 w-3 mr-1 text-red-700 animate-bounce" />,
-          label: customLabel || "Triage Level 1: Critical",
+          label: customLabel || localizedDefault,
         };
       case "high":
         return {
           variant: "warning" as const,
           icon: <AlertTriangle className="h-3 w-3 mr-1 text-orange-600" />,
-          label: customLabel || "Triage Level 2: Urgent",
+          label: customLabel || localizedDefault,
         };
       case "moderate":
         return {
           variant: "warning" as const,
           icon: <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />,
-          label: customLabel || "Triage Level 3: Moderate",
+          label: customLabel || localizedDefault,
         };
       case "low":
         return {
           variant: "success" as const,
           icon: <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />,
-          label: customLabel || "Triage Level 4: Routine",
+          label: customLabel || localizedDefault,
         };
 
       // Disputed / Error / Cancelled
@@ -147,14 +152,14 @@ export function StatusBadge({ status, customLabel, className, size = "default" }
         return {
           variant: "destructive" as const,
           icon: <XCircle className="h-3 w-3 mr-1 text-red-600" />,
-          label: customLabel || (normalized === "disputed" ? "Dispute Filed" : normalized === "emergency_occupied" ? "Emergency Occupied" : "Cancelled"),
+          label: customLabel || localizedDefault,
         };
 
       default:
         return {
           variant: "secondary" as const,
           icon: <AlertCircle className="h-3 w-3 mr-1 text-slate-500" />,
-          label: customLabel || status.replace(/_/g, " ").toUpperCase(),
+          label: customLabel || localizedDefault,
         };
     }
   };

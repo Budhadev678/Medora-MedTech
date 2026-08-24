@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 import {
   getPatientPolicies,
   getPatientClaims,
@@ -47,6 +48,7 @@ import { HealthcareBill } from "@/types/database.types";
 
 export default function PatientFinancialSupportPage() {
   const { user } = useAuth();
+  const { t, formatCurrency } = useLocalization();
   const patientId = user?.identifier || user?.id || "PAT-1001";
 
   const [activeTab, setActiveTab] = useState<"insurance" | "schemes" | "assistance">("insurance");
@@ -154,24 +156,24 @@ export default function PatientFinancialSupportPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Link href="/patient" className="text-xs font-semibold text-slate-500 hover:text-slate-900">
-                  Dashboard
+                  {t("nav.home")}
                 </Link>
                 <span className="text-slate-400">/</span>
-                <span className="text-xs font-semibold text-indigo-700">Financial Support</span>
+                <span className="text-xs font-semibold text-indigo-700">{t("billing.manage_coverage")}</span>
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
                 <ShieldCheck className="h-7 w-7 text-indigo-600" />
-                Financial Support & Coverage Hub
+                {t("billing.insurance_coverage")} &amp; {t("billing.scheme_coverage")}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Manage your health insurance policies, government benefit schemes, and financial aid grants.
+                {t("billing.why_charged")}
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Link href="/patient/billing">
                 <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl border-slate-300">
-                  <FileText className="h-4 w-4 mr-1.5 text-slate-600" /> View My Bills
+                  <FileText className="h-4 w-4 mr-1.5 text-slate-600" /> {t("billing.title")}
                 </Button>
               </Link>
             </div>
@@ -181,7 +183,7 @@ export default function PatientFinancialSupportPage() {
           <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-950 flex items-start gap-2.5 shadow-2xs">
             <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">Prototype Financial Demonstration:</span> Insurance policies, claims processing, and government scheme allocations are demonstrated using benchmark reference models. In production, these integrate directly with NHA PM-JAY and licensed TPA gateways.
+              <span className="font-bold">{t("billing.reference_benchmark")}:</span> PM-JAY, BSKY &amp; {t("billing.insurance_coverage")}.
             </div>
           </div>
 
@@ -224,7 +226,7 @@ export default function PatientFinancialSupportPage() {
               }`}
             >
               <ShieldCheck className="h-4 w-4" />
-              Health Insurance ({policies.length})
+              {t("nav.insurance")} ({policies.length})
             </button>
             <button
               type="button"
@@ -236,7 +238,7 @@ export default function PatientFinancialSupportPage() {
               }`}
             >
               <Landmark className="h-4 w-4" />
-              Government Schemes ({schemes.length})
+              {t("billing.scheme_coverage")} ({schemes.length})
             </button>
             <button
               type="button"
@@ -248,7 +250,7 @@ export default function PatientFinancialSupportPage() {
               }`}
             >
               <HandHeart className="h-4 w-4" />
-              Hospital Charity & Aid ({grants.length})
+              {t("billing.how_calculated")} ({grants.length})
             </button>
           </div>
 

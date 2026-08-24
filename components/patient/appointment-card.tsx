@@ -23,6 +23,8 @@ import { AppointmentBookingService } from "@/lib/services/appointment-booking-se
 import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { getTodayDateStr, QueueStore } from "@/lib/data/queue-store";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 export interface AppointmentCardProps {
   appointment: Appointment;
@@ -31,6 +33,7 @@ export interface AppointmentCardProps {
 
 export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps) {
   const { user } = useAuth();
+  const { t, formatDate, formatStatus } = useLocalization();
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -44,20 +47,7 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
   const isCheckedIn = appointment.status === "CHECKED_IN" || Boolean(existingQueue);
 
   const getStatusBadge = () => {
-    switch (appointment.status) {
-      case "CONFIRMED":
-        return <Badge variant="teal" className="text-[10px]">● Confirmed</Badge>;
-      case "COMPLETED":
-        return <Badge variant="success" className="text-[10px]">● Completed</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive" className="text-[10px]">● Cancelled</Badge>;
-      case "RESCHEDULED":
-        return <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-50 border-blue-200">● Rescheduled</Badge>;
-      case "CHECKED_IN":
-        return <Badge variant="warning" className="text-[10px]">● Checked In</Badge>;
-      default:
-        return <Badge variant="secondary" className="text-[10px]">● {appointment.status}</Badge>;
-    }
+    return <StatusBadge status={appointment.status} size="sm" />;
   };
 
   const handleSelfCheckIn = async () => {
@@ -150,7 +140,7 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
         <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
           <div className="flex items-center gap-1.5 font-semibold text-slate-900">
             <Calendar className="h-3.5 w-3.5 text-teal-600" />
-            <span>{appointment.appointment_date}</span>
+            <span>{formatDate(appointment.appointment_date)}</span>
           </div>
           <div className="flex items-center gap-1.5 font-medium text-slate-700">
             <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -171,7 +161,7 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
           </div>
           {(appointment.token_number || existingQueue?.token_number) && (
             <span className="font-bold text-teal-900 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md font-mono">
-              Token #{appointment.token_number || existingQueue?.token_number}
+              {t("queue.your_token")} #{appointment.token_number || existingQueue?.token_number}
             </span>
           )}
         </div>
@@ -195,7 +185,7 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
         {/* Cancellation Reason if Cancelled */}
         {appointment.status === "CANCELLED" && appointment.cancellation_reason && (
           <div className="rounded-lg bg-red-50/80 border border-red-200 p-2 text-[11px] text-red-700">
-            <strong className="font-semibold">Cancellation Note:</strong> {appointment.cancellation_reason}
+            <strong className="font-semibold">{t("status.cancelled")}:</strong> {appointment.cancellation_reason}
           </div>
         )}
 
@@ -210,11 +200,11 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
                 className="h-8 text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white rounded-xl shadow-xs"
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1" />
-                {isCheckingIn ? "Checking in..." : "Check In for Today's Visit"}
+                {isCheckingIn ? "..." : t("appointments.self_checkin")}
               </Button>
             ) : (
               <span className="text-[11px] text-slate-400 font-medium italic">
-                Check-in opens on {appointment.appointment_date}
+                {t("appointments.self_checkin")} ({formatDate(appointment.appointment_date)})
               </span>
             )}
 
@@ -225,7 +215,7 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
               className="h-8 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 rounded-xl"
             >
               <XCircle className="h-3.5 w-3.5 mr-1" />
-              Cancel
+              {t("appointments.cancel_btn")}
             </Button>
           </div>
         )}
@@ -235,11 +225,11 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold text-teal-800 flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
-              Checked In • Waiting for Call
+              {t("status.checked_in")} • {t("status.waiting")}
             </span>
             <Link href="/patient">
               <Button size="sm" variant="outline" className="h-8 text-xs font-semibold rounded-xl text-teal-700 border-teal-200">
-                <span>View in Live Queue</span>
+                <span>{t("queue.live_queue")}</span>
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </Link>
@@ -256,18 +246,18 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
                 <AlertCircle className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Cancel Appointment?</h3>
+                <h3 className="text-sm font-bold text-slate-900">{t("appointments.cancel_btn")}?</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Are you sure you want to cancel your session with {appointment.doctor_name}? Your slot will be released back to other patients.
+                  {t("appointments.cancel_confirm")} ({appointment.doctor_name})
                 </p>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-700">Reason for Cancellation (Optional)</label>
+              <label className="text-[11px] font-semibold text-slate-700">{t("appointments.cancel_btn")}</label>
               <input
                 type="text"
-                placeholder="e.g. Schedule conflict, feeling better"
+                placeholder={t("appointments.reason_placeholder")}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-teal-600"
@@ -281,14 +271,14 @@ export function AppointmentCard({ appointment, onRefresh }: AppointmentCardProps
                 className="flex-1 rounded-xl h-9 text-xs font-semibold"
                 disabled={isCancelling}
               >
-                Keep Appointment
+                {t("profile.cancel")}
               </Button>
               <Button
                 onClick={handleCancel}
                 disabled={isCancelling}
                 className="flex-1 rounded-xl h-9 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
               >
-                {isCancelling ? "Cancelling..." : "Yes, Cancel"}
+                {isCancelling ? "..." : t("appointments.cancel_btn")}
               </Button>
             </div>
           </div>

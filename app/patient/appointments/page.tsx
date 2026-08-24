@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -17,9 +17,11 @@ import { WaitlistStore } from "@/lib/data/waitlist-store";
 import { AppointmentBookingService } from "@/lib/services/appointment-booking-service";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Bell, CheckCircle } from "lucide-react";
+import { useLocalization } from "@/lib/localization";
 
 export default function PatientAppointmentsPage() {
   const { user } = useAuth();
+  const { t } = useLocalization();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "cancelled">("upcoming");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [activeQueue, setActiveQueue] = useState<QueueEntry | null>(null);
@@ -105,14 +107,14 @@ export default function PatientAppointmentsPage() {
       <div className="space-y-5 animate-in fade-in-50 duration-150 pb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <PageHeader
-            title="My Doctor Appointments"
-            description="View your scheduled outpatient consultations, operational session times, and hospital visits."
-            breadcrumbs={[{ label: "Patient Portal", href: "/patient" }, { label: "Appointments" }]}
+            title={t("appointments.title")}
+            description={t("common.upcoming_schedule")}
+            breadcrumbs={[{ label: t("nav.home"), href: "/patient" }, { label: t("nav.appointments") }]}
           />
           <Link href="/patient/appointments/book">
             <Button className="w-full sm:w-auto rounded-2xl h-10 px-5 text-xs font-bold bg-teal-700 hover:bg-teal-800 shadow-xs flex items-center gap-1.5">
               <Plus className="h-4 w-4" />
-              <span>Book Appointment</span>
+              <span>{t("appointments.book")}</span>
             </Button>
           </Link>
         </div>
@@ -130,7 +132,7 @@ export default function PatientAppointmentsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
                 <Bell className="h-4 w-4 text-teal-600" />
-                <span>My Active Waitlists ({waitlists.length})</span>
+                <span>Active Waitlists ({waitlists.length})</span>
               </div>
               <span className="text-[10px] text-slate-500 font-medium">Automatic Slot Notification</span>
             </div>
@@ -152,7 +154,7 @@ export default function PatientAppointmentsPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {isNotified ? (
                             <Badge variant="teal" className="text-[10px] font-black uppercase tracking-wider animate-pulse">
-                              ● Slot Available Now
+                              ●  Slot Available Now
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px] font-bold border-slate-300 text-slate-700">
@@ -167,11 +169,6 @@ export default function PatientAppointmentsPage() {
                         <div className="text-xs font-bold text-slate-900">
                           {w.doctor_name} • <span className="text-slate-600 font-normal">{w.organization_name}</span>
                         </div>
-                        <p className="text-[11px] text-slate-500">
-                          {isNotified
-                            ? "A slot just opened up for this session! Click below to confirm and book immediately."
-                            : "You are on the cancellation waitlist. We will notify you immediately if a slot is released."}
-                        </p>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
@@ -180,18 +177,18 @@ export default function PatientAppointmentsPage() {
                             size="sm"
                             onClick={() => handleBookWaitlistSlot(w)}
                             disabled={bookingWaitlistId === w.id}
-                            className="rounded-xl h-8 px-4 text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white shadow-xs"
+                            className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl h-8"
                           >
-                            {bookingWaitlistId === w.id ? "Booking..." : "Book Released Slot"}
+                            {bookingWaitlistId === w.id ? "..." : "Claim Slot"}
                           </Button>
                         )}
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleCancelWaitlist(w.id)}
-                          className="rounded-xl h-8 px-3 text-[11px] text-slate-500 hover:text-red-700 hover:bg-red-50"
+                          className="text-xs text-slate-500 hover:text-red-600 rounded-xl h-8"
                         >
-                          Cancel Waitlist
+                          {t("profile.cancel")}
                         </Button>
                       </div>
                     </div>
@@ -211,7 +208,7 @@ export default function PatientAppointmentsPage() {
               activeTab === "upcoming" ? "bg-white text-teal-900 font-bold shadow-xs" : "hover:text-slate-900"
             }`}
           >
-            Upcoming ({upcomingAppointments.length})
+            {t("common.upcoming_schedule")} ({upcomingAppointments.length})
           </button>
           <button
             type="button"
@@ -220,7 +217,7 @@ export default function PatientAppointmentsPage() {
               activeTab === "past" ? "bg-white text-teal-900 font-bold shadow-xs" : "hover:text-slate-900"
             }`}
           >
-            Past Consultations ({pastAppointments.length})
+            {t("status.completed")} ({pastAppointments.length})
           </button>
           <button
             type="button"
@@ -229,7 +226,7 @@ export default function PatientAppointmentsPage() {
               activeTab === "cancelled" ? "bg-white text-teal-900 font-bold shadow-xs" : "hover:text-slate-900"
             }`}
           >
-            Cancelled ({cancelledAppointments.length})
+            {t("status.cancelled")} ({cancelledAppointments.length})
           </button>
         </div>
 
@@ -243,14 +240,10 @@ export default function PatientAppointmentsPage() {
         ) : (
           <EmptyState
             icon={<Calendar className="h-6 w-6 text-teal-600" />}
-            title={activeTab === "upcoming" ? "No Upcoming Appointments" : `No ${activeTab} appointments`}
-            description={
-              activeTab === "upcoming"
-                ? "You do not have any upcoming doctor sessions booked. Schedule a specialist consultation across our connected network."
-                : `No ${activeTab} appointment records found in your medical history.`
-            }
+            title={activeTab === "upcoming" ? t("common.no_appointments") : t("common.no_records")}
+            description={t("appointments.no_appointments")}
             actionHref="/patient/appointments/book"
-            actionLabel="Book Specialist Session"
+            actionLabel={t("appointments.book")}
           />
         )}
       </div>

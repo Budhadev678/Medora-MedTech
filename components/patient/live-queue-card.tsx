@@ -23,6 +23,7 @@ import { QueueEntry, WaitingEstimateResult } from "@/types/database.types";
 import { WaitingTimeEstimationService } from "@/lib/services/waiting-time-service";
 import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 
 export interface LiveQueueCardProps {
   queueEntry?: QueueEntry;
@@ -31,6 +32,7 @@ export interface LiveQueueCardProps {
 
 export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueueCardProps) {
   const { user } = useAuth();
+  const { t, formatStatus } = useLocalization();
   const [entry, setEntry] = useState<QueueEntry | null>(initialEntry || null);
   const [estimate, setEstimate] = useState<WaitingEstimateResult | null>(null);
   const [lastUpdatedSec, setLastUpdatedSec] = useState(0);
@@ -89,14 +91,14 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
           <span className={`inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
             isCalled ? "bg-white text-amber-900" : isInConsultation ? "bg-teal-700 text-white" : "bg-teal-700 text-white"
           }`}>
-            <Sparkles className="h-3 w-3" /> Live OPD Queue
+            <Sparkles className="h-3 w-3" /> {t("queue.live_queue")}
           </span>
           <span className={`text-xs font-semibold ${isCalled || isInConsultation ? "text-white/90" : "text-slate-600"}`}>
             {entry.department_name}
           </span>
         </div>
         <Badge variant={isCalled ? "warning" : isInConsultation ? "success" : "teal"} className="text-xs font-bold font-mono">
-          {entry.status}
+          {formatStatus(entry.status)}
         </Badge>
       </div>
 
@@ -108,9 +110,9 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
               <Volume2 className="h-6 w-6 animate-bounce" />
             </div>
             <div>
-              <span className="text-xs font-extrabold block">Your Token is Being Called!</span>
+              <span className="text-xs font-extrabold block">{t("status.called")}</span>
               <span className="text-[11px] opacity-90 block">
-                Please proceed immediately to <strong>{entry.room_number || "OPD Room 102"}</strong>.
+                {entry.room_number || "OPD Room 102"}
               </span>
             </div>
           </div>
@@ -123,7 +125,7 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
             <span className={`text-[10px] font-bold uppercase tracking-wider block ${
               isCalled || isInConsultation ? "text-white/80" : "text-slate-400"
             }`}>
-              Your Token
+              {t("queue.your_token")}
             </span>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${
@@ -143,13 +145,13 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
           {isWaiting && estimate && (
             <div className="text-right p-2.5 rounded-2xl bg-teal-50/90 border border-teal-200">
               <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 block flex items-center justify-end gap-1">
-                <Hourglass className="h-3 w-3 text-teal-600 animate-spin" /> Estimated Wait
+                <Hourglass className="h-3 w-3 text-teal-600 animate-spin" /> {t("queue.estimated_wait")}
               </span>
               <span className="text-lg sm:text-xl font-black text-teal-950 block mt-0.5">
                 {estimate.display_text}
               </span>
               <span className="text-[10px] text-teal-700 font-medium block">
-                {estimate.people_ahead === 0 ? "You're next in line" : `${estimate.people_ahead} people ahead`}
+                {estimate.people_ahead === 0 ? "Next in line" : `${estimate.people_ahead} ${t("queue.patients_ahead")}`}
               </span>
             </div>
           )}

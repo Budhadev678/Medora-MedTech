@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 import {
   ClinicalContinuityService,
   HealthJourneyDateGroup,
@@ -66,6 +67,7 @@ export type HealthTab = "overview" | "visits" | "prescriptions" | "lab_reports" 
 
 export default function PatientHealthHubPage() {
   const { user } = useAuth();
+  const { t, formatDate, formatStatus } = useLocalization();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -303,13 +305,13 @@ export default function PatientHealthHubPage() {
       <div className="space-y-5 animate-in fade-in-50 duration-150 font-sans pb-16">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Unified Patient Health Records</span>
+            <span className="text-xs font-semibold text-slate-500 block">{t("profile.title")}</span>
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <HeartPulse className="h-5 w-5 text-teal-600" />
-              My Health
+              {t("nav.records")}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Your comprehensive visits, prescriptions, lab reports, documents, and medical timeline.
+              {t("common.recent_activity")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -318,19 +320,19 @@ export default function PatientHealthHubPage() {
               className="bg-teal-700 hover:bg-teal-800 text-white text-xs gap-1.5 h-9 font-bold rounded-xl"
             >
               <Upload className="h-3.5 w-3.5" />
-              <span>Upload Document</span>
+              <span>{t("profile.save")}</span>
             </Button>
           </div>
         </div>
 
         <div className="flex items-center gap-1 bg-slate-100/90 p-1.5 rounded-2xl overflow-x-auto no-scrollbar text-xs font-bold text-slate-600 border border-slate-200/80 shadow-2xs">
           {[
-            { id: "overview", label: "Overview", icon: Activity },
-            { id: "visits", label: `Visits (${bundles.length})`, icon: Stethoscope },
-            { id: "prescriptions", label: `Prescriptions (${prescriptions.length})`, icon: Pill },
-            { id: "lab_reports", label: `Lab Reports (${reports.length})`, icon: FlaskConical },
-            { id: "documents", label: `Documents (${documents.length})`, icon: FolderOpen },
-            { id: "timeline", label: "Timeline", icon: History },
+            { id: "overview", label: t("nav.dashboard"), icon: Activity },
+            { id: "visits", label: `${t("nav.consultations")} (${bundles.length})`, icon: Stethoscope },
+            { id: "prescriptions", label: `${t("nav.prescriptions")} (${prescriptions.length})`, icon: Pill },
+            { id: "lab_reports", label: `${t("nav.reports")} (${reports.length})`, icon: FlaskConical },
+            { id: "documents", label: `${t("records.medical")} (${documents.length})`, icon: FolderOpen },
+            { id: "timeline", label: t("records.timeline"), icon: History },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
