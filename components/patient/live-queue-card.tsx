@@ -76,82 +76,115 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
   const isWaiting = entry.status === "WAITING";
 
   return (
-    <Card className={`overflow-hidden rounded-3xl border transition-all shadow-md ${
+    <Card className={`overflow-hidden rounded-3xl border transition-all duration-300 shadow-xs ${
       isCalled 
-        ? "bg-amber-500 text-white border-amber-600 ring-4 ring-amber-400/30 animate-pulse" 
+        ? "bg-gradient-to-br from-amber-50/90 via-white to-orange-50/50 border-amber-300 shadow-amber-500/10 ring-2 ring-amber-400/40" 
         : isInConsultation
-        ? "bg-teal-900 text-white border-teal-800"
-        : "bg-white border-teal-300 shadow-teal-700/5"
+        ? "bg-gradient-to-br from-teal-50/80 via-white to-emerald-50/40 border-teal-300 shadow-teal-700/5 ring-2 ring-teal-500/20"
+        : "bg-white border-slate-200 hover:border-teal-300 shadow-slate-900/5"
     }`}>
-      {/* Header Banner */}
-      <div className={`p-4 flex items-center justify-between border-b ${
-        isCalled ? "border-amber-400/50 bg-amber-600/30" : isInConsultation ? "border-teal-800 bg-teal-950/40" : "border-slate-100 bg-teal-50/70"
+      {/* Top Header Banner */}
+      <div className={`px-5 py-3 flex items-center justify-between border-b ${
+        isCalled 
+          ? "border-amber-200/80 bg-amber-100/60 text-amber-950" 
+          : isInConsultation 
+          ? "border-teal-100 bg-teal-100/50 text-teal-950" 
+          : "border-slate-100 bg-slate-50/70 text-slate-800"
       }`}>
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-            isCalled ? "bg-white text-amber-900" : isInConsultation ? "bg-teal-700 text-white" : "bg-teal-700 text-white"
+        <div className="flex items-center gap-2.5">
+          <span className={`inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-2xs ${
+            isCalled 
+              ? "bg-amber-600 text-white" 
+              : isInConsultation 
+              ? "bg-teal-700 text-white" 
+              : "bg-teal-700 text-white"
           }`}>
             <Sparkles className="h-3 w-3" /> {t("queue.live_queue")}
           </span>
-          <span className={`text-xs font-semibold ${isCalled || isInConsultation ? "text-white/90" : "text-slate-600"}`}>
+          <span className="text-xs font-bold text-slate-700">
             {entry.department_name}
           </span>
         </div>
-        <Badge variant={isCalled ? "warning" : isInConsultation ? "success" : "teal"} className="text-xs font-bold font-mono">
+        <Badge 
+          variant={isCalled ? "warning" : isInConsultation ? "success" : "teal"} 
+          className="text-xs font-bold px-2.5 py-0.5 shadow-2xs font-sans"
+        >
           {formatStatus(entry.status)}
         </Badge>
       </div>
 
-      <CardContent className="p-5 space-y-4">
-        {/* Token & Called Announcement Strip */}
+      <CardContent className="p-5 sm:p-6 space-y-4">
+        {/* Token is Called Announcement Banner */}
         {isCalled && (
-          <div className="rounded-2xl bg-white/20 p-3 flex items-center gap-3 border border-white/30 text-white">
-            <div className="h-10 w-10 rounded-2xl bg-white text-amber-600 flex items-center justify-center flex-shrink-0">
+          <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 p-4 flex items-center gap-3.5 text-white shadow-md shadow-amber-500/20 animate-in fade-in-50">
+            <div className="h-11 w-11 rounded-2xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0 border border-white/30">
               <Volume2 className="h-6 w-6 animate-bounce" />
             </div>
-            <div>
-              <span className="text-xs font-extrabold block">{t("status.called")}</span>
-              <span className="text-[11px] opacity-90 block">
-                {entry.room_number || "OPD Room 102"}
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-black tracking-tight block">
+                {t("status.called")}!
               </span>
+              <p className="text-xs text-amber-50 font-medium mt-0.5">
+                Please proceed immediately to <strong className="text-white underline underline-offset-2 font-bold">{entry.room_number || "OPD Room 102"}</strong> for consultation.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Active Consultation In-Progress Announcement Banner */}
+        {isInConsultation && (
+          <div className="rounded-2xl bg-gradient-to-r from-teal-700 to-emerald-700 p-3.5 flex items-center gap-3 text-white shadow-md shadow-teal-800/15 animate-in fade-in-50">
+            <div className="h-10 w-10 rounded-2xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0 border border-white/30">
+              <Stethoscope className="h-5 w-5 animate-pulse" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-black tracking-tight block">
+                {t("status.in_consultation")}
+              </span>
+              <p className="text-[11px] text-teal-100 font-medium">
+                {entry.doctor_name} is actively consulting with you in <strong className="text-white font-bold">{entry.room_number || "Room 102"}</strong>.
+              </p>
             </div>
           </div>
         )}
 
         {/* Primary Token Display & Waiting Estimation Box */}
-        <div className="grid grid-cols-2 gap-3 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
           {/* Token Box */}
           <div>
-            <span className={`text-[10px] font-bold uppercase tracking-wider block ${
-              isCalled || isInConsultation ? "text-white/80" : "text-slate-400"
-            }`}>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 block">
               {t("queue.your_token")}
             </span>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${
-                isCalled || isInConsultation ? "text-white" : "text-slate-900"
-              }`}>
+            <div className="flex items-baseline gap-2.5 mt-1">
+              <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-900">
                 #{entry.token_number}
               </span>
-              <span className={`text-[11px] font-semibold ${
-                isCalled || isInConsultation ? "text-white/80" : "text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md"
-              }`}>
+              <span className="text-xs font-bold text-teal-800 bg-teal-100/80 border border-teal-200 px-2.5 py-0.5 rounded-lg shadow-2xs">
                 {entry.room_number || "Room 102"}
               </span>
             </div>
           </div>
 
           {/* Dynamic Waiting Estimate Box (Phase B.3) */}
-          {isWaiting && estimate && (
-            <div className="text-right p-2.5 rounded-2xl bg-teal-50/90 border border-teal-200">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 block flex items-center justify-end gap-1">
-                <Hourglass className="h-3 w-3 text-teal-600 animate-spin" /> {t("queue.estimated_wait")}
+          {isWaiting && estimate ? (
+            <div className="sm:text-right p-3 rounded-xl bg-white border border-teal-200/80 shadow-2xs">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 block flex items-center sm:justify-end gap-1">
+                <Hourglass className="h-3.5 w-3.5 text-teal-600 animate-spin" /> {t("queue.estimated_wait")}
               </span>
-              <span className="text-lg sm:text-xl font-black text-teal-950 block mt-0.5">
+              <span className="text-lg sm:text-xl font-black text-teal-950 block mt-0.5 font-mono">
                 {estimate.display_text}
               </span>
-              <span className="text-[10px] text-teal-700 font-medium block">
+              <span className="text-[11px] text-teal-700 font-semibold block mt-0.5">
                 {estimate.people_ahead === 0 ? "Next in line" : `${estimate.people_ahead} ${t("queue.patients_ahead")}`}
+              </span>
+            </div>
+          ) : (
+            <div className="sm:text-right">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Queue Status
+              </span>
+              <span className="text-sm font-extrabold text-slate-800 block mt-0.5">
+                {isCalled ? "Ready for Entry" : isInConsultation ? "In Cabin" : "Checked In"}
               </span>
             </div>
           )}
@@ -159,38 +192,36 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
 
         {/* Doctor Delay Notice (if detected) */}
         {isWaiting && estimate?.delay_status === "DELAYED" && (
-          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-2.5 flex items-center gap-2 text-xs text-amber-800 animate-in fade-in-50">
+          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3 flex items-center gap-2.5 text-xs text-amber-900 animate-in fade-in-50">
             <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-            <span className="text-[11px] font-medium">
+            <span className="text-xs font-medium">
               {estimate.delay_notice || "Doctor is running slightly behind schedule. Waiting time updated."}
             </span>
           </div>
         )}
 
         {/* Context Details Strip */}
-        <div className={`p-3 rounded-2xl text-xs space-y-1.5 border ${
-          isCalled 
-            ? "bg-amber-600/20 border-amber-400/40 text-white" 
-            : isInConsultation 
-            ? "bg-teal-800/50 border-teal-700/50 text-teal-100" 
-            : "bg-slate-50 border-slate-200 text-slate-700"
-        }`}>
+        <div className="p-3.5 rounded-2xl text-xs space-y-2 bg-white border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-bold">
-              <Stethoscope className="h-3.5 w-3.5 opacity-70" />
+            <span className="flex items-center gap-2 font-bold text-slate-900">
+              <div className="h-6 w-6 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-700">
+                <Stethoscope className="h-3.5 w-3.5" />
+              </div>
               {entry.doctor_name}
             </span>
-            <span className="font-semibold text-[11px] opacity-80">{entry.organization_name}</span>
+            <span className="font-semibold text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+              {entry.organization_name}
+            </span>
           </div>
 
-          <div className="flex items-center justify-between pt-1 border-t border-current/10 text-[11px]">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3 opacity-70" />
-              Checked-in: {new Date(entry.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              {t("status.checked_in")}: {new Date(entry.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
             {estimate?.currently_serving_token && (
-              <span className="font-semibold">
-                Serving: <strong className="font-mono">#{estimate.currently_serving_token}</strong>
+              <span className="font-semibold text-slate-700">
+                Serving: <strong className="font-mono text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded">#{estimate.currently_serving_token}</strong>
               </span>
             )}
           </div>
@@ -198,11 +229,11 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
 
         {/* Phase B.4: Long Wait Option Discovery */}
         {isWaiting && estimate && estimate.estimated_upper_minutes >= 30 && (
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-            <span className="text-[11px] text-slate-600">Want to check earlier slots or clinics?</span>
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+            <span className="text-xs text-slate-600">Want to check earlier slots or clinics?</span>
             <Link
               href="/patient/appointments/book"
-              className="text-[11px] font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1 hover:underline shrink-0"
+              className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1 hover:underline shrink-0"
             >
               <span>Explore Options</span>
               <ArrowRight className="h-3 w-3" />
@@ -211,7 +242,7 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
         )}
 
         {/* Transparency & Non-Guarantee Note */}
-        <div className="flex items-center justify-between text-[10px] text-slate-400 italic pt-0.5">
+        <div className="flex items-center justify-between text-[11px] text-slate-400 italic pt-1">
           <span>
             {isCalled
               ? "Doctor is ready for your consultation."
@@ -219,8 +250,8 @@ export function LiveQueueCard({ queueEntry: initialEntry, onRefresh }: LiveQueue
               ? "Clinical consultation currently in progress."
               : "Estimated waiting time adapts dynamically as consultations progress."}
           </span>
-          <span className="not-italic text-slate-400 font-mono flex items-center gap-1 flex-shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="not-italic text-slate-500 font-mono text-[10px] flex items-center gap-1.5 flex-shrink-0 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             {lastUpdatedSec === 0 ? "Live" : `${lastUpdatedSec}s ago`}
           </span>
         </div>
