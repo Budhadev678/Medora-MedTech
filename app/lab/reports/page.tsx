@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 export default function LabReportsPage() {
   return (
-    <RoleGuard allowedRoles={["lab_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "lab_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-4">
         <PageHeader
           title="Certified Pathology Reports Archive"

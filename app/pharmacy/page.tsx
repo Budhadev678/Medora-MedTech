@@ -68,7 +68,7 @@ export default function PharmacyWorkQueuePage() {
   );
 
   return (
-    <RoleGuard allowedRoles={["pharmacy_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "pharmacy_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-150">
         
         {/* Top Operational Title Bar */}

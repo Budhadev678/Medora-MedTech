@@ -320,7 +320,7 @@ export default function LabWorkspacePage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["lab_staff", "admin", "doctor"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "lab_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200">
         {/* Lab Operations Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">

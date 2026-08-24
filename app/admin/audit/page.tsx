@@ -67,7 +67,7 @@ export default function AdminAuditPage() {
   }, [events, filterType, searchQuery]);
 
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "doctor", "finance_staff"]}>
       <div className="space-y-6 max-w-7xl mx-auto pb-24 font-sans p-4 sm:p-6 animate-in fade-in-50 duration-200">
         
         {/* Header */}

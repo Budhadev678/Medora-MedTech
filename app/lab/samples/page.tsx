@@ -8,7 +8,7 @@ import { RoleGuard } from "@/components/shared/role-guard";
 
 export default function LabSamplesPage() {
   return (
-    <RoleGuard allowedRoles={["lab_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "lab_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-4">
         <PageHeader
           title="Specimen Intake & Barcode Tracking"

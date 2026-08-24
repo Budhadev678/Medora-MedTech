@@ -8,7 +8,7 @@ import { RoleGuard } from "@/components/shared/role-guard";
 
 export default function BloodInventoryPage() {
   return (
-    <RoleGuard allowedRoles={["blood_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "blood_staff", "staff", "admin", "emergency_staff", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-150">
         <WorkspaceHeader
           title="Blood Bank Units & Component Inventory"

@@ -8,7 +8,7 @@ import { RoleGuard } from "@/components/shared/role-guard";
 
 export default function PharmacyPreparationPage() {
   return (
-    <RoleGuard allowedRoles={["pharmacy_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "pharmacy_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-4">
         <PageHeader
           title="Medication Packaging & Quality Verification"

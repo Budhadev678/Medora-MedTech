@@ -25,7 +25,7 @@ export default function BloodBankWorkspacePage() {
   ];
 
   return (
-    <RoleGuard allowedRoles={["blood_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "blood_staff", "staff", "admin", "emergency_staff", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200">
         {/* Blood Bank Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50/50 p-5 shadow-xs">

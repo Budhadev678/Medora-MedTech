@@ -42,7 +42,7 @@ export default function LabOrdersPage() {
   });
 
   return (
-    <RoleGuard allowedRoles={["lab_staff", "admin"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "lab_staff", "staff", "admin", "doctor"]}>
       <div className="space-y-5 animate-in fade-in-50 duration-150">
         <PageHeader
           title="Diagnostic Test Orders Queue"
