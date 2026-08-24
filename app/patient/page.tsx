@@ -189,12 +189,9 @@ export default function PatientHomePage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/patient/emergency" aria-label="Emergency Assistance">
-              <button className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-xs transition-all">
-                <AlertTriangle className="h-3.5 w-3.5 animate-pulse" />
-                <span>SOS</span>
-              </button>
-            </Link>
+            <Badge variant="outline" className="text-[11px] font-mono text-teal-800 bg-teal-50/70 border-teal-200">
+              {livePatient?.identifier || "PAT-1001"}
+            </Badge>
           </div>
         </div>
 

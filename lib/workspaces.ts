@@ -35,7 +35,7 @@ import {
 import { UserRole } from "@/lib/constants";
 import { StoredIdentity } from "@/lib/data/identity-store";
 import type { OrganizationMembership } from "@/types/database.types";
-import { NavItem, DOCTOR_NAV, PHARMACY_NAV } from "@/lib/navigation";
+import { NavItem, DOCTOR_NAV, PHARMACY_NAV, HOSPITAL_NAV, PATIENT_PRIMARY_NAV } from "@/lib/navigation";
 
 export type WorkspaceType =
   | "patient_mobile"
@@ -66,12 +66,7 @@ export const PATIENT_WORKSPACE: WorkspaceDefinition = {
   landingRoute: "/patient",
   allowedRoles: ["patient"],
   badgeText: "Patient App",
-  navItems: [
-    { label: "Home", href: "/patient", icon: Home, exact: true },
-    { label: "Appointments", href: "/patient/appointments", icon: Calendar },
-    { label: "Health", href: "/patient/health", icon: Activity, exact: false },
-    { label: "Emergency", href: "/patient/emergency", icon: AlertTriangle },
-  ],
+  navItems: PATIENT_PRIMARY_NAV,
 };
 
 // 2. Doctor Clinical Workspace
@@ -103,29 +98,15 @@ export const RECEPTION_WORKSPACE: WorkspaceDefinition = {
   ],
 };
 
-// 4. Hospital Command Center Workspace
+// 4. Hospital Control Center Workspace (Canonical 5-Step Architecture)
 export const HOSPITAL_WORKSPACE: WorkspaceDefinition = {
   id: "hospital_command",
-  displayName: "Hospital Command Center",
+  displayName: "Hospital Control Center",
   workspaceType: "Facility Operations Hub",
   landingRoute: "/hospital",
-  allowedRoles: ["hospital_admin"],
+  allowedRoles: ["hospital_admin", "staff", "admin"],
   badgeText: "Hospital Operations",
-  navItems: [
-    { label: "Command Center", href: "/hospital", icon: Building2, exact: true },
-    { label: "Operational Encounters", href: "/hospital/encounters", icon: Activity },
-    { label: "Patients", href: "/hospital/patients", icon: Users, comingSoon: true, phase: "Phase 6" },
-    { label: "Medical Staff & Doctors", href: "/hospital/doctors", icon: Stethoscope },
-    { label: "Departments", href: "/hospital/departments", icon: Layers, comingSoon: true, phase: "Phase 5" },
-    { label: "Appointments", href: "/hospital/appointments", icon: Calendar, comingSoon: true, phase: "Phase 6" },
-    { label: "Bed & Admissions", href: "/hospital/admissions", icon: BedDouble, comingSoon: true, phase: "Phase 5" },
-    { label: "Emergency Trauma Unit", href: "/hospital/emergency", icon: AlertTriangle, comingSoon: true, phase: "Phase 13" },
-    { label: "Hospital Laboratory", href: "/hospital/laboratory", icon: FlaskConical, comingSoon: true, phase: "Phase 8" },
-    { label: "Hospital Pharmacy", href: "/hospital/pharmacy", icon: Pill, comingSoon: true, phase: "Phase 9" },
-    { label: "Billing & Invoices", href: "/hospital/billing", icon: Receipt, comingSoon: true, phase: "Phase 10" },
-    { label: "Members & Staff", href: "/hospital/staff", icon: Users, comingSoon: true, phase: "Phase 5" },
-    { label: "Facility Settings", href: "/hospital/settings", icon: Settings },
-  ],
+  navItems: HOSPITAL_NAV,
 };
 
 // 5. Outpatient Clinic Operations Workspace

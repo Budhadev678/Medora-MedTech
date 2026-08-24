@@ -119,18 +119,35 @@ export const RECEPTION_NAV: NavItem[] = [
   { label: "Staff Roster", href: "/hospital/doctors", icon: User },
 ];
 
-// 5. Hospital Command Center Navigation
+// 5. Hospital Control Center Navigation (Step 1 of 5 Canonical Hierarchy)
 export const HOSPITAL_NAV: NavItem[] = [
-  { label: "Command Center", href: "/hospital", icon: Building2, exact: true },
-  { label: "Operational Encounters", href: "/clinic/encounters", icon: Activity },
-  { label: "Medical Staff & Doctors", href: "/hospital/doctors", icon: Stethoscope },
-  { label: "Departments", href: "/hospital/departments", icon: Layers },
-  { label: "Appointments Desk", href: "/hospital/appointments", icon: Calendar },
-  { label: "Bed & Admissions", href: "/hospital/admissions", icon: BedDouble },
-  { label: "Hospital Laboratory", href: "/lab", icon: FlaskConical },
-  { label: "Hospital Pharmacy", href: "/pharmacy", icon: Pill },
-  { label: "Revenue & Billing", href: "/hospital/billing", icon: Receipt },
-  { label: "Compliance & Security", href: "/admin/telemetry", icon: ShieldCheck },
+  // CONTROL
+  { label: "Control Center", href: "/hospital", icon: Building2, exact: true, section: "CONTROL" },
+
+  // OPERATIONS
+  { label: "Patients", href: "/hospital/patients", icon: Users, section: "OPERATIONS" },
+  { label: "Appointments / Arrival", href: "/hospital/appointments", icon: Calendar, section: "OPERATIONS" },
+  { label: "Emergency", href: "/hospital/emergency", icon: AlertTriangle, section: "OPERATIONS" },
+  { label: "Admissions", href: "/hospital/admissions", icon: BedDouble, section: "OPERATIONS" },
+  { label: "Discharge", href: "/hospital/discharge", icon: CheckCircle2, section: "OPERATIONS" },
+
+  // FINANCE
+  { label: "Billing", href: "/hospital/billing", icon: Receipt, section: "FINANCE" },
+  { label: "Transactions", href: "/hospital/billing/payments", icon: CreditCard, section: "FINANCE" },
+  { label: "Disputes", href: "/hospital/finance/disputes", icon: Shield, section: "FINANCE" },
+
+  // OVERSIGHT
+  { label: "Audit", href: "/admin/audit", icon: ShieldCheck, section: "OVERSIGHT" },
+  { label: "Reports / Activity", href: "/hospital/activity", icon: Activity, section: "OVERSIGHT" },
+
+  // INTEGRATIONS
+  { label: "Doctors", href: "/hospital/doctors", icon: Stethoscope, section: "INTEGRATIONS" },
+  { label: "Pharmacy", href: "/pharmacy", icon: Pill, section: "INTEGRATIONS" },
+  { label: "Laboratory", href: "/lab", icon: FlaskConical, section: "INTEGRATIONS" },
+
+  // SYSTEM
+  { label: "Hospital Settings", href: "/hospital/settings", icon: Settings, section: "SYSTEM" },
+  { label: "Staff / Roles", href: "/hospital/staff", icon: User, section: "SYSTEM" },
 ];
 
 // 6. Clinic Operations Navigation

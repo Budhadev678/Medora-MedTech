@@ -18,6 +18,7 @@ import {
   Activity,
   AlertCircle,
   XCircle,
+  X,
   Plus
 } from "lucide-react";
 import { RoleGuard } from "@/components/shared/role-guard";
@@ -88,7 +89,13 @@ export default function PatientEmergencyPage() {
   };
 
   const handleCancelEmergency = (caseId: string) => {
-    cancelEmergencyCase(caseId, "Patient resolved or no longer required");
+    cancelEmergencyCase({
+      emergencyId: caseId,
+      reason: "Patient resolved or no longer required",
+      actorId: user?.identifier || user?.id || "PAT-1001",
+      actorName: user?.fullName || "Patient",
+      actorRole: "patient",
+    });
     reloadData();
   };
 
@@ -118,73 +125,81 @@ export default function PatientEmergencyPage() {
           <h1 className="text-xl font-black text-rose-950 tracking-tight">
             Emergency Pre-Arrival Hospital Notification
           </h1>
-          <p className="text-xs text-rose-900 leading-relaxed">
-            In immediate life-threatening situations, call National Emergency 112 or alert the receiving hospital trauma team before arrival.
+          <p className="text-xs text-rose-900 leading-relaxed max-w-2xl">
+            In life-threatening medical emergencies, alert the nearest hospital trauma response center immediately. Real-time pre-alerts allow trauma teams to prepare oxygen, ventilators, and blood units before the ambulance arrives.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-            <a 
-              href="tel:112"
-              className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all"
-            >
-              <Phone className="h-4 w-4" />
-              <span>National ER (112)</span>
-            </a>
-            <a 
-              href="tel:108"
-              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black active:scale-95 text-white py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all"
-            >
-              <Ambulance className="h-4 w-4" />
-              <span>Ambulance (108)</span>
-            </a>
-            {!activeCase && (
+          {!activeCase && (
+            <div className="pt-2">
               <Button
                 onClick={() => setShowInitiateModal(true)}
-                className="col-span-2 sm:col-span-1 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-xl shadow-xs py-2.5 h-auto"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-sm gap-2"
               >
-                <Plus className="h-4 w-4 mr-1" /> Pre-Alert Hospital
+                <AlertTriangle className="h-4 w-4" />
+                <span>Trigger Emergency Pre-Alert</span>
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
+        {/* Success / Alert Banner */}
         {successMsg && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-            {successMsg}
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs font-semibold text-emerald-900 flex items-center justify-between shadow-xs animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+            <button onClick={() => setSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
 
-        {/* Active Emergency Tracker */}
+        {/* Active Emergency Case Card (Live Ingress Status) */}
         {activeCase && (
-          <Card className="border-rose-300 bg-white rounded-2xl shadow-md overflow-hidden">
-            <CardHeader className="p-4 bg-rose-50/50 border-b border-rose-100 flex flex-row items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">Active Emergency Pre-Alert</span>
-                <CardTitle className="text-sm font-bold text-slate-900 font-mono">
-                  {activeCase.case_number} • {activeCase.target_facility_name}
+          <Card className="border-rose-300 bg-white rounded-2xl shadow-sm overflow-hidden animate-in fade-in-50">
+            <CardHeader className="bg-rose-50/50 p-4 border-b border-rose-100 flex flex-row items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-600 animate-ping" />
+                  <span className="text-xs font-extrabold uppercase text-rose-800 tracking-wider">
+                    Active Pre-Alert Case
+                  </span>
+                  <Badge variant="outline" className="font-mono text-[10px] bg-white border-rose-200">
+                    {activeCase.case_number}
+                  </Badge>
+                </div>
+                <CardTitle className="text-sm font-bold text-slate-900">
+                  {activeCase.target_facility_name}
                 </CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCancelEmergency(activeCase.id)}
-                className="text-xs text-rose-700 hover:bg-rose-100 rounded-xl h-8"
-              >
-                <XCircle className="h-4 w-4 mr-1" /> Cancel Case
-              </Button>
+
+              <div className="flex items-center gap-2">
+                <Badge variant="emergency" className="text-xs font-bold uppercase">
+                  {activeCase.status}
+                </Badge>
+                <Button
+                  onClick={() => handleCancelEmergency(activeCase.id)}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs text-rose-700 hover:bg-rose-50 border-rose-200 h-7"
+                >
+                  Cancel Alert
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 space-y-4 text-xs">
-              {/* Status Milestones */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+
+            <CardContent className="p-4 space-y-4">
+              {/* Progress Milestones */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                 <div className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900">
                   <span className="text-[10px] font-bold block">1. Alert Sent</span>
                   <span className="text-[11px] font-medium">✓ {new Date(activeCase.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <div className={`p-2.5 rounded-xl border ${activeCase.hospital_acknowledged_at ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                <div className={`p-2.5 rounded-xl border ${activeCase.hospital_acknowledged_at || activeCase.acknowledged_at ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                   <span className="text-[10px] font-bold block">2. Hospital Acknowledged</span>
                   <span className="text-[11px] font-medium">
-                    {activeCase.hospital_acknowledged_at ? `✓ ${new Date(activeCase.hospital_acknowledged_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Awaiting Ack"}
+                    {activeCase.hospital_acknowledged_at || activeCase.acknowledged_at ? `✓ ${new Date(activeCase.hospital_acknowledged_at || activeCase.acknowledged_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Awaiting Ack"}
                   </span>
                 </div>
                 <div className={`p-2.5 rounded-xl border ${activeCase.arrived_at ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
@@ -193,10 +208,10 @@ export default function PatientEmergencyPage() {
                     {activeCase.arrived_at ? "✓ Arrived at ER" : activeCase.arriving_by_ambulance ? `En Route (~${activeCase.eta_minutes || 10}m)` : "In Transit"}
                   </span>
                 </div>
-                <div className={`p-2.5 rounded-xl border ${activeCase.status === "TRIAGE_STARTED" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
-                  <span className="text-[10px] font-bold block">4. Trauma Triage</span>
+                <div className={`p-2.5 rounded-xl border ${activeCase.status === "EMERGENCY_CARE" || activeCase.status === "TRIAGE_STARTED" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                  <span className="text-[10px] font-bold block">4. Trauma Care</span>
                   <span className="text-[11px] font-medium">
-                    {activeCase.status === "TRIAGE_STARTED" ? "✓ Triage Active" : "Pending Arrival"}
+                    {activeCase.status === "EMERGENCY_CARE" || activeCase.status === "TRIAGE_STARTED" ? "✓ ER Care Active" : "Pending Arrival"}
                   </span>
                 </div>
               </div>

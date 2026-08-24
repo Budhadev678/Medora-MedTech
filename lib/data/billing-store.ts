@@ -198,6 +198,9 @@ export function getBillVersions(billId: string): BillVersion[] {
   return BILL_VERSIONS_STORE.filter((v) => v.bill_id.toLowerCase() === clean).sort((a, b) => b.version_number - a.version_number);
 }
 
+export const getPatientBills = getBillsByPatient;
+export const getFacilityBills = getBillsByFacility;
+
 // ============================================================
 // BILL MUTATIONS
 // ============================================================

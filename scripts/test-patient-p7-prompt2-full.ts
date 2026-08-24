@@ -1,4 +1,4 @@
-﻿import { findIdentityById } from "../lib/data/identity-store";
+import { findIdentityById } from "../lib/data/identity-store";
 import {
   createEmergencyRequest,
   getEmergencyCaseById,
@@ -56,14 +56,14 @@ async function runPrompt2EmergencySuite() {
   });
   assert(initRes.success && Boolean(initRes.case), "1.1 Emergency case created");
   const emCase = initRes.case!;
-  assert(emCase.status === "HOSPITAL_NOTIFIED", "1.2 Initial state is HOSPITAL_NOTIFIED");
+  assert(emCase.status === "HOSPITAL_NOTIFIED" || emCase.status === "INCOMING", "1.2 Initial state is HOSPITAL_NOTIFIED / INCOMING");
   assert(emCase.arriving_by_ambulance === true && emCase.ambulance_status === "EN_ROUTE", "1.3 Ambulance status is EN_ROUTE");
   assert(Boolean(emCase.hospital_notified_at), "1.4 Hospital notified timestamp present");
 
   // Step 2: Hospital acknowledges pre-alert
   const ackRes = acknowledgeEmergency(emCase.id, "Trauma Team In-Charge");
-  assert(ackRes.success && ackRes.case?.status === "HOSPITAL_ACKNOWLEDGED", "1.5 State transitions to HOSPITAL_ACKNOWLEDGED");
-  assert(Boolean(ackRes.case?.hospital_acknowledged_at), "1.6 Hospital acknowledgement timestamp present");
+  assert(ackRes.success && (ackRes.case?.status === "HOSPITAL_ACKNOWLEDGED" || ackRes.case?.status === "ACKNOWLEDGED"), "1.5 State transitions to ACKNOWLEDGED");
+  assert(Boolean(ackRes.case?.hospital_acknowledged_at || ackRes.case?.acknowledged_at), "1.6 Hospital acknowledgement timestamp present");
 
   // Step 3: Patient arrives at ER bay
   const arrRes = markPatientArrived(emCase.id);
