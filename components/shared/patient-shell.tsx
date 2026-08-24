@@ -74,7 +74,12 @@ export function PatientShell({ children }: PatientShellProps) {
           })}
         </nav>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+          <Link href="/patient/profile" className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="View Patient Profile">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold text-slate-800">{user?.fullName || "Rahul Verma"}</span>
+            <span className="text-[10px] font-mono text-slate-500 font-medium">({user?.identifier || "PAT-1001"})</span>
+          </Link>
           <Link href="/patient/emergency" aria-label="Emergency and Urgent Care Assistance">
             <div className="flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 transition-colors">
               <AlertTriangle className="h-3 w-3 text-red-600" aria-hidden="true" />

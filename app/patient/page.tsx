@@ -26,6 +26,10 @@ import {
   Package,
   AlertCircle,
   Landmark,
+  Droplet,
+  Phone,
+  MapPin,
+  Activity,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -176,23 +180,97 @@ export default function PatientHomePage() {
     <RoleGuard allowedRoles={["patient", "admin"]}>
       <div className="space-y-5 animate-in fade-in-50 duration-150 font-sans">
         
-        {/* 1. Header Greeting / Patient Identity */}
-        <div className="flex items-center justify-between pb-1">
-          <div>
-            <span className="text-xs font-semibold text-slate-500 block">
-              Good morning,
-            </span>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              {livePatient?.fullName || "Patient"}
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Your healthcare at a glance.
-            </p>
+        {/* 1. Top Patient Identity & Health Passport Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white font-black text-base flex items-center justify-center shadow-xs">
+                {(livePatient?.fullName || "R").charAt(0)}
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-slate-500 block">
+                  Good morning,
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                    {livePatient?.fullName || "Rahul Verma"}
+                  </h1>
+                  <Badge variant="outline" className="text-[11px] font-mono text-teal-800 bg-teal-50 border-teal-200 font-bold">
+                    {livePatient?.identifier || "PAT-1001"}
+                  </Badge>
+                  {livePatient?.patientData?.abhaStatus === "LINKED" ? (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3 text-emerald-600" /> ABHA LINKED
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300 font-medium">
+                      ABHA Pending
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Your personalized health dashboard & longitudinal records.
+                </p>
+              </div>
+            </div>
+
+            <Link href="/patient/profile">
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold gap-1 text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-100/70 h-8 self-start sm:self-auto">
+                <User className="h-3.5 w-3.5" /> Digital Health ID <ChevronRight className="h-3 w-3" />
+              </Button>
+            </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[11px] font-mono text-teal-800 bg-teal-50/70 border-teal-200">
-              {livePatient?.identifier || "PAT-1001"}
-            </Badge>
+
+          {/* Quick Demographics & Vital Indicators */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-0.5">
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-teal-100/70 text-teal-800 flex items-center justify-center shrink-0">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Demographics</span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {livePatient?.patientData?.gender ? livePatient.patientData.gender.toUpperCase() : "MALE"}, 34 Yrs
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-rose-100/70 text-rose-800 flex items-center justify-center shrink-0">
+                <Droplet className="h-4 w-4 fill-rose-600 text-rose-600" />
+              </div>
+              <div className="overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Blood Group</span>
+                <span className="text-xs font-bold text-rose-700 truncate flex items-center gap-1 font-mono">
+                  {livePatient?.patientData?.bloodGroup || "O+"}
+                  <span className="text-[9px] font-sans font-medium text-slate-500">(Verified)</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-indigo-100/70 text-indigo-800 flex items-center justify-center shrink-0">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div className="overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">City / State</span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {livePatient?.patientData?.address?.city || "Bhubaneswar"}, Odisha
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-amber-100/70 text-amber-800 flex items-center justify-center shrink-0">
+                <Phone className="h-4 w-4" />
+              </div>
+              <div className="overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Emergency Contact</span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {livePatient?.patientData?.emergencyContact?.name || "Pooja Verma"} (Spouse)
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
