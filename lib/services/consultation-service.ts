@@ -34,6 +34,11 @@ import { AppointmentStore } from "@/lib/data/appointment-store";
 import { ConsultationHistoryStore } from "@/lib/data/consultation-history-store";
 import { StoredIdentity, findIdentityById } from "@/lib/data/identity-store";
 import { AuditLedger } from "@/lib/data/audit-store";
+import {
+  hasContextualAccess,
+  getConsultationSharingDecision,
+  ConsultationSharingDecision,
+} from "@/lib/data/consent-store";
 
 export interface StartConsultationResult {
   success: boolean;
@@ -63,6 +68,8 @@ export interface ConsultationContext {
   recent_encounters: HealthcareEncounter[];
   linked_appointment: Appointment | null;
   linked_queue_entry: QueueEntry | null;
+  records_shared: boolean;
+  sharing_decision: ConsultationSharingDecision | null;
 }
 
 export class ConsultationService {
@@ -605,7 +612,7 @@ export class ConsultationService {
 
   /**
    * Retrieves complete contextual clinical data for a consultation.
-   * Enforces patient isolation and authorized clinician context.
+   * Enforces patient isolation, doctor authorization, and contextual record sharing.
    */
   public static getConsultationContext(
     encounterId: string,
@@ -614,11 +621,31 @@ export class ConsultationService {
     const encounter = getEncounterById(encounterId);
     if (!encounter) return null;
 
-    // Authorization & Patient Isolation Check
+    const actorId = actor ? actor.identifier || actor.id : "";
+
+    // 1. Strict Patient Isolation Check
     if (actor && actor.role === "patient") {
       const patientId = actor.identifier || actor.id;
       if (encounter.patient_id !== patientId && encounter.patient_id !== actor.id) {
-        return null; // Strict Patient Isolation: Access denied to other patient records
+        return null; // Block unauthorized cross-patient route tampering
+      }
+    }
+
+    // 2. Strict Doctor Organization / Practitioner Scoping Check
+    if (actor && actor.role === "doctor") {
+      const docId = actor.identifier || actor.id;
+      const orgId = actor.organizationId || "";
+      const isAssignedDoctor = encounter.provider_id === docId;
+      const isFacilityDoctor =
+        encounter.organization_id === orgId ||
+        encounter.facility_id === orgId ||
+        actor.doctorData?.affiliations.some(
+          (a) => a.organizationIdentifier === encounter.organization_id || a.organizationId === encounter.organization_id
+        );
+      
+      // Block doctors attempting to access consultations belonging to unrelated organizations
+      if (!isAssignedDoctor && !isFacilityDoctor) {
+        return null;
       }
     }
 
@@ -626,7 +653,20 @@ export class ConsultationService {
     const patient = findIdentityById(encounter.patient_id);
     const allergies = patient?.patientData?.allergies || [];
     const chronicConditions = patient?.patientData?.chronicConditions || [];
-    const recentEncounters = getPatientEncounters(encounter.patient_id).filter((e) => e.id !== encounter.id);
+
+    // Contextual Sharing Authorization Decision
+    const sharingDecision = getConsultationSharingDecision(encounter.id, encounter.patient_id);
+    const isContextuallyAuthorized = hasContextualAccess(
+      encounter.patient_id,
+      actorId,
+      encounter.organization_id,
+      encounter.id
+    );
+    const recordsShared = isContextuallyAuthorized || sharingDecision?.decision === "SHARE";
+
+    // Disclose historical encounters only when authorized by patient or emergency override
+    const allRecentEncounters = getPatientEncounters(encounter.patient_id).filter((e) => e.id !== encounter.id);
+    const accessibleEncounters = recordsShared ? allRecentEncounters.slice(0, 5) : [];
 
     const linkedAppointment = encounter.appointment_id
       ? AppointmentStore.getAppointmentById(encounter.appointment_id) || null
@@ -636,9 +676,8 @@ export class ConsultationService {
       ? QueueStore.getQueueEntryById(encounter.queue_entry_id) || null
       : null;
 
-    // Audit Record Access (Requirement 87 & 88)
+    // Audit Record Access Event
     if (actor) {
-      const actorId = actor.identifier || actor.id;
       AuditLedger.recordEvent({
         actor_id: actorId,
         actor_name: actor.fullName,
@@ -649,6 +688,7 @@ export class ConsultationService {
           patient_id: encounter.patient_id,
           organization_id: encounter.organization_id,
           encounter_id: encounter.id,
+          records_shared: recordsShared,
         },
       });
     }
@@ -659,9 +699,11 @@ export class ConsultationService {
       patient,
       allergies,
       chronic_conditions: chronicConditions,
-      recent_encounters: recentEncounters.slice(0, 5), // Recent 5 encounters
+      recent_encounters: accessibleEncounters,
       linked_appointment: linkedAppointment,
       linked_queue_entry: linkedQueueEntry,
+      records_shared: recordsShared,
+      sharing_decision: sharingDecision,
     };
   }
 }

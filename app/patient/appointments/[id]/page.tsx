@@ -36,6 +36,7 @@ import { AppointmentBookingService } from "@/lib/services/appointment-booking-se
 import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { Appointment, QueueEntry } from "@/types/database.types";
 import { getRemainingCurrentWeekDates } from "@/lib/utils";
+import { ConsultationSharingPrompt } from "@/components/patient/consultation-sharing-prompt";
 
 export default function AppointmentDetailPage() {
   const params = useParams();
@@ -400,6 +401,17 @@ export default function AppointmentDetailPage() {
             </Button>
           </div>
         </div>
+
+        {/* Contextual Consultation Previous Records Sharing */}
+        <ConsultationSharingPrompt
+          encounterId={queueEntry?.encounter_id || `ENC-${appointment.id}`}
+          patientId={appointment.patient_id}
+          patientName={appointment.patient_name}
+          doctorId={appointment.doctor_id}
+          doctorName={appointment.doctor_name}
+          organizationId={appointment.organization_id || appointment.organization_identifier || "HSP-1001"}
+          organizationName={appointment.organization_name}
+        />
 
         {/* ============================================================ */}
         {/* 2. CLINIC ARRIVAL GUIDANCE & HOSPITAL DIRECTIONS             */}

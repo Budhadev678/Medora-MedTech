@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -614,43 +614,101 @@ export default function PatientConsentPage() {
           </div>
         )}
 
-        {/* TAB 4: SECURITY & PRIVACY AUDIT TRAIL */}
+        {/* TAB 4: SECURITY & PRIVACY AUDIT TRAIL / RECORD ACCESS HISTORY */}
         {activeTab === "history" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-0.5">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Patient Privacy & Security Ledger
+                Record Access History & Security Ledger
               </h2>
               <p className="text-[11px] text-slate-500">
-                Authoritative append-only log of all consent, identity, and authorization events.
+                Authoritative append-only log tracking who accessed your medical records, when, where, and for what purpose.
               </p>
             </div>
 
+            {/* Emergency Access Notification Alert if any emergency events exist */}
+            {auditLog.some((e) => e.event_type === "EMERGENCY_ACCESS_TRIGGERED") && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-900">
+                  <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>Emergency Medical Access Notification</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Your medical records were accessed under an Emergency Break-Glass override for critical clinical care. All access reasons and doctor credentials are recorded below in your immutable audit history.
+                </p>
+              </div>
+            )}
+
             {auditLog.length > 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden text-xs">
-                {auditLog.map((event) => (
-                  <div key={event.id} className="p-3.5 space-y-1 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10px] font-bold text-slate-400">
-                        {event.id}
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        {new Date(event.timestamp).toLocaleString()}
-                      </span>
-                    </div>
+                {auditLog.map((event) => {
+                  const isEmergency = event.event_type === "EMERGENCY_ACCESS_TRIGGERED";
+                  return (
+                    <div
+                      key={event.id}
+                      className={`p-4 space-y-2 hover:bg-slate-50/50 transition-colors ${
+                        isEmergency ? "bg-amber-50/30" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] font-bold text-slate-400">
+                            {event.id}
+                          </span>
+                          {isEmergency && (
+                            <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[9px] font-bold">
+                              EMERGENCY ACCESS
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-400">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </span>
+                      </div>
 
-                    <div className="flex items-start gap-2">
-                      <div className="h-2 w-2 rounded-full bg-teal-500 mt-1.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-bold text-slate-900">{event.summary}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
-                          <span>Actor: {event.actor_name} ({event.actor_role})</span>
-                          {event.organization_name && <span>• {event.organization_name}</span>}
+                      <div className="flex items-start gap-2.5">
+                        <div
+                          className={`h-2.5 w-2.5 rounded-full mt-1 flex-shrink-0 ${
+                            isEmergency ? "bg-amber-500" : "bg-teal-500"
+                          }`}
+                        />
+                        <div className="space-y-1.5 flex-1">
+                          <p className="font-bold text-slate-900 text-xs">{event.summary}</p>
+                          
+                          {/* WHO, WHAT, WHEN, WHERE, WHY Grid */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            <div>
+                              <span className="text-slate-400 block text-[9px] uppercase font-bold">Who</span>
+                              <span className="font-semibold text-slate-800">{event.actor_name}</span>
+                              <span className="text-[10px] text-slate-500 block">({event.actor_role})</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[9px] uppercase font-bold">Where</span>
+                              <span className="font-semibold text-slate-800">
+                                {event.organization_name || "Facility"}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[9px] uppercase font-bold">When</span>
+                              <span className="font-semibold text-slate-800">
+                                {new Date(event.timestamp).toLocaleDateString()}
+                              </span>
+                              <span className="text-[10px] text-slate-500 block">
+                                {new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[9px] uppercase font-bold">Why</span>
+                              <span className="font-semibold text-slate-800">
+                                {isEmergency ? "Emergency Care" : "Consultation / Care"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Card className="bg-white border-slate-200 p-6 text-center">

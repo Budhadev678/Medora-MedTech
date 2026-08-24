@@ -339,20 +339,221 @@ export function revokeConsent(
   return { success: true, consent };
 }
 
+export interface ConsultationSharingDecision {
+  id: string;
+  encounter_id: string;
+  patient_id: string;
+  patient_name?: string;
+  doctor_id: string;
+  doctor_name?: string;
+  organization_id: string;
+  organization_name?: string;
+  decision: "SHARE" | "DONT_SHARE";
+  requested_by_doctor?: boolean;
+  granted_scopes?: string[];
+  decided_at: string;
+}
+
+const SHARING_DECISIONS_KEY = "medora_consultation_sharing_decisions";
+let memorySharingDecisions: ConsultationSharingDecision[] = [];
+
+export function getAllSharingDecisions(): ConsultationSharingDecision[] {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(SHARING_DECISIONS_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+  }
+  return memorySharingDecisions;
+}
+
+export function saveSharingDecisions(decisions: ConsultationSharingDecision[]) {
+  memorySharingDecisions = decisions;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SHARING_DECISIONS_KEY, JSON.stringify(decisions));
+      window.dispatchEvent(new Event("medora-sharing-decision-updated"));
+      window.dispatchEvent(new Event("medora-consent-updated"));
+    } catch (e) {}
+  }
+}
+
+export function getConsultationSharingDecision(
+  encounterId: string,
+  patientId?: string
+): ConsultationSharingDecision | null {
+  if (!encounterId) return null;
+  const all = getAllSharingDecisions();
+  return (
+    all.find((d) => {
+      const matchEnc = d.encounter_id.toLowerCase() === encounterId.toLowerCase();
+      const matchPat = patientId ? d.patient_id.toLowerCase() === patientId.toLowerCase() : true;
+      return matchEnc && matchPat;
+    }) || null
+  );
+}
+
+export function requestConsultationSharing(params: {
+  encounterId: string;
+  doctorId: string;
+  doctorName: string;
+  patientId: string;
+  organizationId?: string;
+}): { success: boolean; message: string } {
+  const all = getAllSharingDecisions();
+  const existingIndex = all.findIndex(
+    (d) => d.encounter_id.toLowerCase() === params.encounterId.toLowerCase()
+  );
+
+  if (existingIndex >= 0) {
+    all[existingIndex].requested_by_doctor = true;
+  } else {
+    all.unshift({
+      id: "SHR-REQ-" + Math.floor(1000 + Math.random() * 9000),
+      encounter_id: params.encounterId,
+      patient_id: params.patientId,
+      doctor_id: params.doctorId,
+      doctor_name: params.doctorName,
+      organization_id: params.organizationId || "HSP-1001",
+      decision: "DONT_SHARE",
+      requested_by_doctor: true,
+      decided_at: new Date().toISOString(),
+    });
+  }
+
+  saveSharingDecisions(all);
+
+  logAuditEvent({
+    event_type: "CONSENT_REQUESTED" as any,
+    actor_id: params.doctorId,
+    actor_name: params.doctorName,
+    actor_role: "doctor",
+    patient_id: params.patientId,
+    organization_id: params.organizationId || "HSP-1001",
+    organization_name: "Hospital Facility",
+    summary: `${params.doctorName} requested patient decision to share previous medical records for consultation ${params.encounterId}`,
+    reference_id: params.encounterId,
+  });
+
+  return {
+    success: true,
+    message: "Access request sent to patient for this consultation.",
+  };
+}
+
+export function recordConsultationSharingDecision(params: {
+  encounterId: string;
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
+  organizationId: string;
+  organizationName: string;
+  decision: "SHARE" | "DONT_SHARE";
+}): { success: boolean; decision: ConsultationSharingDecision } {
+  const now = new Date();
+  const all = getAllSharingDecisions();
+  const existingIndex = all.findIndex(
+    (d) => d.encounter_id.toLowerCase() === params.encounterId.toLowerCase()
+  );
+
+  const decisionRecord: ConsultationSharingDecision = {
+    id: existingIndex >= 0 ? all[existingIndex].id : "SHR-" + Math.floor(1000 + Math.random() * 9000),
+    encounter_id: params.encounterId,
+    patient_id: params.patientId,
+    patient_name: params.patientName,
+    doctor_id: params.doctorId,
+    doctor_name: params.doctorName,
+    organization_id: params.organizationId,
+    organization_name: params.organizationName,
+    decision: params.decision,
+    requested_by_doctor: false,
+    granted_scopes:
+      params.decision === "SHARE"
+        ? ["medical_history", "prescriptions", "lab_reports", "diagnostic_reports"]
+        : [],
+    decided_at: now.toISOString(),
+  };
+
+  if (existingIndex >= 0) {
+    all[existingIndex] = decisionRecord;
+  } else {
+    all.unshift(decisionRecord);
+  }
+
+  saveSharingDecisions(all);
+
+  if (params.decision === "SHARE") {
+    // Also create/update scoped contextual consent record
+    grantContextualConsultationSharing({
+      patientId: params.patientId,
+      patientName: params.patientName,
+      doctorId: params.doctorId,
+      doctorName: params.doctorName,
+      organizationId: params.organizationId,
+      organizationName: params.organizationName,
+      encounterId: params.encounterId,
+    });
+  } else {
+    // Log Don't Share decision
+    logAuditEvent({
+      event_type: "CONSENT_DENIED",
+      actor_id: params.patientId,
+      actor_name: params.patientName,
+      actor_role: "patient",
+      patient_id: params.patientId,
+      organization_id: params.organizationId,
+      organization_name: params.organizationName,
+      summary: `Patient chose not to share previous records with ${params.doctorName} for consultation ${params.encounterId}`,
+      reference_id: decisionRecord.id,
+      metadata: {
+        encounter_id: params.encounterId,
+        decision: "DONT_SHARE",
+      },
+    });
+  }
+
+  return { success: true, decision: decisionRecord };
+}
+
 /**
  * Checks if a practitioner has authorized access to a patient's historical records.
  * Authorized if:
  * 1. Active GRANTED consent exists
  * 2. Or break-glass emergency access grant is active
+ * 3. Or explicit "SHARE" decision was made for this encounter
  */
 export function hasContextualAccess(
   patientId: string,
   requesterId: string,
-  organizationId?: string
+  organizationId?: string,
+  encounterId?: string
 ): boolean {
+  if (!patientId) return false;
+
+  // 1. Check emergency override first (emergency bypass)
   const consents = getPatientConsents(patientId);
   const now = Date.now();
 
+  const emergencyGrant = consents.find(
+    (c) =>
+      c.status === "GRANTED" &&
+      c.purpose === "emergency_access" &&
+      new Date(c.expires_at).getTime() >= now &&
+      (c.requester_id === requesterId || (organizationId && c.organization_id === organizationId))
+  );
+  if (emergencyGrant) return true;
+
+  // 2. If encounterId provided, check encounter sharing decision
+  if (encounterId) {
+    const decision = getConsultationSharingDecision(encounterId, patientId);
+    if (decision) {
+      if (decision.decision === "SHARE") return true;
+      if (decision.decision === "DONT_SHARE") return false;
+    }
+  }
+
+  // 3. Check regular granted consent records
   return consents.some((c) => {
     if (c.status !== "GRANTED") return false;
     if (new Date(c.expires_at).getTime() < now) return false;

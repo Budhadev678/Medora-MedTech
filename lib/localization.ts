@@ -190,6 +190,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "fin.patient_responsibility": "Net Patient Responsibility",
     "fin.refund": "Refund",
     "fin.adjustment": "Accounting Adjustment",
+
+    // Contextual Record Sharing & Emergency Access
+    "sharing.share_previous_records": "Share Previous Records",
+    "sharing.dont_share": "Don't Share",
+    "sharing.confirm_share": "Confirm & Share",
+    "sharing.records_shared_title": "Previous Records Shared",
+    "sharing.records_shared_desc": "Your previous medical records have been shared with your doctor for this active consultation.",
+    "sharing.records_not_shared_title": "Previous Records Not Shared",
+    "sharing.records_not_shared_desc": "Previous records were not shared. You can continue your consultation normally.",
+    "sharing.what_will_be_shared": "What will be shared?",
+    "sharing.scope_consultations": "Previous consultations & diagnoses",
+    "sharing.scope_prescriptions": "Active and past prescriptions",
+    "sharing.scope_lab_reports": "Laboratory & diagnostic reports",
+    "sharing.scope_clinical_history": "Relevant clinical history & vitals",
+    "sharing.scope_excluded": "Financial records and administrative files are NOT shared",
+    "sharing.request_patient_decision": "Request Patient Decision",
+    "sharing.emergency_access_title": "Emergency Medical Access",
+    "sharing.emergency_access_desc": "Emergency medical access authorized for critical patient care.",
+    "sharing.access_history_title": "Record Access History",
   },
   hi: {
     // Navigation & Shell
@@ -367,6 +386,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "fin.patient_responsibility": "मरीज की देय राशि",
     "fin.refund": "रिफंड",
     "fin.adjustment": "समायोजन (एडजस्टमेंट)",
+
+    // Contextual Record Sharing & Emergency Access
+    "sharing.share_previous_records": "पिछले रिकॉर्ड साझा करें",
+    "sharing.dont_share": "साझा न करें",
+    "sharing.confirm_share": "पुष्टि करें और साझा करें",
+    "sharing.records_shared_title": "पिछले रिकॉर्ड साझा किए गए",
+    "sharing.records_shared_desc": "आपके पिछले मेडिकल रिकॉर्ड वर्तमान परामर्श हेतु डॉक्टर के साथ साझा कर दिए गए हैं।",
+    "sharing.records_not_shared_title": "पिछले रिकॉर्ड साझा नहीं किए गए",
+    "sharing.records_not_shared_desc": "पिछले रिकॉर्ड साझा नहीं किए गए हैं। आप सामान्य रूप से परामर्श जारी रख सकते हैं।",
+    "sharing.what_will_be_shared": "क्या साझा किया जाएगा?",
+    "sharing.scope_consultations": "पिछले परामर्श और निदान",
+    "sharing.scope_prescriptions": "वर्तमान एवं पुराने नुस्खे (दवाइयाँ)",
+    "sharing.scope_lab_reports": "लैब और जांच रिपोर्ट",
+    "sharing.scope_clinical_history": "प्रासंगिक नैदानिक इतिहास",
+    "sharing.scope_excluded": "वित्तीय और प्रशासनिक रिकॉर्ड साझा नहीं किए जाते हैं",
+    "sharing.request_patient_decision": "रोगी के निर्णय का अनुरोध करें",
+    "sharing.emergency_access_title": "आपातकालीन चिकित्सा पहुंच",
+    "sharing.emergency_access_desc": "आपातकालीन स्थिति में आवश्यक चिकित्सा हेतु अधिकृत पहुंच।",
+    "sharing.access_history_title": "रिकॉर्ड एक्सेस इतिहास",
   },
   or: {
     // Navigation & Shell
@@ -544,6 +582,25 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     "fin.patient_responsibility": "ରୋଗୀଙ୍କ ପ୍ରଦେୟ ରାଶି",
     "fin.refund": "ଫେରସ୍ତ (ରିଫଣ୍ଡ)",
     "fin.adjustment": "ସଂଶୋଧନ (ଏଡଜଷ୍ଟମେଣ୍ଟ)",
+
+    // Contextual Record Sharing & Emergency Access
+    "sharing.share_previous_records": "ପୂର୍ବ ରେକର୍ଡ ଅଂଶୀଦାର କରନ୍ତୁ",
+    "sharing.dont_share": "ଅଂଶୀଦାର କରନ୍ତୁ ନାହିଁ",
+    "sharing.confirm_share": "ନିଶ୍ଚିତ କରନ୍ତୁ ଏବଂ ଅଂଶୀଦାର କରନ୍ତୁ",
+    "sharing.records_shared_title": "ପୂର୍ବ ରେକର୍ଡ ଅଂଶୀଦାର ହୋଇଛି",
+    "sharing.records_shared_desc": "ଏହି ପରାମର୍ଶ ପାଇଁ ଆପଣଙ୍କ ପୂର୍ବ ମେଡିକାଲ୍ ରେକର୍ଡ ଡାକ୍ତରଙ୍କ ସହିତ ଅଂଶୀଦାର ହୋଇଛି।",
+    "sharing.records_not_shared_title": "ପୂର୍ବ ରେକର୍ଡ ଅଂଶୀଦାର ହୋଇନାହିଁ",
+    "sharing.records_not_shared_desc": "ପୂର୍ବ ରେକର୍ଡ ଅଂଶୀଦାର ହୋଇନାହିଁ। ଆପଣ ସ୍ୱାଭାବିକ ଭାବରେ ପରାମର୍ଶ ଜାରି ରଖିପାରିବେ।",
+    "sharing.what_will_be_shared": "କ'ଣ ଅଂଶୀଦାର ହେବ?",
+    "sharing.scope_consultations": "ପୂର୍ବ ପରାମର୍ଶ ଏବଂ ରୋଗ ନିର୍ଣ୍ଣୟ",
+    "sharing.scope_prescriptions": "ଔଷଧ ପ୍ରେସକ୍ରିପସନ୍",
+    "sharing.scope_lab_reports": "ଲ୍ୟାବ୍ ଏବଂ ପରୀକ୍ଷା ରିପୋର୍ଟ",
+    "sharing.scope_clinical_history": "ପ୍ରାସଙ୍ଗିକ ଚିକିତ୍ସା ଇତିହାସ",
+    "sharing.scope_excluded": "ଆର୍ଥିକ ଏବଂ ପ୍ରଶାସନିକ ରେକର୍ଡ ଅଂଶୀଦାର କରାଯାଏ ନାହିଁ",
+    "sharing.request_patient_decision": "ରୋଗୀଙ୍କ ନିଷ୍ପତ୍ତି ପାଇଁ ଅନୁରୋଧ କରନ୍ତୁ",
+    "sharing.emergency_access_title": "ଜରୁରୀକାଳୀନ ଚିକିତ୍ସା ପ୍ରବେଶ",
+    "sharing.emergency_access_desc": "ଜରୁରୀକାଳୀନ ଚିକିତ୍ସା ପାଇଁ ଅନୁମୋଦିତ ପ୍ରବେଶ।",
+    "sharing.access_history_title": "ରେକର୍ଡ ପ୍ରବେଶ ଇତିହାସ",
   },
 };
 

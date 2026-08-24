@@ -78,8 +78,13 @@ import { FollowUpService } from "@/lib/services/followup-service";
 import { ClinicalContinuityService } from "@/lib/services/clinical-continuity-service";
 import { createBloodRequest, BloodGroup, BloodComponentType } from "@/lib/data/blood-centre-store";
 import { requestAdmission, AdmissionType } from "@/lib/data/admission-store";
-import { hasContextualAccess, grantContextualConsultationSharing, triggerBreakGlassEmergencyAccess } from "@/lib/data/consent-store";
-import { Droplet, BedDouble, AlertOctagon } from "lucide-react";
+import {
+  hasContextualAccess,
+  grantContextualConsultationSharing,
+  triggerBreakGlassEmergencyAccess,
+  requestConsultationSharing,
+} from "@/lib/data/consent-store";
+import { Droplet, BedDouble, AlertOctagon, Lock } from "lucide-react";
 
 export default function DedicatedConsultationWorkspacePage() {
   const params = useParams();
@@ -91,6 +96,7 @@ export default function DedicatedConsultationWorkspacePage() {
   const [contextData, setContextData] = useState<ConsultationContext | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [requestDecisionStatus, setRequestDecisionStatus] = useState<string | null>(null);
 
   // Timeline & Continuity Modal State
   const [patientTimeline, setPatientTimeline] = useState<TimelineEvent[]>([]);
@@ -281,15 +287,41 @@ export default function DedicatedConsultationWorkspacePage() {
     const orders = PrescriptionOrderService.getEncounterMedicalOrders(encounterId, user);
     setEncounterOrders(orders);
 
-    // Load Patient Clinical Continuity Timeline
-    const timeline = ClinicalContinuityService.getPatientTimeline(ctx.encounter.patient_id, user as any);
-    setPatientTimeline(timeline);
+    // Load Patient Clinical Continuity Timeline (Disclose previous records only if shared)
+    const allTimeline = ClinicalContinuityService.getPatientTimeline(ctx.encounter.patient_id, user as any);
+    if (ctx.records_shared) {
+      setPatientTimeline(allTimeline);
+    } else {
+      setPatientTimeline(
+        allTimeline.filter((e) => e.reference_id === encounterId || e.source_id === encounterId)
+      );
+    }
 
     setIsLoading(false);
   };
 
+  const handleRequestPatientDecision = () => {
+    if (!contextData || !user) return;
+    requestConsultationSharing({
+      encounterId: contextData.encounter.id,
+      doctorId: user.identifier || user.id,
+      doctorName: user.fullName || "Attending Physician",
+      patientId: contextData.encounter.patient_id,
+      organizationId: contextData.encounter.organization_id,
+    });
+    setRequestDecisionStatus("Access decision request sent to patient.");
+    setTimeout(() => setRequestDecisionStatus(null), 5000);
+  };
+
   useEffect(() => {
     loadContext();
+    const handleUpdate = () => loadContext();
+    window.addEventListener("medora-sharing-decision-updated", handleUpdate);
+    window.addEventListener("medora-consent-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-sharing-decision-updated", handleUpdate);
+      window.removeEventListener("medora-consent-updated", handleUpdate);
+    };
   }, [encounterId, user]);
 
   // Elapsed Timer Calculation
@@ -2101,18 +2133,27 @@ export default function DedicatedConsultationWorkspacePage() {
             {/* Previous Consultations & Clinical Continuity */}
             <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <History className="h-4 w-4 text-indigo-600" />
-                  Clinical Continuity ({patientTimeline.length} Events)
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFullTimelineModal(true)}
-                  className="text-xs h-7 text-indigo-700 border-indigo-200 hover:bg-indigo-50 font-semibold"
-                >
-                  Full Timeline
-                </Button>
+                <div>
+                  <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <History className="h-4 w-4 text-indigo-600" />
+                    Previous Records & Continuity
+                  </CardTitle>
+                  <CardDescription className="text-[11px] text-slate-500">
+                    {contextData?.records_shared
+                      ? "✓ Shared by patient for this consultation"
+                      : "Access not granted by patient for this session"}
+                  </CardDescription>
+                </div>
+                {contextData?.records_shared && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFullTimelineModal(true)}
+                    className="text-xs h-7 text-indigo-700 border-indigo-200 hover:bg-indigo-50 font-semibold"
+                  >
+                    Full Timeline
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="p-4 pt-1 space-y-2">
                 {/* Active Encounter Highlight */}
@@ -2130,35 +2171,65 @@ export default function DedicatedConsultationWorkspacePage() {
                   <p className="text-[10px] text-teal-600 italic">Started: {new Date(encounter.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
                 </div>
 
-                {/* Recent Historical Timeline Events */}
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recent Care Trajectory</span>
-                  {patientTimeline
-                    .filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id)
-                    .slice(0, 4)
-                    .map((event) => (
-                      <div
-                        key={event.id}
-                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between font-bold text-slate-800">
-                          <span className="text-[11px] truncate max-w-[170px]">{event.title}</span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            {new Date(event.occurred_at).toLocaleDateString()}
-                          </span>
+                {/* Case 1: Records Shared by Patient */}
+                {contextData?.records_shared ? (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Shared Care Trajectory</span>
+                    {patientTimeline
+                      .filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id)
+                      .slice(0, 4)
+                      .map((event) => (
+                        <div
+                          key={event.id}
+                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between font-bold text-slate-800">
+                            <span className="text-[11px] truncate max-w-[170px]">{event.title}</span>
+                            <span className="text-[10px] font-mono text-slate-500">
+                              {new Date(event.occurred_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-600 line-clamp-1">{event.summary}</p>
+                          <div className="flex items-center justify-between text-[9px] text-slate-400">
+                            <span>{event.professional_name || event.organization_name}</span>
+                            <Badge variant="outline" className="text-[8px] px-1 py-0">{event.status}</Badge>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-slate-600 line-clamp-1">{event.summary}</p>
-                        <div className="flex items-center justify-between text-[9px] text-slate-400">
-                          <span>{event.professional_name || event.organization_name}</span>
-                          <Badge variant="outline" className="text-[8px] px-1 py-0">{event.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
 
-                  {patientTimeline.length <= 1 && (
-                    <p className="text-xs text-slate-400 italic py-2 text-center">No prior medical records on file.</p>
-                  )}
-                </div>
+                    {patientTimeline.filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id).length === 0 && (
+                      <p className="text-xs text-slate-400 italic py-2 text-center">No prior medical records on file.</p>
+                    )}
+                  </div>
+                ) : (
+                  /* Case 2: Records NOT Shared */
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5 text-center my-1">
+                    <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-slate-800">Patient has not shared previous medical records for this consultation.</p>
+                      <p className="text-[10px] text-slate-500">
+                        Current consultation documentation and prescriptions continue normally.
+                      </p>
+                    </div>
+                    <div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleRequestPatientDecision}
+                        className="text-xs font-bold rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 h-8"
+                      >
+                        <Share2 className="h-3 w-3 mr-1" />
+                        Request Patient Decision
+                      </Button>
+                    </div>
+                    {requestDecisionStatus && (
+                      <p className="text-[11px] text-emerald-700 font-bold animate-pulse">{requestDecisionStatus}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Break-Glass Emergency Override Button */}
                 <div className="pt-3 border-t border-slate-100">
@@ -2176,36 +2247,38 @@ export default function DedicatedConsultationWorkspacePage() {
               </CardContent>
             </Card>
 
-            {/* PREVIOUS VISITS WITH YOU (Same-Doctor History) */}
-            <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4 text-teal-600" />
-                  Previous Visits With You
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Past consultation encounters authored by {user?.fullName || "you"}.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-1 space-y-2 text-xs">
-                {patientTimeline
-                  .filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name))
-                  .slice(0, 3)
-                  .map((visit) => (
-                    <div key={visit.id} className="p-2.5 rounded-xl bg-teal-50/40 border border-teal-200 space-y-1">
-                      <div className="flex items-center justify-between font-bold text-slate-900">
-                        <span className="text-[11px] truncate">{visit.title}</span>
-                        <span className="text-[10px] font-mono text-slate-500">{new Date(visit.occurred_at).toLocaleDateString()}</span>
+            {/* PREVIOUS VISITS WITH YOU (Same-Doctor History - only if records shared) */}
+            {contextData?.records_shared && (
+              <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4 text-teal-600" />
+                    Previous Visits With You
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500">
+                    Past consultation encounters authored by {user?.fullName || "you"}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-1 space-y-2 text-xs">
+                  {patientTimeline
+                    .filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name))
+                    .slice(0, 3)
+                    .map((visit) => (
+                      <div key={visit.id} className="p-2.5 rounded-xl bg-teal-50/40 border border-teal-200 space-y-1">
+                        <div className="flex items-center justify-between font-bold text-slate-900">
+                          <span className="text-[11px] truncate">{visit.title}</span>
+                          <span className="text-[10px] font-mono text-slate-500">{new Date(visit.occurred_at).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 line-clamp-2">{visit.summary}</p>
                       </div>
-                      <p className="text-[10px] text-slate-600 line-clamp-2">{visit.summary}</p>
-                    </div>
-                  ))}
+                    ))}
 
-                {patientTimeline.filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name)).length === 0 && (
-                  <p className="text-xs text-slate-400 italic py-2 text-center">No previous consultations with you on record.</p>
-                )}
-              </CardContent>
-            </Card>
+                  {patientTimeline.filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name)).length === 0 && (
+                    <p className="text-xs text-slate-400 italic py-2 text-center">No previous consultations with you on record.</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
