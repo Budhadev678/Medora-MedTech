@@ -81,7 +81,7 @@ export const SEEDED_ENCOUNTERS: HealthcareEncounter[] = [
     created_by_role: "doctor",
     created_at: "2026-08-15T16:00:00Z",
     updated_at: "2026-08-15T16:25:00Z",
-    consent_id: "CNS-1001",
+    consent_id: "CNS-1002",
   },
   // 3. Encounter 3: Priya Sharma at City Hospital (Active Clinical Encounter)
   {
@@ -106,6 +106,8 @@ export const SEEDED_ENCOUNTERS: HealthcareEncounter[] = [
     source_type: "DIRECT_CONSULTATION",
     reason_for_visit: "Persistent migraine, palpitations and dizziness",
     location: "Room 204, OPD Block A",
+    appointment_id: "apt-1002",
+    queue_entry_id: "q-1003",
     started_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
     created_by: "DOC-1001",
     created_by_role: "doctor",

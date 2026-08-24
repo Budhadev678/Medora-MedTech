@@ -84,6 +84,7 @@ const createSeededQueueEntries = (): QueueEntry[] => {
       id: "q-1003",
       queue_no: "QUE-1003",
       appointment_id: "apt-1002",
+      encounter_id: "ENC-1003",
       patient_id: "PAT-1002",
       patient_name: "Priya Sharma",
       patient_phone: "+91 98765 00002",

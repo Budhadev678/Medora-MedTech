@@ -149,6 +149,10 @@ export class ConsultationService {
         (e.patient_id === entry.patient_id && e.provider_id === entry.doctor_id && e.status === "ACTIVE")
     );
 
+    if (existingEncounter && (existingEncounter.status === "COMPLETED" || existingEncounter.status === "FINALIZED")) {
+      existingEncounter = undefined;
+    }
+
     let encounter: HealthcareEncounter;
 
     if (existingEncounter) {

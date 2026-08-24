@@ -694,6 +694,10 @@ class AppointmentRepository {
       updated_at: new Date().toISOString(),
     };
     this.appointments.set(appointment.id, updated);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("medora-appointments-updated"));
+      window.dispatchEvent(new CustomEvent("medora-appointment-updated", { detail: updated }));
+    }
     return updated;
   }
 

@@ -2,29 +2,30 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   Users, 
   Stethoscope, 
   FileText, 
   Clock, 
   CheckCircle2, 
-  AlertTriangle,
-  Play,
-  Pause,
-  StopCircle,
-  ArrowRight,
-  X,
-  Volume2,
-  RotateCcw,
-  UserCheck,
-  UserX,
-  AlertOctagon,
-  RefreshCw,
-  HeartPulse,
-  ShieldAlert,
-  Radio,
-  Activity,
-  Zap,
+  AlertTriangle, 
+  Play, 
+  Pause, 
+  StopCircle, 
+  ArrowRight, 
+  X, 
+  Volume2, 
+  RotateCcw, 
+  UserCheck, 
+  UserX, 
+  AlertOctagon, 
+  RefreshCw, 
+  HeartPulse, 
+  ShieldAlert, 
+  Radio, 
+  Activity, 
+  Zap, 
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,9 +45,12 @@ import { QueueManagementService } from "@/lib/services/queue-management-service"
 import { WaitingTimeEstimationService } from "@/lib/services/waiting-time-service";
 import { getEmergenciesForFacility, PatientEmergencyCase, acknowledgeEmergency, startPreparation } from "@/lib/data/emergency-store";
 import { triggerBreakGlassEmergencyAccess } from "@/lib/data/consent-store";
+import { getAllEncounters } from "@/lib/data/encounter-store";
+import { ConsultationService } from "@/lib/services/consultation-service";
 import { DoctorQueueSummary, QueueEntry, DoctorOperationalQueueStatus } from "@/types/database.types";
 
 export default function DoctorWorkspacePage() {
+  const router = useRouter();
   const { user } = useAuth();
   const doctorId = user?.identifier || user?.id || "DOC-1001";
   
@@ -228,6 +232,56 @@ export default function DoctorWorkspacePage() {
       }
     } catch (err: any) {
       setActionMessage({ type: "error", text: err.message || "Failed to mark no-show." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Action: Open Workbench dynamically bound to patient encounter
+  const handleOpenWorkbenchForPatient = async (entry: QueueEntry) => {
+    if (!user || isProcessing) return;
+    setIsProcessing(true);
+    setActionMessage(null);
+    try {
+      // 1. Check if encounter already exists for this entry or patient
+      const allEncounters = getAllEncounters();
+      let match = allEncounters.find(
+        (e) =>
+          e.queue_entry_id === entry.id ||
+          (entry.appointment_id && e.appointment_id?.toLowerCase() === entry.appointment_id?.toLowerCase()) ||
+          (e.patient_id === entry.patient_id && e.provider_id === doctorId && (e.status === "ACTIVE" || entry.status === "IN_CONSULTATION"))
+      );
+
+      if (match) {
+        // Sync queue entry if needed
+        if (entry.status !== "IN_CONSULTATION") {
+          QueueStore.saveQueueEntry({
+            ...entry,
+            status: "IN_CONSULTATION",
+            encounter_id: match.id,
+            consultation_started_at: new Date().toISOString(),
+          });
+        }
+        router.push(`/doctor/consultations/${match.id}`);
+        return;
+      }
+
+      // 2. Start consultation from queue entry to create/link canonical encounter
+      const startRes = await ConsultationService.startConsultationFromQueue(entry.id, user);
+      if (startRes.success && startRes.encounter) {
+        router.push(`/doctor/consultations/${startRes.encounter.id}`);
+        return;
+      }
+
+      // 3. Fallback to any encounter for this patient
+      match = allEncounters.find((e) => e.patient_id === entry.patient_id);
+      if (match) {
+        router.push(`/doctor/consultations/${match.id}`);
+      } else {
+        setActionMessage({ type: "error", text: startRes.message || "Failed to initialize consultation workbench." });
+      }
+    } catch (err: any) {
+      setActionMessage({ type: "error", text: err.message || "Failed to open clinical workbench." });
     } finally {
       setIsProcessing(false);
     }
@@ -532,13 +586,15 @@ export default function DoctorWorkspacePage() {
                     {/* Operational Actions for Current Patient */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                       <div className="flex items-center gap-2">
-                        <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
-                          <Button className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-9 rounded-xl gap-1.5 shadow-xs">
-                            <Stethoscope className="h-4 w-4" />
-                            <span>Open Clinical Workbench</span>
-                            <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                          </Button>
-                        </Link>
+                        <Button
+                          onClick={() => handleOpenWorkbenchForPatient(currentPatient)}
+                          disabled={isProcessing}
+                          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-9 rounded-xl gap-1.5 shadow-xs"
+                        >
+                          <Stethoscope className="h-4 w-4" />
+                          <span>Open Clinical Workbench</span>
+                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        </Button>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -735,12 +791,15 @@ export default function DoctorWorkspacePage() {
                         <Badge className="bg-teal-700 text-white text-[10px]">IN CONSULTATION</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/doctor/consultations/${currentPatient.encounter_id || 'ENC-1001'}`}>
-                          <Button size="sm" className="h-7 text-xs bg-teal-700 text-white font-bold rounded-lg gap-1">
-                            <span>Open</span>
-                            <ArrowRight className="h-3 w-3" />
-                          </Button>
-                        </Link>
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenWorkbenchForPatient(currentPatient)}
+                          disabled={isProcessing}
+                          className="h-7 text-xs bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-lg gap-1 shadow-2xs"
+                        >
+                          <span>Open</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )}

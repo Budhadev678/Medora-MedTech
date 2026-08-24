@@ -76,9 +76,11 @@ export default function AppointmentDetailPage() {
     loadData();
     const handleUpdate = () => loadData();
     window.addEventListener("medora-appointment-updated", handleUpdate);
+    window.addEventListener("medora-appointments-updated", handleUpdate);
     window.addEventListener("medora-queue-updated", handleUpdate);
     return () => {
       window.removeEventListener("medora-appointment-updated", handleUpdate);
+      window.removeEventListener("medora-appointments-updated", handleUpdate);
       window.removeEventListener("medora-queue-updated", handleUpdate);
     };
   }, [appointmentId]);
