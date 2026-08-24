@@ -76,6 +76,10 @@ import { LabOrderService } from "@/lib/services/lab-order-service";
 import { ReferralService } from "@/lib/services/referral-service";
 import { FollowUpService } from "@/lib/services/followup-service";
 import { ClinicalContinuityService } from "@/lib/services/clinical-continuity-service";
+import { createBloodRequest, BloodGroup, BloodComponentType } from "@/lib/data/blood-centre-store";
+import { requestAdmission, AdmissionType } from "@/lib/data/admission-store";
+import { hasContextualAccess, grantContextualConsultationSharing, triggerBreakGlassEmergencyAccess } from "@/lib/data/consent-store";
+import { Droplet, BedDouble, AlertOctagon } from "lucide-react";
 
 export default function DedicatedConsultationWorkspacePage() {
   const params = useParams();
@@ -184,7 +188,7 @@ export default function DedicatedConsultationWorkspacePage() {
   // ============================================================
   // PHASE C.2: MEDICAL ORDERS STATE
   // ============================================================
-  const [activeOrderTab, setActiveOrderTab] = useState<"lab" | "imaging" | "referral">("lab");
+  const [activeOrderTab, setActiveOrderTab] = useState<"lab" | "imaging" | "referral" | "blood" | "admission">("lab");
   const [encounterOrders, setEncounterOrders] = useState<HealthcareMedicalOrder[]>([]);
 
   // Lab Order State
@@ -214,6 +218,25 @@ export default function DedicatedConsultationWorkspacePage() {
   const [referralReason, setReferralReason] = useState("");
   const [referralSummary, setReferralSummary] = useState("");
   const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
+
+  // Blood Order State
+  const [bloodGroup, setBloodGroup] = useState<BloodGroup>("O+");
+  const [bloodComponent, setBloodComponent] = useState<BloodComponentType>("PACKED_RBC");
+  const [bloodUnits, setBloodUnits] = useState<number>(1);
+  const [bloodPriority, setBloodPriority] = useState<"NORMAL" | "URGENT" | "EMERGENCY">("URGENT");
+  const [bloodIndication, setBloodIndication] = useState("");
+  const [isSubmittingBlood, setIsSubmittingBlood] = useState(false);
+
+  // Inpatient Admission State
+  const [admissionDept, setAdmissionDept] = useState("General Medicine");
+  const [admissionType, setAdmissionType] = useState<AdmissionType>("PLANNED");
+  const [admissionReason, setAdmissionReason] = useState("");
+  const [isSubmittingAdmission, setIsSubmittingAdmission] = useState(false);
+
+  // Break-Glass State
+  const [showBreakGlassModal, setShowBreakGlassModal] = useState(false);
+  const [breakGlassReason, setBreakGlassReason] = useState("");
+  const [isSubmittingBreakGlass, setIsSubmittingBreakGlass] = useState(false);
 
   // Load Context & Orders
   const loadContext = () => {
@@ -598,6 +621,99 @@ export default function DedicatedConsultationWorkspacePage() {
       }
     } finally {
       setIsSubmittingReferral(false);
+    }
+  };
+
+  // Submit Hospital Blood Centre Order
+  const handleSubmitBloodOrder = async () => {
+    if (!contextData || !user) return;
+    setIsSubmittingBlood(true);
+    try {
+      const res = createBloodRequest({
+        hospitalId: contextData.encounter.organization_id || "FAC-1001",
+        patientId: contextData.encounter.patient_id,
+        patientName: contextData.encounter.patient_name || "Patient",
+        doctorId: user.identifier || user.id,
+        doctorName: user.fullName,
+        encounterId,
+        bloodGroup,
+        componentType: bloodComponent,
+        unitsRequested: bloodUnits,
+        priority: bloodPriority,
+        clinicalIndication: bloodIndication.trim() || chiefComplaint || "Clinical transfusion requirement",
+        actorId: user.identifier || user.id,
+        actorName: user.fullName,
+        actorRole: user.role,
+      });
+
+      if (res.success && res.request) {
+        alert(`Blood request ${res.request.request_number} submitted to Hospital Blood Centre.`);
+        setBloodIndication("");
+      } else {
+        alert(res.error || "Failed to submit blood request.");
+      }
+    } finally {
+      setIsSubmittingBlood(false);
+    }
+  };
+
+  // Submit Inpatient Admission Request
+  const handleSubmitAdmissionOrder = async () => {
+    if (!contextData || !user) return;
+    setIsSubmittingAdmission(true);
+    try {
+      const res = requestAdmission({
+        patientId: contextData.encounter.patient_id,
+        patientName: contextData.encounter.patient_name || "Patient",
+        encounterId,
+        doctorId: user.identifier || user.id,
+        doctorName: user.fullName,
+        departmentName: admissionDept,
+        facilityId: contextData.encounter.organization_id || "FAC-1001",
+        facilityName: contextData.encounter.organization_name || "City Hospital",
+        admissionType,
+        reason: admissionReason.trim() || chiefComplaint || "Inpatient clinical monitoring and treatment",
+        actorId: user.identifier || user.id,
+        actorName: user.fullName,
+        actorRole: user.role,
+      });
+
+      if (res.success && res.admission) {
+        alert(`Inpatient admission request ${res.admission.id} created for ${admissionDept}.`);
+        setAdmissionReason("");
+      } else {
+        alert(res.error || "Failed to request admission.");
+      }
+    } finally {
+      setIsSubmittingAdmission(false);
+    }
+  };
+
+  // Execute Break-Glass Emergency Medical Record Access
+  const handleExecuteBreakGlass = () => {
+    if (!contextData || !user || !breakGlassReason.trim()) return;
+    setIsSubmittingBreakGlass(true);
+    try {
+      const res = triggerBreakGlassEmergencyAccess({
+        patientId: contextData.encounter.patient_id,
+        patientName: contextData.encounter.patient_name,
+        actorId: user.identifier || user.id,
+        actorName: user.fullName,
+        actorRole: user.role,
+        organizationId: contextData.encounter.organization_id || "FAC-1001",
+        organizationName: contextData.encounter.organization_name || "City Hospital",
+        justificationReason: breakGlassReason.trim(),
+        emergencyCaseId: contextData.encounter.id,
+      });
+
+      if (res.success) {
+        alert("Break-glass emergency medical record access granted and logged to immutable audit ledger.");
+        setShowBreakGlassModal(false);
+        setBreakGlassReason("");
+        loadContext();
+      }
+    } finally {
+      setIsSubmittingBreakGlass(false);
     }
   };
 
@@ -1512,20 +1628,20 @@ export default function DedicatedConsultationWorkspacePage() {
               <CardContent className="p-4 space-y-4">
                 
                 {/* Order Type Tabs */}
-                <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold text-slate-600">
+                <div className="flex flex-wrap rounded-xl bg-slate-100 p-1 text-xs font-semibold text-slate-600 gap-1">
                   <button
                     type="button"
                     onClick={() => setActiveOrderTab("lab")}
-                    className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    className={`flex-1 min-w-[120px] py-1.5 px-2 rounded-lg transition-all text-center ${
                       activeOrderTab === "lab" ? "bg-white text-purple-800 font-bold shadow-xs" : "hover:text-slate-900"
                     }`}
                   >
-                    🧪 Diagnostic Lab Orders
+                    🧪 Diagnostic Lab
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveOrderTab("imaging")}
-                    className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    className={`flex-1 min-w-[120px] py-1.5 px-2 rounded-lg transition-all text-center ${
                       activeOrderTab === "imaging" ? "bg-white text-purple-800 font-bold shadow-xs" : "hover:text-slate-900"
                     }`}
                   >
@@ -1534,11 +1650,29 @@ export default function DedicatedConsultationWorkspacePage() {
                   <button
                     type="button"
                     onClick={() => setActiveOrderTab("referral")}
-                    className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    className={`flex-1 min-w-[120px] py-1.5 px-2 rounded-lg transition-all text-center ${
                       activeOrderTab === "referral" ? "bg-white text-purple-800 font-bold shadow-xs" : "hover:text-slate-900"
                     }`}
                   >
                     🏥 Specialty Referral
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrderTab("blood")}
+                    className={`flex-1 min-w-[120px] py-1.5 px-2 rounded-lg transition-all text-center ${
+                      activeOrderTab === "blood" ? "bg-white text-rose-800 font-bold shadow-xs" : "hover:text-slate-900"
+                    }`}
+                  >
+                    🩸 Blood Centre
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrderTab("admission")}
+                    className={`flex-1 min-w-[120px] py-1.5 px-2 rounded-lg transition-all text-center ${
+                      activeOrderTab === "admission" ? "bg-white text-teal-800 font-bold shadow-xs" : "hover:text-slate-900"
+                    }`}
+                  >
+                    🛏️ Inpatient Admission
                   </button>
                 </div>
 
@@ -1748,6 +1882,151 @@ export default function DedicatedConsultationWorkspacePage() {
                   </div>
                 )}
 
+                {/* Sub-Tab 4: Hospital Blood Centre Order */}
+                {activeOrderTab === "blood" && (
+                  <div className="space-y-3 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-700">Blood Group</Label>
+                        <select
+                          value={bloodGroup}
+                          onChange={(e) => setBloodGroup(e.target.value as any)}
+                          className="w-full h-8 mt-1 rounded-lg border border-input bg-white px-2 text-xs font-bold font-mono"
+                        >
+                          <option value="A+">A+ (A Rh Positive)</option>
+                          <option value="A-">A- (A Rh Negative)</option>
+                          <option value="B+">B+ (B Rh Positive)</option>
+                          <option value="B-">B- (B Rh Negative)</option>
+                          <option value="AB+">AB+ (AB Rh Positive)</option>
+                          <option value="AB-">AB- (AB Rh Negative)</option>
+                          <option value="O+">O+ (O Rh Positive)</option>
+                          <option value="O-">O- (O Rh Negative)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-700">Component</Label>
+                        <select
+                          value={bloodComponent}
+                          onChange={(e) => setBloodComponent(e.target.value as any)}
+                          className="w-full h-8 mt-1 rounded-lg border border-input bg-white px-2 text-xs font-medium"
+                        >
+                          <option value="PACKED_RBC">PACKED_RBC (Packed Red Cells)</option>
+                          <option value="WHOLE_BLOOD">WHOLE_BLOOD</option>
+                          <option value="FRESH_FROZEN_PLASMA">FRESH_FROZEN_PLASMA</option>
+                          <option value="PLATELETS">PLATELETS</option>
+                          <option value="CRYOPRECIPITATE">CRYOPRECIPITATE</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-700">Units Requested & Priority</Label>
+                        <div className="grid grid-cols-2 gap-1 mt-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={6}
+                            value={bloodUnits}
+                            onChange={(e) => setBloodUnits(Math.max(1, Number(e.target.value)))}
+                            className="w-full h-8 rounded-lg border border-input px-2 text-xs font-mono font-bold"
+                          />
+                          <select
+                            value={bloodPriority}
+                            onChange={(e) => setBloodPriority(e.target.value as any)}
+                            className="w-full h-8 rounded-lg border border-input bg-white px-1 text-[11px] font-bold"
+                          >
+                            <option value="NORMAL">Normal</option>
+                            <option value="URGENT">Urgent</option>
+                            <option value="EMERGENCY">Emergency</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-700">Clinical Indication & Transfusion Goal *</Label>
+                      <Input
+                        placeholder="e.g. Hemoglobin 6.8 g/dL, active surgical prep / trauma standby..."
+                        value={bloodIndication}
+                        onChange={(e) => setBloodIndication(e.target.value)}
+                        className="text-xs h-8 mt-1 rounded-lg"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end pt-1">
+                      <Button
+                        type="button"
+                        onClick={handleSubmitBloodOrder}
+                        size="sm"
+                        className="text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs"
+                        disabled={isSubmittingBlood}
+                      >
+                        <Droplet className="h-3.5 w-3.5 mr-1" />
+                        {isSubmittingBlood ? "Requesting..." : `Request ${bloodUnits}x ${bloodGroup} Unit(s)`}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-Tab 5: Inpatient Admission Request */}
+                {activeOrderTab === "admission" && (
+                  <div className="space-y-3 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-700">Target Department / Specialty Ward *</Label>
+                        <select
+                          value={admissionDept}
+                          onChange={(e) => setAdmissionDept(e.target.value)}
+                          className="w-full h-8 mt-1 rounded-lg border border-input bg-white px-2 text-xs font-medium"
+                        >
+                          <option value="General Medicine">General Medicine Ward</option>
+                          <option value="Cardiology">Cardiology ICU / Step-Down</option>
+                          <option value="Orthopedics">Orthopedics Surgical Unit</option>
+                          <option value="Pediatrics">Pediatrics Care Ward</option>
+                          <option value="Intensive Care Unit (ICU)">Intensive Care Unit (ICU)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-700">Admission Priority *</Label>
+                        <select
+                          value={admissionType}
+                          onChange={(e) => setAdmissionType(e.target.value as any)}
+                          className="w-full h-8 mt-1 rounded-lg border border-input bg-white px-2 text-xs font-medium"
+                        >
+                          <option value="PLANNED">Planned (Elective Inpatient)</option>
+                          <option value="EMERGENCY">Emergency (Immediate Bed Requisition)</option>
+                          <option value="DAY_CARE">Day-Care Procedure</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-700">Reason for Admission & Clinical Instructions *</Label>
+                      <Textarea
+                        rows={2}
+                        placeholder="e.g. Inpatient IV antibiotic management, telemetry monitoring, pre-op cardiac catheterization..."
+                        value={admissionReason}
+                        onChange={(e) => setAdmissionReason(e.target.value)}
+                        className="text-xs mt-1 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end pt-1">
+                      <Button
+                        type="button"
+                        onClick={handleSubmitAdmissionOrder}
+                        size="sm"
+                        className="text-xs font-bold rounded-xl bg-teal-700 hover:bg-teal-800 text-white shadow-xs"
+                        disabled={!admissionReason.trim() || isSubmittingAdmission}
+                      >
+                        <BedDouble className="h-3.5 w-3.5 mr-1" />
+                        {isSubmittingAdmission ? "Submitting..." : "Initiate Inpatient Admission Request"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Display Existing Medical Orders for this Encounter */}
                 {encounterOrders.length > 0 && (
                   <div className="pt-3 border-t border-slate-200 space-y-2">
@@ -1880,14 +2159,123 @@ export default function DedicatedConsultationWorkspacePage() {
                     <p className="text-xs text-slate-400 italic py-2 text-center">No prior medical records on file.</p>
                   )}
                 </div>
+
+                {/* Break-Glass Emergency Override Button */}
+                <div className="pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowBreakGlassModal(true)}
+                    size="sm"
+                    className="w-full text-xs font-bold rounded-xl border-amber-300 bg-amber-50/50 hover:bg-amber-100 text-amber-900 gap-1.5 shadow-2xs"
+                  >
+                    <AlertOctagon className="h-4 w-4 text-amber-600" />
+                    Emergency Break-Glass Override
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* PREVIOUS VISITS WITH YOU (Same-Doctor History) */}
+            <Card className="bg-white rounded-2xl shadow-xs border-slate-200">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4 text-teal-600" />
+                  Previous Visits With You
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500">
+                  Past consultation encounters authored by {user?.fullName || "you"}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 pt-1 space-y-2 text-xs">
+                {patientTimeline
+                  .filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name))
+                  .slice(0, 3)
+                  .map((visit) => (
+                    <div key={visit.id} className="p-2.5 rounded-xl bg-teal-50/40 border border-teal-200 space-y-1">
+                      <div className="flex items-center justify-between font-bold text-slate-900">
+                        <span className="text-[11px] truncate">{visit.title}</span>
+                        <span className="text-[10px] font-mono text-slate-500">{new Date(visit.occurred_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-600 line-clamp-2">{visit.summary}</p>
+                    </div>
+                  ))}
+
+                {patientTimeline.filter((e) => e.reference_id !== encounter.id && e.source_id !== encounter.id && (e.professional_id === user?.identifier || e.professional_id === user?.id || e.facility_name === encounter.organization_name)).length === 0 && (
+                  <p className="text-xs text-slate-400 italic py-2 text-center">No previous consultations with you on record.</p>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
 
         {/* ============================================================ */}
-        {/* 3. MODALS (PREVIEW, CONFIRMATION, AMENDMENT, FULL TIMELINE) */}
+        {/* 3. MODALS (PREVIEW, CONFIRMATION, AMENDMENT, FULL TIMELINE, BREAK-GLASS) */}
         {/* ============================================================ */}
+
+        {/* Break-Glass Emergency Modal */}
+        {showBreakGlassModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in-50">
+            <div className="max-w-md w-full p-6 space-y-4 bg-white rounded-3xl shadow-2xl border border-amber-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-9 w-9 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800">
+                    <AlertOctagon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900">Break-Glass Emergency Access</h2>
+                    <p className="text-xs text-slate-500">Immediate access to critical records with mandatory audit</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBreakGlassModal(false)}
+                  className="rounded-full p-1 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] leading-relaxed">
+                  <strong>⚠️ Legal & Audit Notice:</strong> Break-glass access unlocks the patient's longitudinal diagnostic history without explicit consultation consent. This action is permanently cryptographically stamped in the institutional audit ledger.
+                </div>
+
+                <div>
+                  <Label className="text-[11px] font-bold text-slate-700">Mandatory Clinical Justification *</Label>
+                  <Textarea
+                    rows={3}
+                    placeholder="e.g. Critical hemodynamic instability, unresponsive patient in trauma bay requiring immediate allergy and history review..."
+                    value={breakGlassReason}
+                    onChange={(e) => setBreakGlassReason(e.target.value)}
+                    className="text-xs mt-1 rounded-xl"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowBreakGlassModal(false)}
+                    className="text-xs rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleExecuteBreakGlass}
+                    disabled={!breakGlassReason.trim() || isSubmittingBreakGlass}
+                    size="sm"
+                    className="text-xs font-bold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+                  >
+                    {isSubmittingBreakGlass ? "Verifying..." : "Confirm & Unlock Records"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Full Patient Clinical Timeline Modal */}
         {showFullTimelineModal && (
