@@ -13,10 +13,12 @@ import {
   Sparkles
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 import { Badge } from "@/components/ui/badge";
 
 export function UserMenu() {
   const { user, role, logout } = useAuth();
+  const { language, changeLanguage, languages } = useLocalization();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!user) {
@@ -98,6 +100,31 @@ export function UserMenu() {
                 <Settings className="h-4 w-4 text-slate-400" />
                 <span>Account & Preferences</span>
               </Link>
+            </div>
+
+            {/* Language Switcher in User Menu */}
+            <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 my-1">
+              <div className="flex items-center justify-between mb-1.5 px-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                  <Globe className="h-3 w-3 text-teal-600" /> Language / ଭାଷା
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {languages.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => changeLanguage(l.code)}
+                    className={`py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      language === l.code
+                        ? "bg-teal-700 text-white shadow-xs"
+                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {l.nativeName}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Sign Out Action */}

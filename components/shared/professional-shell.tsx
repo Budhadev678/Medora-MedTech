@@ -25,6 +25,7 @@ import { DoctorContextHeader } from "@/components/doctor/doctor-context-header";
 import { DoctorBreadcrumbs } from "@/components/doctor/doctor-breadcrumbs";
 import { PharmacyContextHeader } from "@/components/pharmacy/pharmacy-context-header";
 import { PharmacyBreadcrumbs } from "@/components/pharmacy/pharmacy-breadcrumbs";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 interface ProfessionalShellProps {
   children: React.ReactNode;
@@ -162,6 +163,7 @@ export function ProfessionalShell({ children }: ProfessionalShellProps) {
 
         {/* TopBar Tools */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <LanguageSwitcher variant="pill" />
           <OrganizationSwitcher />
           <NotificationPanel />
           <UserMenu />

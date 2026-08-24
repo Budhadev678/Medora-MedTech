@@ -13,6 +13,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { NotificationPanel } from "@/components/shared/notification-panel";
 import { UserMenu } from "@/components/shared/user-menu";
 import { PATIENT_PRIMARY_NAV, PATIENT_MORE_NAV } from "@/lib/navigation";
@@ -26,7 +28,17 @@ interface PatientShellProps {
 export function PatientShell({ children }: PatientShellProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t } = useLocalization();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+
+  const getTranslatedNavLabel = (href: string, fallback: string) => {
+    if (href === "/patient") return t("nav.home");
+    if (href.startsWith("/patient/appointments")) return t("nav.appointments");
+    if (href.startsWith("/patient/records")) return t("nav.records");
+    if (href.startsWith("/patient/billing")) return t("nav.bills");
+    if (href.startsWith("/patient/profile")) return t("nav.profile");
+    return fallback;
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-foreground flex flex-col font-sans">
@@ -55,6 +67,7 @@ export function PatientShell({ children }: PatientShellProps) {
               ? pathname === item.href 
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
+            const label = getTranslatedNavLabel(item.href, item.label);
 
             return (
               <Link
@@ -68,14 +81,15 @@ export function PatientShell({ children }: PatientShellProps) {
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{item.label}</span>
+                <span>{label}</span>
               </Link>
             );
           })}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/patient/profile" className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="View Patient Profile">
+          <LanguageSwitcher variant="pill" />
+          <Link href="/patient/profile" className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors" title="View Patient Profile">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-bold text-slate-800">{user?.fullName || "Rahul Verma"}</span>
             <span className="text-[10px] font-mono text-slate-500 font-medium">({user?.identifier || "PAT-1001"})</span>
@@ -106,12 +120,13 @@ export function PatientShell({ children }: PatientShellProps) {
             ? pathname === item.href 
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
+          const label = getTranslatedNavLabel(item.href, item.label);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              aria-label={item.label}
+              aria-label={label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors py-1.5 px-0.5 rounded-xl active:scale-95",
@@ -120,8 +135,8 @@ export function PatientShell({ children }: PatientShellProps) {
                   : "text-slate-500 hover:text-slate-900"
               )}
             >
-              <Icon className={cn("h-4.5 w-4.5 shrink-0", isActive ? "text-teal-700 stroke-[2.5]" : "text-slate-500")} aria-hidden="true" />
-              <span className="truncate">{item.label}</span>
+              <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="truncate max-w-[64px]">{label}</span>
             </Link>
           );
         })}

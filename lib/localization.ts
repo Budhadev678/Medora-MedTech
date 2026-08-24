@@ -714,8 +714,10 @@ export function useLocalization() {
     };
 
     window.addEventListener("medora-language-change", handleLanguageChange);
+    window.addEventListener("storage", handleLanguageChange);
     return () => {
       window.removeEventListener("medora-language-change", handleLanguageChange);
+      window.removeEventListener("storage", handleLanguageChange);
     };
   }, []);
 

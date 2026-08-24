@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RoleGuard } from "@/components/shared/role-guard";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useLocalization } from "@/lib/localization";
 import { AppointmentCard } from "@/components/patient/appointment-card";
 import { RecordCard } from "@/components/patient/record-card";
 import { findIdentityById, calculateProfileCompleteness, StoredIdentity, ProfileCompletenessResult } from "@/lib/data/identity-store";
@@ -50,6 +51,7 @@ import { Appointment, QueueEntry, HealthcareBill, HealthcareLabReport } from "@/
 
 export default function PatientHomePage() {
   const { user } = useAuth();
+  const { t } = useLocalization();
   const [livePatient, setLivePatient] = useState<StoredIdentity | null>(null);
   const [completeness, setCompleteness] = useState<ProfileCompletenessResult>({ 
     percentage: 100, 
@@ -189,7 +191,7 @@ export default function PatientHomePage() {
               </div>
               <div>
                 <span className="text-[11px] font-semibold text-slate-500 block">
-                  Good morning,
+                  {t("common.good_morning")},
                 </span>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
@@ -209,14 +211,14 @@ export default function PatientHomePage() {
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Your personalized health dashboard & longitudinal records.
+                  {t("profile.title")} • {livePatient?.patientData?.abhaId || "rahul.verma@abdm"}
                 </p>
               </div>
             </div>
 
             <Link href="/patient/profile">
               <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold gap-1 text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-100/70 h-8 self-start sm:self-auto">
-                <User className="h-3.5 w-3.5" /> Digital Health ID <ChevronRight className="h-3 w-3" />
+                <User className="h-3.5 w-3.5" /> {t("nav.profile")} <ChevronRight className="h-3 w-3" />
               </Button>
             </Link>
           </div>
@@ -228,7 +230,7 @@ export default function PatientHomePage() {
                 <User className="h-4 w-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Demographics</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{t("profile.personal_info")}</span>
                 <span className="text-xs font-bold text-slate-800 truncate block">
                   {livePatient?.patientData?.gender ? livePatient.patientData.gender.toUpperCase() : "MALE"}, 34 Yrs
                 </span>
@@ -240,10 +242,10 @@ export default function PatientHomePage() {
                 <Droplet className="h-4 w-4 fill-rose-600 text-rose-600" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Blood Group</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{t("profile.blood_group")}</span>
                 <span className="text-xs font-bold text-rose-700 truncate flex items-center gap-1 font-mono">
                   {livePatient?.patientData?.bloodGroup || "O+"}
-                  <span className="text-[9px] font-sans font-medium text-slate-500">(Verified)</span>
+                  <span className="text-[9px] font-sans font-medium text-slate-500">({t("common.verified")})</span>
                 </span>
               </div>
             </div>
@@ -253,7 +255,7 @@ export default function PatientHomePage() {
                 <MapPin className="h-4 w-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">City / State</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{t("profile.address")}</span>
                 <span className="text-xs font-bold text-slate-800 truncate block">
                   {livePatient?.patientData?.address?.city || "Bhubaneswar"}, Odisha
                 </span>
@@ -265,7 +267,7 @@ export default function PatientHomePage() {
                 <Phone className="h-4 w-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Emergency Contact</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{t("profile.emergency_contact")}</span>
                 <span className="text-xs font-bold text-slate-800 truncate block">
                   {livePatient?.patientData?.emergencyContact?.name || "Pooja Verma"} (Spouse)
                 </span>
@@ -285,11 +287,11 @@ export default function PatientHomePage() {
         <section aria-label="Upcoming Schedule">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Upcoming Schedule
+              {t("common.upcoming_schedule")}
             </h2>
             {appointments.length > 1 && (
               <Link href="/patient/appointments" className="text-xs font-bold text-teal-700 hover:underline">
-                View All ({appointments.length})
+                {t("common.view_all")} ({appointments.length})
               </Link>
             )}
           </div>
@@ -354,7 +356,7 @@ export default function PatientHomePage() {
         <section aria-label="Quick Actions">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Quick Actions
+              {t("common.quick_actions")}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -365,27 +367,27 @@ export default function PatientHomePage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700 group-hover:scale-105 transition-transform mb-1.5">
                 <Calendar className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-bold text-slate-800">Book Appointment</span>
+              <span className="text-[11px] font-bold text-slate-800">{t("nav.appointments")}</span>
             </Link>
 
             <Link 
-              href="/patient/appointments" 
+              href="/patient/records" 
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:border-sky-400 hover:bg-sky-50/30 transition-all active:scale-95 text-center group shadow-2xs"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700 group-hover:scale-105 transition-transform mb-1.5">
-                <Clock className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-bold text-slate-800">My Appointments</span>
+              <span className="text-[11px] font-bold text-slate-800">{t("nav.records")}</span>
             </Link>
 
             <Link 
-              href="/patient/health" 
+              href="/patient/prescriptions" 
               className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/30 transition-all active:scale-95 text-center group shadow-2xs"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:scale-105 transition-transform mb-1.5">
-                <HeartPulse className="h-4 w-4" />
+                <Pill className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-bold text-slate-800">My Health</span>
+              <span className="text-[11px] font-bold text-slate-800">{t("nav.prescriptions")}</span>
             </Link>
 
             <Link 
@@ -395,7 +397,7 @@ export default function PatientHomePage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-700 group-hover:scale-105 transition-transform mb-1.5">
                 <Receipt className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-bold text-slate-800">Bills & Payments</span>
+              <span className="text-[11px] font-bold text-slate-800">{t("nav.bills")}</span>
             </Link>
           </div>
         </section>
