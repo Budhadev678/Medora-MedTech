@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Activity, Loader2, RotateCw, LogIn } from "lucide-react";
+import { Activity, RotateCw, LogIn, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LoadingStateProps {
@@ -28,23 +28,32 @@ export function LoadingState({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center p-8 text-center animate-in fade-in-50 duration-150 ${
+      className={`flex flex-col items-center justify-center p-8 text-center animate-in fade-in-50 duration-200 font-sans ${
         fullscreen ? "min-h-[70vh] w-full" : "py-16 w-full"
       }`}
     >
-      <div className="relative mb-4">
-        <div className="h-12 w-12 rounded-xl bg-teal-600/10 flex items-center justify-center text-teal-700 animate-pulse">
-          <Activity className="h-6 w-6" />
+      {/* Premium MEDORA Brand Animated Loading Emblem */}
+      <div className="relative mb-5 flex items-center justify-center">
+        {/* Soft Background Radar Pulse */}
+        <div className="absolute h-20 w-20 rounded-3xl bg-teal-500/15 animate-ping opacity-75" />
+        
+        {/* Orbit Spinner Ring */}
+        <div className="absolute h-18 w-18 rounded-3xl border-2 border-dashed border-teal-500/40 animate-spin" style={{ animationDuration: "6s" }} />
+
+        {/* Center Brand Emblem Squircle */}
+        <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 text-white shadow-lg shadow-teal-700/20 flex items-center justify-center border border-teal-400/30">
+          <Activity className="h-7 w-7 stroke-[2.5] text-white animate-pulse" />
         </div>
-        <Loader2 className="absolute -bottom-1 -right-1 h-5 w-5 text-teal-600 animate-spin" />
       </div>
 
-      <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-        {message}
-      </h3>
-      <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
-        {subtext}
-      </p>
+      <div className="space-y-1">
+        <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+          {message}
+        </h3>
+        <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+          {subtext}
+        </p>
+      </div>
 
       {showRetry && (
         <div className="mt-5 flex items-center gap-2 animate-in fade-in-50 duration-200">
@@ -52,7 +61,7 @@ export function LoadingState({
             variant="outline"
             size="sm"
             onClick={() => window.location.reload()}
-            className="text-xs font-semibold gap-1.5 h-8 rounded-xl"
+            className="text-xs font-semibold gap-1.5 h-8 rounded-xl border-slate-200 hover:bg-slate-50"
           >
             <RotateCw className="h-3 w-3" />
             Reload Workspace
