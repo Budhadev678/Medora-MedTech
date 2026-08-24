@@ -144,6 +144,7 @@ export const HOSPITAL_NAV: NavItem[] = [
   { label: "Doctors", href: "/hospital/doctors", icon: Stethoscope, section: "INTEGRATIONS" },
   { label: "Pharmacy", href: "/pharmacy", icon: Pill, section: "INTEGRATIONS" },
   { label: "Laboratory", href: "/lab", icon: FlaskConical, section: "INTEGRATIONS" },
+  { label: "Blood Centre", href: "/hospital/blood-centre", icon: Droplet, section: "INTEGRATIONS" },
 
   // SYSTEM
   { label: "Hospital Settings", href: "/hospital/settings", icon: Settings, section: "SYSTEM" },

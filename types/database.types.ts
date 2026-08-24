@@ -18,7 +18,6 @@ export type UserRole =
   | "insurance_staff"
   | "government_staff"
   | "ambulance_staff"
-  | "receptionist"
   | "staff"
   | "admin";
 
@@ -1163,7 +1162,12 @@ export type AuditEventType =
   | "EMERGENCY_DISCHARGED"
   | "EMERGENCY_CANCELLED"
   | "EMERGENCY_COMPLETED"
-  | "EMERGENCY_PATIENT_LINKED";
+  | "EMERGENCY_PATIENT_LINKED"
+  | "BLOOD_REQUEST_CREATED"
+  | "BLOOD_UNIT_RESERVED"
+  | "BLOOD_UNITS_ISSUED"
+  | "BLOOD_UNIT_QUARANTINED"
+  | "BLOOD_UNIT_DISCARDED";
 
 export interface StoredAuditEvent {
   id: string;

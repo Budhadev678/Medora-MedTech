@@ -321,7 +321,7 @@ export default function EmergencyControlCenterPage() {
   }
 
   return (
-    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "emergency_staff", "doctor", "receptionist"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "emergency_staff", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200 font-sans pb-12">
         
         {/* ============================================================ */}

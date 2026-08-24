@@ -386,7 +386,7 @@ export const SEEDED_MEMBERSHIPS: OrganizationMembership[] = [
     verification_status: "verified",
     created_at: "2025-10-01T09:00:00Z",
   },
-  // 7. Anita (STAFF-1002 - Multi-org receptionist) @ City Hospital (HSP-1001)
+  // 7. Anita (STAFF-1002 - Hospital Operations Coordinator) @ City Hospital (HSP-1001)
   {
     id: "MEM-5001",
     person_id: "PER-STAFF-1002",
@@ -395,8 +395,8 @@ export const SEEDED_MEMBERSHIPS: OrganizationMembership[] = [
     organization_identifier: "HSP-1001",
     organization_name: "City Hospital",
     organization_type: "hospital",
-    department_name: "Reception & Admissions",
-    role_title: "Receptionist",
+    department_name: "Hospital Operations & Inpatient Care",
+    role_title: "Inpatient Care Coordinator",
     member_role: "staff",
     employment_type: "part_time",
     start_date: "2026-01-01",
@@ -404,7 +404,7 @@ export const SEEDED_MEMBERSHIPS: OrganizationMembership[] = [
     verification_status: "verified",
     created_at: "2026-01-01T09:00:00Z",
   },
-  // 8. Anita (STAFF-1002 - Multi-org receptionist) @ Green Care Clinic (CLN-1001)
+  // 8. Anita (STAFF-1002 - Clinic Operations Coordinator) @ Green Care Clinic (CLN-1001)
   {
     id: "MEM-5002",
     person_id: "PER-STAFF-1002",
@@ -413,8 +413,8 @@ export const SEEDED_MEMBERSHIPS: OrganizationMembership[] = [
     organization_identifier: "CLN-1001",
     organization_name: "Green Care Clinic",
     organization_type: "clinic",
-    department_name: "Front Desk & Billing",
-    role_title: "Receptionist",
+    department_name: "Operations & Billing",
+    role_title: "Clinic Operations Coordinator",
     member_role: "staff",
     employment_type: "part_time",
     start_date: "2026-02-01",
@@ -957,7 +957,7 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
       },
     ],
   },
-  // 18. Staff: Anita Patel (STAFF-1002 - Multi-org Receptionist)
+  // 18. Staff: Anita Patel (STAFF-1002 - Operations Coordinator)
   {
     id: "k0000001-0000-0000-0000-000000000002",
     email: "anita@cityhospital.org",
@@ -976,8 +976,17 @@ export const SEEDED_IDENTITIES: StoredIdentity[] = [
         organizationId: "11111111-1111-1111-1111-111111111101",
         organizationIdentifier: "HSP-1001",
         organizationName: "City Hospital",
-        departmentName: "Reception & Admissions",
-        roleTitle: "Receptionist",
+        departmentName: "Hospital Operations & Inpatient Care",
+        roleTitle: "Inpatient Care Coordinator",
+        status: "active",
+        verificationStatus: "verified",
+      },
+      {
+        organizationId: "11111111-1111-1111-1111-111111111103",
+        organizationIdentifier: "CLN-1001",
+        organizationName: "Green Care Clinic",
+        departmentName: "Operations & Billing",
+        roleTitle: "Clinic Operations Coordinator",
         status: "active",
         verificationStatus: "verified",
       },

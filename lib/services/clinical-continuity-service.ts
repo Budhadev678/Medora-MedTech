@@ -98,7 +98,7 @@ export class ClinicalContinuityService {
         const appointments = AppointmentStore.getAppointmentsForPatient(cleanPatientId);
         for (const apt of appointments) {
           // Facility scoping for hospital staff
-          if (role === "hospital_admin" || role === "receptionist" || role === "staff") {
+          if (role === "hospital_admin" || role === "staff") {
             if (actorOrgId && apt.organization_identifier !== actorOrgId) {
               continue;
             }
@@ -151,7 +151,7 @@ export class ClinicalContinuityService {
     if (role !== "lab_staff" && role !== "pharmacy_staff") {
       const encounters = getPatientEncounters(cleanPatientId);
       for (const enc of encounters) {
-        if (role === "hospital_admin" || role === "receptionist" || role === "staff") {
+        if (role === "hospital_admin" || role === "staff") {
           if (actorOrgId && enc.organization_id !== actorOrgId) {
             continue;
           }
@@ -206,7 +206,7 @@ export class ClinicalContinuityService {
     if (role !== "lab_staff" && role !== "pharmacy_staff") {
       const clinicalRecords = getPatientClinicalRecords(cleanPatientId, false);
       for (const cr of clinicalRecords) {
-        if (role === "hospital_admin" || role === "receptionist" || role === "staff") {
+        if (role === "hospital_admin" || role === "staff") {
           if (actorOrgId && cr.organization_id !== actorOrgId) {
             continue;
           }

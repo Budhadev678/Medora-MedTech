@@ -307,7 +307,7 @@ export default function HospitalControlCenter() {
   }
 
   return (
-    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "emergency_staff", "finance_staff", "receptionist"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "emergency_staff", "finance_staff", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200 font-sans pb-10">
         
         {/* ============================================================ */}

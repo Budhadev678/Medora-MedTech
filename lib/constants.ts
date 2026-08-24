@@ -14,7 +14,6 @@ export type UserRole =
   | "insurance_staff"
   | "government_staff"
   | "ambulance_staff"
-  | "receptionist"
   | "staff"
   | "admin";
 
@@ -58,17 +57,7 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     identifier: "DOC-1001",
     organization: "City Hospital & Green Care Clinic (Cardiology)",
     avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-    description: "Multi-Facility Doctor — Practicing across 3 hospitals and outpatient clinics with instant context switching.",
-  },
-  {
-    id: "staff-1002",
-    name: "Anita Patel",
-    email: "anita@cityhospital.org",
-    role: "receptionist",
-    identifier: "STAFF-1002",
-    organization: "City Hospital & Green Care Clinic (Front Desk)",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-    description: "Reception Desk — Patient check-in, token issuance, OPD registration, and queue management.",
+    description: "Multi-Facility Doctor — Practicing across hospitals and outpatient clinics with unified clinical examination pad.",
   },
   {
     id: "hosp-1001",
@@ -116,7 +105,7 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     email: "bloodbank@medora.health",
     role: "blood_staff",
     identifier: "BLC-1001",
-    organization: "Emergency Blood Logistics & Donor Hub",
+    organization: "Hospital Blood Centre & Transfusion Unit",
     avatar: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=150&auto=format&fit=crop&q=80",
     description: "Blood Coordination — Real-time blood unit inventory, donor registry, cross-matching, and dispatch.",
   },
@@ -139,12 +128,11 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   lab_staff: "Laboratory Diagnostic Workbench",
   pharmacy_staff: "Pharmacy Dispensing Desk",
   emergency_staff: "Emergency Trauma Unit",
-  blood_staff: "Blood Coordination Desk",
+  blood_staff: "Hospital Blood Centre",
   finance_staff: "Healthcare Financing Workspace",
   insurance_staff: "Insurance Claims & Pre-Auth",
   government_staff: "Government Assistance Desk",
   ambulance_staff: "Emergency Dispatch Console",
-  receptionist: "Front Desk & Reception Workspace",
   staff: "Healthcare Staff Duty Desk",
   admin: "Medora Platform Governance",
 };
@@ -156,12 +144,11 @@ export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
   lab_staff: "/lab",
   pharmacy_staff: "/pharmacy",
   emergency_staff: "/emergency",
-  blood_staff: "/blood-bank",
+  blood_staff: "/hospital/blood-centre",
   finance_staff: "/finance",
   insurance_staff: "/insurance",
   government_staff: "/government",
   ambulance_staff: "/ambulance",
-  receptionist: "/reception",
   staff: "/staff",
   admin: "/admin",
 };
@@ -174,7 +161,7 @@ export const NAVIGATION_LINKS = [
   { name: "Diagnostic Lab", href: "/lab", role: "lab_staff" },
   { name: "Pharmacy Desk", href: "/pharmacy", role: "pharmacy_staff" },
   { name: "Emergency Dispatch", href: "/ambulance", role: "ambulance_staff" },
-  { name: "Blood Centre", href: "/blood-bank", role: "blood_staff" },
+  { name: "Blood Centre", href: "/hospital/blood-centre", role: "blood_staff" },
   { name: "Government Desk", href: "/government", role: "government_staff" },
   { name: "Healthcare Finance", href: "/finance", role: "finance_staff" },
   { name: "Insurance Portal", href: "/insurance", role: "insurance_staff" },

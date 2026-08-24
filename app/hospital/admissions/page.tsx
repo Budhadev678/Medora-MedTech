@@ -281,7 +281,7 @@ export default function HospitalAdmissionsPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "doctor", "receptionist"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "doctor"]}>
       <div className="space-y-6 animate-in fade-in-50 duration-200 max-w-7xl mx-auto pb-24 font-sans p-4 sm:p-6">
         
         {/* Header */}

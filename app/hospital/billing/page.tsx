@@ -160,7 +160,7 @@ export default function HospitalBillingConsolePage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "finance_staff", "doctor", "receptionist"]}>
+    <RoleGuard allowedRoles={["hospital_admin", "staff", "admin", "finance_staff", "doctor"]}>
       <div className="min-h-screen space-y-6 max-w-7xl mx-auto pb-24 font-sans animate-in fade-in-50 duration-200">
         
         {/* Header */}

@@ -63,8 +63,8 @@ export default function HospitalStaffPage() {
     email: "",
     phone: "",
     department_id: departments[0]?.id || "",
-    role_title: "OPD Receptionist",
-    staff_role: "RECEPTIONIST",
+    role_title: "Staff Nurse",
+    staff_role: "NURSE",
   });
 
   const refreshData = () => {
@@ -106,8 +106,8 @@ export default function HospitalStaffPage() {
         email: "",
         phone: "",
         department_id: departments[0]?.id || "",
-        role_title: "OPD Receptionist",
-        staff_role: "RECEPTIONIST",
+        role_title: "Staff Nurse",
+        staff_role: "NURSE",
       });
       setTimeout(() => setActionMessage(null), 3000);
     } else {
@@ -165,7 +165,7 @@ export default function HospitalStaffPage() {
       <div className="space-y-6">
         <PageHeader
           title="Hospital Clinical & Operational Staff"
-          description={`Receptionists, triage nurses, lab technicians, pharmacists, and administrators appointed at ${facility?.name || "this hospital"}.`}
+          description={`Triage nurses, blood centre coordinators, lab technicians, pharmacists, and administrators appointed at ${facility?.name || "this hospital"}.`}
           breadcrumbs={[{ label: "Hospital Command", href: "/hospital" }, { label: "Staff Roster" }]}
           actions={
             <Button
@@ -211,7 +211,7 @@ export default function HospitalStaffPage() {
             >
               <option value="all">All Staff Roles</option>
               <option value="FACILITY_ADMIN">Facility Admin</option>
-              <option value="RECEPTIONIST">Receptionist</option>
+              <option value="BLOOD_STAFF">Blood Centre Staff</option>
               <option value="NURSE">Nurse</option>
               <option value="TECHNICIAN">Technician</option>
               <option value="LAB_STAFF">Lab Staff</option>
@@ -427,8 +427,8 @@ export default function HospitalStaffPage() {
                         aria-label="Staff Role Category"
                         className="w-full text-xs h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-800 font-medium"
                       >
-                        <option value="RECEPTIONIST">Receptionist / OPD Desk</option>
                         <option value="NURSE">Nurse / Clinical Care</option>
+                        <option value="BLOOD_STAFF">Blood Centre Coordinator</option>
                         <option value="TECHNICIAN">Diagnostic / Radiology Technician</option>
                         <option value="LAB_STAFF">Laboratory Specialist</option>
                         <option value="PHARMACY_STAFF">Dispensing Pharmacist</option>

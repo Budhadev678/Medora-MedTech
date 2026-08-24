@@ -81,7 +81,6 @@ export default function LoginPage() {
     switch (role) {
       case "patient": return <Users className="h-4 w-4 text-teal-600" />;
       case "doctor": return <Stethoscope className="h-4 w-4 text-blue-600" />;
-      case "receptionist": return <ClipboardList className="h-4 w-4 text-amber-600" />;
       case "hospital_admin": return <Building2 className="h-4 w-4 text-indigo-600" />;
       case "lab_staff": return <FlaskConical className="h-4 w-4 text-purple-600" />;
       case "pharmacy_staff": return <Pill className="h-4 w-4 text-emerald-600" />;
@@ -242,10 +241,10 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickFillPreset("anita@cityhospital.org")}
-                      className="rounded-lg bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
+                      onClick={() => quickFillPreset("bloodbank@medora.health")}
+                      className="rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-800 text-slate-700 px-2.5 py-1 text-[11px] font-medium transition-colors"
                     >
-                      Receptionist (Anita)
+                      Blood Centre (City Blood)
                     </button>
                     <button
                       type="button"
