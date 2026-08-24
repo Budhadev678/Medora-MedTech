@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -61,11 +61,6 @@ export default function PatientBillingDashboardPage() {
             <Link href="/patient/insurance">
               <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
                 Insurance
-              </Button>
-            </Link>
-            <Link href="/patient/billing/disputes">
-              <Button variant="outline" size="sm" className="text-xs rounded-xl h-8 text-slate-700 hover:bg-slate-50 border-slate-200">
-                Disputes
               </Button>
             </Link>
           </div>
