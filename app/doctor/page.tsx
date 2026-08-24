@@ -19,7 +19,12 @@ import {
   UserCheck,
   UserX,
   AlertOctagon,
-  RefreshCw
+  RefreshCw,
+  HeartPulse,
+  ShieldAlert,
+  Radio,
+  Activity,
+  Zap,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +42,8 @@ import {
 import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
 import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { WaitingTimeEstimationService } from "@/lib/services/waiting-time-service";
-import { getEmergenciesForFacility, PatientEmergencyCase } from "@/lib/data/emergency-store";
+import { getEmergenciesForFacility, PatientEmergencyCase, acknowledgeEmergency, startPreparation } from "@/lib/data/emergency-store";
+import { triggerBreakGlassEmergencyAccess } from "@/lib/data/consent-store";
 import { DoctorQueueSummary, QueueEntry, DoctorOperationalQueueStatus } from "@/types/database.types";
 
 export default function DoctorWorkspacePage() {
@@ -58,6 +64,8 @@ export default function DoctorWorkspacePage() {
   const [skipReason, setSkipReason] = useState("Patient stepped out of waiting lobby");
   const [noShowModalEntry, setNoShowModalEntry] = useState<QueueEntry | null>(null);
   const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [attendEmergencyCase, setAttendEmergencyCase] = useState<PatientEmergencyCase | null>(null);
+  const [isEmergencyActing, setIsEmergencyActing] = useState(false);
 
   const todayStr = getTodayDateStr();
 
@@ -232,6 +240,49 @@ export default function DoctorWorkspacePage() {
     loadData();
   };
 
+  const handleAcknowledgeEmergency = (em: PatientEmergencyCase) => {
+    setIsEmergencyActing(true);
+    try {
+      const res = acknowledgeEmergency(em.id, doctorId, user?.fullName || "Attending Physician", user?.role || "doctor");
+      startPreparation(em.id, doctorId, user?.fullName || "Attending Physician", user?.role || "doctor");
+      if (res.success) {
+        setActionMessage({
+          type: "success",
+          text: `Emergency Case ${em.case_number} acknowledged and Trauma Bay 1 mobilized.`,
+        });
+        loadData();
+      }
+    } finally {
+      setIsEmergencyActing(false);
+    }
+  };
+
+  const handleBreakGlassEmergencyRecords = (em: PatientEmergencyCase) => {
+    setIsEmergencyActing(true);
+    try {
+      const res = triggerBreakGlassEmergencyAccess({
+        patientId: em.patient_id,
+        patientName: em.patient_name,
+        actorId: doctorId,
+        actorName: user?.fullName || "Dr. Ananya Sharma",
+        actorRole: user?.role || "doctor",
+        organizationId: em.hospital_id || context?.facilityId || "FAC-1001",
+        organizationName: em.hospital_name || context?.facilityName || "City Hospital",
+        justificationReason: `Rapid trauma ingress response for ${em.case_number} (${em.emergency_type})`,
+        emergencyCaseId: em.id,
+      });
+
+      if (res.success) {
+        setActionMessage({
+          type: "success",
+          text: `Emergency break-glass medical records access unlocked and stamped in institutional audit ledger.`,
+        });
+      }
+    } finally {
+      setIsEmergencyActing(false);
+    }
+  };
+
   const handleEndSession = () => {
     setDoctorSessionStatus(doctorId, "ENDED");
     setDoctorDutyStatus(doctorId, "OFF_DUTY");
@@ -267,12 +318,15 @@ export default function DoctorWorkspacePage() {
                 </p>
               </div>
             </div>
-            <Link href="/doctor/consultations">
-              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shrink-0 gap-1.5">
-                <Stethoscope className="h-4 w-4" />
-                <span>Attend Emergency</span>
-              </Button>
-            </Link>
+            <Button 
+              size="sm" 
+              type="button"
+              onClick={() => setAttendEmergencyCase(emergencies[0])}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shrink-0 gap-1.5 shadow-xs"
+            >
+              <Stethoscope className="h-4 w-4" />
+              <span>Attend Emergency</span>
+            </Button>
           </div>
         )}
 
@@ -870,6 +924,135 @@ export default function DoctorWorkspacePage() {
                 </Button>
                 <Button size="sm" onClick={handleEndSession} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl">
                   Conclude Session
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: Emergency Ingress Live Attendance (No Redirect) */}
+        {attendEmergencyCase && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in-50">
+            <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border-2 border-red-300 space-y-4 max-h-[90vh] overflow-y-auto">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold shrink-0">
+                    <AlertOctagon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                        CRITICAL LEVEL-1 EMERGENCY
+                      </span>
+                      <span className="font-mono text-xs font-bold text-slate-800">
+                        {attendEmergencyCase.case_number}
+                      </span>
+                    </div>
+                    <h3 className="font-extrabold text-base text-slate-900 mt-0.5">
+                      Emergency Clinical Ingress Response
+                    </h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAttendEmergencyCase(null)}
+                  className="rounded-full p-1 text-slate-400 hover:text-slate-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Patient & Arrival Snapshot */}
+              <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-red-800 block">Patient Identity</span>
+                    <p className="font-black text-slate-900 text-sm">{attendEmergencyCase.patient_name}</p>
+                    <span className="font-mono text-slate-600 text-[11px]">{attendEmergencyCase.patient_id}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold uppercase text-red-800 block">Blood Group</span>
+                    <Badge variant="outline" className="font-black text-xs text-rose-700 bg-white border-rose-300">
+                      {attendEmergencyCase.blood_group || "O+"}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-red-200/60 grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 font-bold block">Status & Transit</span>
+                    <span className="font-bold text-red-950">
+                      {attendEmergencyCase.status} {attendEmergencyCase.arriving_by_ambulance ? `(ETA: ${attendEmergencyCase.eta_minutes || 0}m)` : "(Direct ER)"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-bold block">Designated Area</span>
+                    <span className="font-bold text-slate-900">
+                      {attendEmergencyCase.assigned_area || "Trauma Bay 1"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-red-200/60">
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase">Clinical Indication / Presentation</span>
+                  <p className="font-semibold text-slate-800 text-xs mt-0.5">
+                    {attendEmergencyCase.emergency_type.replace("_", " ")} — {attendEmergencyCase.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions Box */}
+              <div className="space-y-2.5 pt-1">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                  Rapid Clinical Response Actions
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleAcknowledgeEmergency(attendEmergencyCase)}
+                    disabled={isEmergencyActing}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl h-10 gap-1.5 shadow-xs"
+                  >
+                    <HeartPulse className="h-4 w-4" />
+                    <span>Mobilize Trauma Bay</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => handleBreakGlassEmergencyRecords(attendEmergencyCase)}
+                    disabled={isEmergencyActing}
+                    variant="outline"
+                    className="border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs rounded-xl h-10 gap-1.5 shadow-2xs"
+                  >
+                    <ShieldAlert className="h-4 w-4 text-amber-600" />
+                    <span>Break-Glass Unlock</span>
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                  <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                    <Activity className="h-3.5 w-3.5 text-teal-600" />
+                    <span>Trauma Stabilization Protocol Activated</span>
+                  </p>
+                  <p>
+                    Attending physician {user?.fullName || "Dr. Ananya Sharma"} assigned as supervising clinical authority for {attendEmergencyCase.case_number}.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAttendEmergencyCase(null)}
+                  className="text-xs font-semibold rounded-xl"
+                >
+                  Close & Continue OPD
                 </Button>
               </div>
             </div>

@@ -729,14 +729,15 @@ function DoctorConsultationsContent() {
                       {/* Action Buttons */}
                       <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
                         {/* Clinical Record Document Action */}
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenRecordEditor(encounter)}
-                          className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8 shadow-2xs"
-                        >
-                          <FileEdit className="h-3.5 w-3.5" />
-                          <span>{clinicalRec ? "Edit Record" : "Record"}</span>
-                        </Button>
+                        <Link href={`/doctor/consultations/${encounter.id}`}>
+                          <Button
+                            size="sm"
+                            className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8 shadow-2xs"
+                          >
+                            <FileEdit className="h-3.5 w-3.5" />
+                            <span>{clinicalRec ? "Edit Record" : "Record"}</span>
+                          </Button>
+                        </Link>
 
                         {/* Health Journey History Button */}
                         <Button
