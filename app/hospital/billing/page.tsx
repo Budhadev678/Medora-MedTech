@@ -66,6 +66,13 @@ export default function HospitalBillingConsolePage() {
 
   useEffect(() => {
     refresh();
+    const handleUpdate = () => refresh();
+    window.addEventListener("medora-billing-updated", handleUpdate);
+    window.addEventListener("medora-bills-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-billing-updated", handleUpdate);
+      window.removeEventListener("medora-bills-updated", handleUpdate);
+    };
   }, [targetFacId]);
 
   // Derive Financial Summary Metrics

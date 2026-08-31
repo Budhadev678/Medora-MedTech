@@ -48,6 +48,7 @@ import { AppointmentStore } from "@/lib/data/appointment-store";
 import { ConsultationHistoryStore } from "@/lib/data/consultation-history-store";
 import { StoredIdentity, findIdentityById } from "@/lib/data/identity-store";
 import { AuditLedger } from "@/lib/data/audit-store";
+import { createOrUpdateConsultationBill } from "@/lib/data/billing-store";
 import {
   hasContextualAccess,
   getConsultationSharingDecision,
@@ -596,7 +597,44 @@ export class ConsultationService {
       completed_at: nowIso,
     });
 
-    // 8. Record Immutable Audit Event
+    // 8. Generate / Update Authoritative Healthcare Bill for this Consultation & Orders
+    try {
+      createOrUpdateConsultationBill({
+        encounterId: encounter.id,
+        patientId: encounter.patient_id,
+        patientName: encounter.patient_name,
+        organizationId: encounter.organization_id,
+        organizationName: encounter.organization_name,
+        facilityId: encounter.facility_id || "FAC-1001",
+        facilityName: encounter.facility_name || encounter.organization_name,
+        doctorName: encounter.provider_name,
+        doctorId: encounter.provider_id,
+        prescriptions: finalizedPrescription?.items || [],
+        labOrders: placedLabOrder?.items || [],
+        actorId,
+        actorName: actor.fullName,
+        actorRole: actor.role,
+      });
+    } catch (billErr) {
+      console.error("Failed to auto-generate bill on consultation completion:", billErr);
+    }
+
+    // 9. Dispatch Global Refresh Events for Reactive UI Update
+    if (typeof window !== "undefined") {
+      try {
+        window.dispatchEvent(new CustomEvent("medora-encounters-updated"));
+        window.dispatchEvent(new CustomEvent("medora-clinical-records-updated"));
+        window.dispatchEvent(new CustomEvent("medora-prescriptions-updated"));
+        window.dispatchEvent(new CustomEvent("medora-lab-orders-updated"));
+        window.dispatchEvent(new CustomEvent("medora-billing-updated"));
+        window.dispatchEvent(new CustomEvent("medora-bills-updated"));
+        window.dispatchEvent(new CustomEvent("medora-appointments-updated"));
+      } catch (evtErr) {
+        console.error("Failed to dispatch update events:", evtErr);
+      }
+    }
+
+    // 10. Record Immutable Audit Event
     AuditLedger.recordEvent({
       actor_id: actorId,
       actor_name: actor.fullName,

@@ -369,7 +369,9 @@ export function getLaboratoryLabOrders(laboratoryId: string): HealthcareLabOrder
   return all.filter((o) => {
     const isAssigned = (o.laboratory_id || "").toUpperCase() === cleanLab;
     const isSelected = (o.selected_lab_id || "").toUpperCase() === cleanLab;
-    return (isAssigned || isSelected) && o.status !== "DRAFT" && o.status !== "CANCELLED";
+    const isLab1001Alias = (cleanLab === "LAB-1001" || cleanLab === "LAB-FAC-1001") && 
+      ((o.selected_lab_id || "").toUpperCase() === "LAB-1001" || (o.selected_lab_id || "").toUpperCase() === "LAB-FAC-1001" || (o.laboratory_id || "").toUpperCase() === "LAB-1001" || (o.laboratory_id || "").toUpperCase() === "LAB-FAC-1001");
+    return (isAssigned || isSelected || isLab1001Alias) && o.status !== "DRAFT" && o.status !== "CANCELLED";
   });
 }
 

@@ -31,8 +31,17 @@ export default function PatientBillingDashboardPage() {
 
   useEffect(() => {
     const patientId = user?.identifier || user?.id || "PAT-1001";
-    const list = getBillsByPatient(patientId);
-    setBills(list);
+    const loadBills = () => {
+      const list = getBillsByPatient(patientId);
+      setBills(list);
+    };
+    loadBills();
+    window.addEventListener("medora-billing-updated", loadBills);
+    window.addEventListener("medora-bills-updated", loadBills);
+    return () => {
+      window.removeEventListener("medora-billing-updated", loadBills);
+      window.removeEventListener("medora-bills-updated", loadBills);
+    };
   }, [user]);
 
   return (

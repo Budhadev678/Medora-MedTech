@@ -14,6 +14,7 @@ import type {
 import { getEncounterById } from "@/lib/data/encounter-store";
 import { findIdentityById, StoredIdentity } from "@/lib/data/identity-store";
 import { appendAuditEvent } from "@/lib/data/audit-store";
+import { createPrescriptionIntake } from "@/lib/data/pharmacy-intake-store";
 
 export type {
   HealthcarePrescription,
@@ -522,6 +523,24 @@ export function issuePrescription(
 
   savePrescriptions(all);
 
+  // Automatically create pharmacy intake record for fulfillment
+  try {
+    createPrescriptionIntake({
+      prescriptionId: finalPrescription.id,
+      prescriptionVersion: finalPrescription.version || 1,
+      patientId: finalPrescription.patient_id,
+      patientName: finalPrescription.patient_name,
+      prescriberId: finalPrescription.prescriber_id,
+      prescriberName: finalPrescription.prescriber_name,
+      facilityId: finalPrescription.selected_pharmacy_id || "PHARM-FAC-1001",
+      actorId,
+      actorName,
+      actorRole,
+    });
+  } catch {
+    // Handled safely if already exists
+  }
+
   appendAuditEvent(
     "PRESCRIPTION_ISSUED",
     actorId,
@@ -680,6 +699,24 @@ export function finalizePrescription(
   }
 
   savePrescriptions(all);
+
+  // Automatically create pharmacy intake record for fulfillment
+  try {
+    createPrescriptionIntake({
+      prescriptionId: finalRx.id,
+      prescriptionVersion: finalRx.version || 1,
+      patientId: finalRx.patient_id,
+      patientName: finalRx.patient_name,
+      prescriberId: finalRx.prescriber_id,
+      prescriberName: finalRx.prescriber_name,
+      facilityId: finalRx.selected_pharmacy_id || "PHARM-FAC-1001",
+      actorId,
+      actorName,
+      actorRole,
+    });
+  } catch {
+    // Handled safely if already exists
+  }
 
   appendAuditEvent(
     "PRESCRIPTION_FINALIZED",

@@ -168,29 +168,53 @@ let BILL_VERSIONS_STORE: BillVersion[] = [
 // BILL QUERIES
 // ============================================================
 
+const BILLS_KEY = "medora_bills_store";
+
 export function getAllBills(): HealthcareBill[] {
-  return [...BILLS_STORE];
+  if (typeof window === "undefined") {
+    return [...BILLS_STORE];
+  }
+  try {
+    const raw = localStorage.getItem(BILLS_KEY);
+    if (!raw) {
+      localStorage.setItem(BILLS_KEY, JSON.stringify(BILLS_STORE));
+      return [...BILLS_STORE];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...BILLS_STORE];
+  } catch {
+    return [...BILLS_STORE];
+  }
 }
 
 export function getBillById(id: string): HealthcareBill | null {
+  const all = getAllBills();
   const clean = (id || "").trim().toLowerCase();
-  return BILLS_STORE.find((b) => b.id.toLowerCase() === clean || b.bill_number.toLowerCase() === clean) || null;
+  return all.find((b) => b.id.toLowerCase() === clean || b.bill_number.toLowerCase() === clean) || null;
 }
 
 export function getBillsByPatient(patientId: string): HealthcareBill[] {
+  const all = getAllBills();
   const clean = (patientId || "").trim().toLowerCase();
-  return BILLS_STORE.filter((b) => b.patient_id.toLowerCase() === clean);
+  return all.filter((b) => b.patient_id.toLowerCase() === clean);
 }
 
 export function getBillsByFacility(facilityId: string, filterStatus?: string): HealthcareBill[] {
+  const all = getAllBills();
   const cleanFac = (facilityId || "").trim().toLowerCase();
-  return BILLS_STORE.filter((b) => {
+  return all.filter((b) => {
     if (b.facility_id.toLowerCase() !== cleanFac) return false;
     if (filterStatus && filterStatus !== "ALL") {
       if (b.status !== filterStatus.trim()) return false;
     }
     return true;
   });
+}
+
+export function getBillsByEncounter(encounterId: string): HealthcareBill[] {
+  const all = getAllBills();
+  const clean = (encounterId || "").trim().toLowerCase();
+  return all.filter((b) => (b.encounter_id || "").toLowerCase() === clean);
 }
 
 export function getBillVersions(billId: string): BillVersion[] {
@@ -206,11 +230,30 @@ export const getFacilityBills = getBillsByFacility;
 // ============================================================
 
 export function saveBill(bill: HealthcareBill): void {
-  const index = BILLS_STORE.findIndex((b) => b.id === bill.id);
+  const all = getAllBills();
+  const index = all.findIndex((b) => b.id === bill.id);
   if (index >= 0) {
-    BILLS_STORE[index] = bill;
+    all[index] = bill;
   } else {
-    BILLS_STORE.push(bill);
+    all.unshift(bill);
+  }
+
+  // Update in-memory fallback
+  const memIndex = BILLS_STORE.findIndex((b) => b.id === bill.id);
+  if (memIndex >= 0) {
+    BILLS_STORE[memIndex] = bill;
+  } else {
+    BILLS_STORE.unshift(bill);
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(BILLS_KEY, JSON.stringify(all));
+      window.dispatchEvent(new CustomEvent("medora-billing-updated"));
+      window.dispatchEvent(new CustomEvent("medora-bills-updated"));
+    } catch (e) {
+      console.error("Failed to save bill to localStorage:", e);
+    }
   }
 }
 
@@ -225,5 +268,198 @@ export function updateBillTotals(billId: string, grossTotal: number, netTotal: n
     b.net_billable_total = netTotal;
     b.patient_responsibility = patientResp;
     b.updated_at = new Date().toISOString();
+    saveBill(b);
   }
+}
+
+/**
+ * Creates or updates an authoritative bill upon clinical consultation completion.
+ * Automatically adds Consultation OPD Fee, Prescribed Medication items, and Diagnostic Lab items.
+ */
+export function createOrUpdateConsultationBill(params: {
+  encounterId: string;
+  patientId: string;
+  patientName: string;
+  organizationId: string;
+  organizationName: string;
+  facilityId?: string;
+  facilityName?: string;
+  doctorName?: string;
+  doctorId?: string;
+  prescriptions?: Array<{ medicine_name: string; dosage?: string }>;
+  labOrders?: Array<{ test_name: string; test_code?: string }>;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+}): HealthcareBill {
+  const {
+    encounterId,
+    patientId,
+    patientName,
+    organizationId,
+    organizationName,
+    facilityId = "FAC-1001",
+    facilityName = "City Hospital — Rourkela Central",
+    doctorName = "Dr. Ananya Sharma",
+    doctorId = "DOC-1001",
+    prescriptions = [],
+    labOrders = [],
+    actorId,
+    actorName,
+    actorRole,
+  } = params;
+
+  const now = new Date().toISOString();
+  const existingBills = getBillsByEncounter(encounterId);
+  let bill: HealthcareBill;
+
+  const items: BillableItem[] = [];
+  let nextItemIdx = 1;
+
+  // 1. Consultation OPD Service Item
+  items.push({
+    id: `BILLITEM-${Date.now()}-${nextItemIdx++}`,
+    bill_id: existingBills[0]?.id || `BILL-${Date.now() % 10000}`,
+    service_id: "SERV-CONS-01",
+    service_code: "CONS-OPD-01",
+    service_name: "Doctor Outpatient Consultation",
+    category: "CONSULTATION",
+    source_type: "ENCOUNTER",
+    source_id: encounterId,
+    description_snapshot: `Doctor Outpatient Consultation — ${doctorName}`,
+    quantity: 1,
+    unit_price: 500.00,
+    base_amount: 500.00,
+    currency: "INR",
+    price_id: "PRICE-CONS-01",
+    service_date: now,
+    verification_status: "VERIFIED",
+    provenance: {
+      ordered_by_id: doctorId,
+      ordered_by_name: doctorName,
+      order_reference_id: encounterId,
+      performed_at: now,
+      facility_name: facilityName,
+      clinical_reason: "Clinical Outpatient Consultation",
+    },
+    created_at: now,
+  });
+
+  // 2. Prescribed Medications Items
+  prescriptions.forEach((rx) => {
+    items.push({
+      id: `BILLITEM-${Date.now()}-${nextItemIdx++}`,
+      bill_id: existingBills[0]?.id || `BILL-${Date.now() % 10000}`,
+      service_id: "SERV-MED-GEN",
+      service_code: "MED-RX-01",
+      service_name: rx.medicine_name,
+      category: "PHARMACY",
+      source_type: "DISPENSING",
+      source_id: encounterId,
+      description_snapshot: `${rx.medicine_name} ${rx.dosage ? `(${rx.dosage})` : ""}`.trim(),
+      quantity: 1,
+      unit_price: 150.00,
+      base_amount: 150.00,
+      currency: "INR",
+      price_id: "PRICE-MED-01",
+      service_date: now,
+      verification_status: "VERIFIED",
+      provenance: {
+        ordered_by_id: doctorId,
+        ordered_by_name: doctorName,
+        order_reference_id: encounterId,
+        performed_at: now,
+        facility_name: facilityName,
+        clinical_reason: "Prescribed medication",
+      },
+      created_at: now,
+    });
+  });
+
+  // 3. Ordered Laboratory Test Items
+  labOrders.forEach((lab) => {
+    items.push({
+      id: `BILLITEM-${Date.now()}-${nextItemIdx++}`,
+      bill_id: existingBills[0]?.id || `BILL-${Date.now() % 10000}`,
+      service_id: "SERV-LAB-GEN",
+      service_code: lab.test_code || "LAB-TEST-01",
+      service_name: lab.test_name,
+      category: "LABORATORY",
+      source_type: "LAB_TEST",
+      source_id: encounterId,
+      description_snapshot: lab.test_name,
+      quantity: 1,
+      unit_price: 350.00,
+      base_amount: 350.00,
+      currency: "INR",
+      price_id: "PRICE-LAB-01",
+      service_date: now,
+      verification_status: "VERIFIED",
+      provenance: {
+        ordered_by_id: doctorId,
+        ordered_by_name: doctorName,
+        order_reference_id: encounterId,
+        performed_at: now,
+        facility_name: facilityName,
+        clinical_reason: "Diagnostic investigation",
+      },
+      created_at: now,
+    });
+  });
+
+  const grossTotal = items.reduce((sum, item) => sum + item.base_amount, 0);
+
+  if (existingBills.length > 0) {
+    bill = existingBills[0];
+    bill.items = items;
+    bill.gross_total = grossTotal;
+    bill.net_billable_total = grossTotal;
+    bill.patient_responsibility = grossTotal;
+    bill.status = "ISSUED";
+    bill.updated_at = now;
+  } else {
+    const nextNum = 1000 + (Date.now() % 9000);
+    const billId = `BILL-${nextNum}`;
+    const billNumber = `MEDORA-INV-${nextNum}`;
+
+    items.forEach((item) => (item.bill_id = billId));
+
+    bill = {
+      id: billId,
+      bill_number: billNumber,
+      patient_id: patientId,
+      patient_name: patientName,
+      organization_id: organizationId,
+      organization_name: organizationName,
+      facility_id: facilityId,
+      facility_name: facilityName,
+      encounter_id: encounterId,
+      bill_type: "FINAL",
+      status: "ISSUED",
+      gross_total: grossTotal,
+      net_billable_total: grossTotal,
+      patient_responsibility: grossTotal,
+      currency: "INR",
+      current_version: 1,
+      items,
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  saveBill(bill);
+
+  appendAuditEvent(
+    "BILL_ISSUED",
+    actorId,
+    actorName,
+    actorRole,
+    `Issued healthcare invoice ${bill.bill_number} for ₹${grossTotal} (Consultation & Orders)`,
+    patientId,
+    organizationId,
+    organizationName,
+    bill.id
+  );
+
+  return bill;
 }

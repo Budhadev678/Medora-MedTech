@@ -81,6 +81,7 @@ import { ConsultationService, ConsultationContext } from "@/lib/services/consult
 import { searchMedicines, getAllMedicines } from "@/lib/data/medicine-catalog-store";
 import { PrescriptionOrderService } from "@/lib/services/prescription-order-service";
 import { LabOrderService } from "@/lib/services/lab-order-service";
+import { placeLabOrder } from "@/lib/data/lab-order-store";
 import { ReferralService } from "@/lib/services/referral-service";
 import { FollowUpService } from "@/lib/services/followup-service";
 import { ClinicalContinuityService } from "@/lib/services/clinical-continuity-service";
@@ -504,26 +505,35 @@ export default function DedicatedConsultationWorkspacePage() {
         return {
           id: `item-${Date.now()}-${tid}`,
           test_id: tid,
+          test_code: tid,
           test_name: t?.name || tid,
-          specimen_type: t?.specimen,
+          specimen_type: t?.specimen || "Blood",
         };
       });
 
-      const res = await PrescriptionOrderService.createMedicalOrder(
-        {
-          encounterId,
-          orderType: "LAB",
-          priority: labPriority,
-          clinicalIndication: labIndication.trim() || chiefComplaint,
-          labItems: items,
-        },
-        user
-      );
+      const res = placeLabOrder({
+        encounterId,
+        appointmentId: contextData.encounter.appointment_id,
+        patientId: contextData.encounter.patient_id,
+        patientName: contextData.encounter.patient_name,
+        actorId: user.identifier || user.id,
+        actorName: user.fullName,
+        actorRole: user.role,
+        organizationId: contextData.encounter.organization_id,
+        organizationName: contextData.encounter.organization_name,
+        items,
+        reason: labIndication.trim() || chiefComplaint,
+        instructions: "",
+        priority: labPriority,
+      });
 
       if (res.success && res.order) {
         setSelectedLabTestIds([]);
         setLabIndication("");
         loadContext();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("medora-lab-orders-updated"));
+        }
       } else {
         alert(res.error || "Failed to place lab order.");
       }
@@ -693,6 +703,17 @@ export default function DedicatedConsultationWorkspacePage() {
     setIsCompleting(true);
 
     try {
+      const labItems: LabOrderItem[] = selectedLabTestIds.map((tid) => {
+        const t = labTests.find((x) => x.id === tid);
+        return {
+          id: `item-${Date.now()}-${tid}`,
+          test_id: tid,
+          test_code: tid,
+          test_name: t?.name || tid,
+          specimen_type: t?.specimen || "Blood",
+        };
+      });
+
       const res = await ConsultationService.completeConsultation(
         encounterId,
         {
@@ -706,6 +727,12 @@ export default function DedicatedConsultationWorkspacePage() {
           diagnoses,
           treatment_plan: treatmentPlan,
           follow_up_plan: followUpPlan,
+          prescriptions: prescriptionItems,
+          prescription_notes: prescriptionNotes,
+          refills_allowed: 0,
+          lab_orders: labItems,
+          lab_reason: labIndication.trim() || chiefComplaint,
+          lab_priority: labPriority,
         },
         user
       );
