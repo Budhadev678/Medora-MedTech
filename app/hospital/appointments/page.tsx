@@ -56,6 +56,13 @@ export default function HospitalAppointmentsPage() {
 
   useEffect(() => {
     loadAppointments();
+    const handleUpdate = () => loadAppointments();
+    window.addEventListener("medora-appointments-updated", handleUpdate);
+    window.addEventListener("medora-appointment-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-appointments-updated", handleUpdate);
+      window.removeEventListener("medora-appointment-updated", handleUpdate);
+    };
   }, [user, statusFilter, dateFilter, searchQuery]);
 
   const handleCheckIn = async (appointment: Appointment) => {

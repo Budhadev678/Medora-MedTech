@@ -30,7 +30,7 @@ export default function DoctorAppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFacility, setSelectedFacility] = useState<string>("all");
 
-  const doctorId = user?.identifier || "DOC-1001";
+  const doctorId = user?.identifier || user?.id || "DOC-1001";
 
   const loadAppointments = () => {
     const records = AppointmentStore.getAppointmentsForDoctor(doctorId);
@@ -39,7 +39,14 @@ export default function DoctorAppointmentsPage() {
 
   useEffect(() => {
     loadAppointments();
-  }, [user]);
+    const handleUpdate = () => loadAppointments();
+    window.addEventListener("medora-appointments-updated", handleUpdate);
+    window.addEventListener("medora-appointment-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-appointments-updated", handleUpdate);
+      window.removeEventListener("medora-appointment-updated", handleUpdate);
+    };
+  }, [user, doctorId]);
 
   const filteredAppointments = appointments.filter((apt) => {
     const matchFacility = selectedFacility === "all" || apt.organization_identifier === selectedFacility;

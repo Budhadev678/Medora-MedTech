@@ -43,9 +43,13 @@ export default function PatientAppointmentsPage() {
   useEffect(() => {
     loadAppointments();
     const handleUpdate = () => loadAppointments();
+    window.addEventListener("medora-appointments-updated", handleUpdate);
+    window.addEventListener("medora-appointment-updated", handleUpdate);
     window.addEventListener("medora-queue-updated", handleUpdate);
     window.addEventListener("medora-waitlist-updated", handleUpdate);
     return () => {
+      window.removeEventListener("medora-appointments-updated", handleUpdate);
+      window.removeEventListener("medora-appointment-updated", handleUpdate);
       window.removeEventListener("medora-queue-updated", handleUpdate);
       window.removeEventListener("medora-waitlist-updated", handleUpdate);
     };

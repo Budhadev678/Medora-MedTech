@@ -301,7 +301,7 @@ export class AppointmentBookingService {
         (a) =>
           a.session_id === request.session_id &&
           a.appointment_date === request.appointment_date &&
-          ["CONFIRMED", "REQUESTED"].includes(a.status)
+          ["CONFIRMED", "REQUESTED", "CHECKED_IN", "WAITING", "IN_CONSULTATION"].includes(a.status)
       );
       return {
         success: true, // Idempotent success returns existing appointment

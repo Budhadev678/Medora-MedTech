@@ -544,19 +544,62 @@ export const SEEDED_APPOINTMENTS: Appointment[] = [
 ];
 
 // ------------------------------------------------------------
-// IN-MEMORY ACTIVE REPOSITORY
+// IN-MEMORY & LOCALSTORAGE PERSISTED ACTIVE REPOSITORY
 // ------------------------------------------------------------
+
+const STORAGE_KEY_APPOINTMENTS = "medora_appointments_store_v1";
+const STORAGE_KEY_SESSIONS = "medora_sessions_store_v1";
+const STORAGE_KEY_OVERRIDES = "medora_overrides_store_v1";
 
 class AppointmentRepository {
   private sessions: Map<string, DoctorWorkingSession> = new Map();
   private overrides: Map<string, ScheduleOverride> = new Map();
   private appointments: Map<string, Appointment> = new Map();
+  private isInitialized = false;
 
   constructor() {
-    this.reset();
+    this.init();
   }
 
-  public reset(): void {
+  private init(): void {
+    if (this.isInitialized) return;
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedApts = localStorage.getItem(STORAGE_KEY_APPOINTMENTS);
+        if (storedApts) {
+          const parsedApts: Appointment[] = JSON.parse(storedApts);
+          parsedApts.forEach((a) => this.appointments.set(a.id, a));
+        }
+
+        const storedSessions = localStorage.getItem(STORAGE_KEY_SESSIONS);
+        if (storedSessions) {
+          const parsedSessions: DoctorWorkingSession[] = JSON.parse(storedSessions);
+          parsedSessions.forEach((s) => this.sessions.set(s.id, s));
+        }
+
+        const storedOverrides = localStorage.getItem(STORAGE_KEY_OVERRIDES);
+        if (storedOverrides) {
+          const parsedOverrides: ScheduleOverride[] = JSON.parse(storedOverrides);
+          parsedOverrides.forEach((o) => this.overrides.set(o.id, o));
+        }
+
+        if (storedApts || storedSessions) {
+          this.isInitialized = true;
+          return;
+        }
+      } catch (err) {
+        console.warn("AppointmentStore: Failed to load from localStorage", err);
+      }
+    }
+
+    // Load initial seeds if not in storage
+    this.loadSeeds();
+    this.persist();
+    this.isInitialized = true;
+  }
+
+  private loadSeeds(): void {
     this.sessions.clear();
     this.overrides.clear();
     this.appointments.clear();
@@ -564,6 +607,29 @@ class AppointmentRepository {
     SEEDED_DOCTOR_SESSIONS.forEach((s) => this.sessions.set(s.id, { ...s }));
     SEEDED_OVERRIDES.forEach((o) => this.overrides.set(o.id, { ...o }));
     SEEDED_APPOINTMENTS.forEach((a) => this.appointments.set(a.id, { ...a }));
+  }
+
+  private persist(): void {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_KEY_APPOINTMENTS, JSON.stringify(Array.from(this.appointments.values())));
+        localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(Array.from(this.sessions.values())));
+        localStorage.setItem(STORAGE_KEY_OVERRIDES, JSON.stringify(Array.from(this.overrides.values())));
+        window.dispatchEvent(new CustomEvent("medora-appointments-updated"));
+      } catch (err) {
+        // storage quota fallback
+      }
+    }
+  }
+
+  public reset(): void {
+    this.loadSeeds();
+    this.persist();
+  }
+
+  public clearAppointments(): void {
+    this.appointments.clear();
+    this.persist();
   }
 
   // SESSIONS
@@ -579,8 +645,10 @@ class AppointmentRepository {
   }
 
   public getDoctorSessions(doctorId: string, orgIdentifier?: string): DoctorWorkingSession[] {
+    if (!doctorId) return [];
+    const cleanDoc = doctorId.trim().toLowerCase();
     return this.getAllSessions().filter((s) => {
-      const matchDoc = s.doctor_id.toLowerCase() === doctorId.toLowerCase();
+      const matchDoc = s.doctor_id.toLowerCase() === cleanDoc;
       const matchOrg = orgIdentifier
         ? s.organization_identifier?.toLowerCase() === orgIdentifier.toLowerCase() ||
           s.facility_id?.toLowerCase() === orgIdentifier.toLowerCase() ||
@@ -596,6 +664,7 @@ class AppointmentRepository {
       updated_at: new Date().toISOString(),
     };
     this.sessions.set(session.id, updated);
+    this.persist();
     return updated;
   }
 
@@ -624,11 +693,14 @@ class AppointmentRepository {
 
   public saveOverride(override: ScheduleOverride): ScheduleOverride {
     this.overrides.set(override.id, override);
+    this.persist();
     return override;
   }
 
   public deleteOverride(id: string): boolean {
-    return this.overrides.delete(id);
+    const res = this.overrides.delete(id);
+    if (res) this.persist();
+    return res;
   }
 
   // APPOINTMENTS
@@ -638,27 +710,38 @@ class AppointmentRepository {
 
   public getAppointmentById(id: string): Appointment | null {
     if (!id) return null;
+    const clean = id.trim().toLowerCase();
     const direct = this.appointments.get(id);
     if (direct) return direct;
     return (
       this.getAllAppointments().find(
-        (a) => a.id.toLowerCase() === id.toLowerCase() || a.appointment_no.toLowerCase() === id.toLowerCase()
+        (a) => a.id.toLowerCase() === clean || a.appointment_no.toLowerCase() === clean
       ) || null
     );
   }
 
   public getAppointmentsForPatient(patientId: string): Appointment[] {
+    if (!patientId) return [];
+    const clean = patientId.trim().toLowerCase();
     return this.getAllAppointments()
-      .filter((a) => a.patient_id === patientId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      .filter((a) => a.patient_id.toLowerCase() === clean)
+      .sort((a, b) => new Date(b.created_at || b.appointment_date).getTime() - new Date(a.created_at || a.appointment_date).getTime());
   }
 
   public getAppointmentsForDoctor(doctorId: string, orgIdentifier?: string): Appointment[] {
-    return this.getAllAppointments().filter((a) => {
-      const matchDoc = a.doctor_id === doctorId;
-      const matchOrg = orgIdentifier ? a.organization_identifier === orgIdentifier : true;
-      return matchDoc && matchOrg;
-    });
+    if (!doctorId) return [];
+    const cleanDoc = doctorId.trim().toLowerCase();
+    return this.getAllAppointments()
+      .filter((a) => {
+        const matchDoc = a.doctor_id.toLowerCase() === cleanDoc;
+        const matchOrg = orgIdentifier
+          ? a.organization_identifier?.toLowerCase() === orgIdentifier.toLowerCase() ||
+            a.organization_id?.toLowerCase() === orgIdentifier.toLowerCase() ||
+            a.facility_id?.toLowerCase() === orgIdentifier.toLowerCase()
+          : true;
+        return matchDoc && matchOrg;
+      })
+      .sort((a, b) => new Date(b.created_at || b.appointment_date).getTime() - new Date(a.created_at || a.appointment_date).getTime());
   }
 
   public getAppointmentsForSessionDate(sessionId: string, date: string): Appointment[] {
@@ -694,15 +777,17 @@ class AppointmentRepository {
       updated_at: new Date().toISOString(),
     };
     this.appointments.set(appointment.id, updated);
+    this.persist();
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("medora-appointments-updated"));
       window.dispatchEvent(new CustomEvent("medora-appointment-updated", { detail: updated }));
     }
     return updated;
   }
 
   public deleteAppointment(id: string): boolean {
-    return this.appointments.delete(id);
+    const res = this.appointments.delete(id);
+    if (res) this.persist();
+    return res;
   }
 }
 

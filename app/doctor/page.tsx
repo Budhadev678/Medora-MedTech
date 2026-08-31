@@ -95,13 +95,16 @@ export default function DoctorWorkspacePage() {
 
     const handleContextChange = () => loadData();
     const handleQueueUpdate = () => loadData();
+    const handleAppointmentsUpdate = () => loadData();
 
     window.addEventListener("medora-doctor-context-changed", handleContextChange);
     window.addEventListener("medora-queue-updated", handleQueueUpdate);
+    window.addEventListener("medora-appointments-updated", handleAppointmentsUpdate);
 
     return () => {
       window.removeEventListener("medora-doctor-context-changed", handleContextChange);
       window.removeEventListener("medora-queue-updated", handleQueueUpdate);
+      window.removeEventListener("medora-appointments-updated", handleAppointmentsUpdate);
     };
   }, [doctorId]);
 

@@ -17,19 +17,26 @@ import {
   Layers,
   ArrowRight,
 } from "lucide-react";
-import { Appointment } from "@/types/database.types";
+import { Appointment, AppointmentStatus } from "@/types/database.types";
 import { FrontendAppointmentService } from "@/lib/services/frontend-appointment-service";
+import { AppointmentBookingService } from "@/lib/services/appointment-booking-service";
+import { AppointmentStore } from "@/lib/data/appointment-store";
+import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { AppointmentStatusBadge } from "@/components/appointment/appointment-status-badge";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth/auth-context";
 
 export default function DoctorAppointmentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const appointmentId = params?.id as string;
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isActing, setIsActing] = useState<boolean>(false);
+  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const loadAppointment = async () => {
     if (!appointmentId) return;
@@ -41,6 +48,13 @@ export default function DoctorAppointmentDetailPage() {
 
   useEffect(() => {
     loadAppointment();
+    const handleUpdate = () => loadAppointment();
+    window.addEventListener("medora-appointments-updated", handleUpdate);
+    window.addEventListener("medora-appointment-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-appointments-updated", handleUpdate);
+      window.removeEventListener("medora-appointment-updated", handleUpdate);
+    };
   }, [appointmentId]);
 
   if (isLoading) {
@@ -71,7 +85,44 @@ export default function DoctorAppointmentDetailPage() {
     );
   }
 
-  const isCheckedIn = appointment.status === "CHECKED_IN" || appointment.status === "WAITING";
+  const handleUpdateStatus = async (newStatus: AppointmentStatus) => {
+    if (!appointment || isActing) return;
+    setIsActing(true);
+    setActionMessage(null);
+    try {
+      const updated = AppointmentStore.saveAppointment({
+        ...appointment,
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      });
+      setAppointment(updated);
+      setActionMessage({ type: "success", text: `Appointment status updated to ${newStatus}.` });
+    } catch (err: any) {
+      setActionMessage({ type: "error", text: err.message || "Failed to update appointment." });
+    } finally {
+      setIsActing(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!appointment || !user || isActing) return;
+    const reason = window.prompt("Please enter the reason for clinical cancellation:") || "Cancelled by attending doctor";
+    setIsActing(true);
+    setActionMessage(null);
+    try {
+      const res = await AppointmentBookingService.cancelAppointment(appointment.id, user, reason);
+      if (res.success) {
+        setActionMessage({ type: "success", text: "Appointment has been cancelled." });
+        loadAppointment();
+      } else {
+        setActionMessage({ type: "error", text: res.message });
+      }
+    } catch (err: any) {
+      setActionMessage({ type: "error", text: err.message || "Failed to cancel appointment." });
+    } finally {
+      setIsActing(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
@@ -84,6 +135,33 @@ export default function DoctorAppointmentDetailPage() {
         <span>/</span>
         <span className="font-mono text-slate-800">{appointment.appointment_no}</span>
       </div>
+
+      {/* Action Notification Toast */}
+      {actionMessage && (
+        <div
+          className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between shadow-xs ${
+            actionMessage.type === "success"
+              ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+              : "bg-rose-50 text-rose-900 border border-rose-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {actionMessage.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-rose-600" />
+            )}
+            <span>{actionMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionMessage(null)}
+            className="text-slate-400 hover:text-slate-700 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main Container */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -158,15 +236,58 @@ export default function DoctorAppointmentDetailPage() {
 
         {/* Action Toolbar */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
-          {isCheckedIn && (
-            <Link href={`/doctor/consultations?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`}>
-              <Button size="sm" className="bg-teal-700 hover:bg-teal-800 text-xs h-9">
-                <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
-                Start SOAP Consultation
-                <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-              </Button>
-            </Link>
+          {appointment.status === "REQUESTED" && (
+            <Button
+              size="sm"
+              onClick={() => handleUpdateStatus("CONFIRMED")}
+              disabled={isActing}
+              className="bg-teal-700 hover:bg-teal-800 text-xs font-bold rounded-xl"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirm Appointment
+            </Button>
           )}
+
+          {appointment.status === "CONFIRMED" && (
+            <Button
+              size="sm"
+              onClick={() => handleUpdateStatus("CHECKED_IN")}
+              disabled={isActing}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl"
+            >
+              Admit to Queue
+            </Button>
+          )}
+
+          {appointment.status === "IN_CONSULTATION" && (
+            <Button
+              size="sm"
+              onClick={() => handleUpdateStatus("COMPLETED")}
+              disabled={isActing}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark Completed
+            </Button>
+          )}
+
+          {appointment.status !== "CANCELLED" && appointment.status !== "COMPLETED" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isActing}
+              className="text-rose-700 border-rose-200 hover:bg-rose-50 text-xs font-semibold rounded-xl"
+            >
+              Cancel Appointment
+            </Button>
+          )}
+
+          <Link href={`/doctor/consultations?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`}>
+            <Button size="sm" className="bg-teal-700 hover:bg-teal-800 text-xs h-9 rounded-xl font-bold">
+              <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
+              Clinical Consultation Desk
+              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
