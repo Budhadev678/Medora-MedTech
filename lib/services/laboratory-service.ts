@@ -29,6 +29,8 @@ import {
   saveLabReports,
   getLabReportById,
   getPatientLabReports,
+  selectLaboratoryForOrder,
+  getLaboratoryLabOrders,
 } from "@/lib/data/lab-order-store";
 import { getLabTestById } from "@/lib/data/lab-test-catalog-store";
 import { appendAuditEvent } from "@/lib/data/audit-store";
@@ -627,18 +629,32 @@ export class LaboratoryService {
   /**
    * 9. Generate and Release Certified Laboratory Report.
    */
-  static generateAndReleaseReport(params: {
-    orderId: string;
-    notes?: string;
-    verifierActor: StoredIdentity | null;
-  }): LaboratoryServiceResponse<HealthcareLabReport> {
-    const { orderId, notes, verifierActor } = params;
+  static generateAndReleaseReport(
+    paramOrOrderId: string | { orderId: string; results?: any[]; notes?: string; verifierActor: StoredIdentity | null },
+    resultsArg?: any[],
+    actorArg?: StoredIdentity | null
+  ): LaboratoryServiceResponse<HealthcareLabReport> {
+    let orderId: string;
+    let explicitResults: any[] | undefined;
+    let notes: string | undefined;
+    let verifierActor: StoredIdentity | null;
+
+    if (typeof paramOrOrderId === "object") {
+      orderId = paramOrOrderId.orderId;
+      explicitResults = paramOrOrderId.results;
+      notes = paramOrOrderId.notes;
+      verifierActor = paramOrOrderId.verifierActor;
+    } else {
+      orderId = paramOrOrderId;
+      explicitResults = resultsArg;
+      verifierActor = actorArg || null;
+    }
 
     if (!verifierActor) {
       return { success: false, error: "Authentication required to release laboratory report.", errorCode: "UNAUTHENTICATED" };
     }
 
-    const allowedRoles = ["lab_staff", "admin", "doctor"];
+    const allowedRoles = ["lab_staff", "admin", "doctor", "staff", "nurse"];
     if (!allowedRoles.includes(verifierActor.role)) {
       return { success: false, error: "Unauthorized. Pathologist / Verifier credentials required.", errorCode: "FORBIDDEN" };
     }
@@ -648,7 +664,7 @@ export class LaboratoryService {
       return { success: false, error: `Lab order ${orderId} not found.`, errorCode: "NOT_FOUND" };
     }
 
-    const results = getOrderTestResults(order.id);
+    let results = explicitResults && explicitResults.length > 0 ? explicitResults : getOrderTestResults(order.id);
     if (results.length === 0) {
       return { success: false, error: "Cannot generate report with zero test results.", errorCode: "NO_RESULTS" };
     }
@@ -670,8 +686,8 @@ export class LaboratoryService {
       ordering_provider_id: order.ordering_provider_id,
       ordering_provider_name: order.ordering_provider_name,
       ordering_provider_role: order.ordering_provider_role,
-      laboratory_id: order.laboratory_id || verifierActor.organizationId || "LAB-1001",
-      laboratory_name: order.laboratory_name || verifierActor.organizationName || "ABC Diagnostics",
+      laboratory_id: order.selected_lab_id || order.laboratory_id || verifierActor.organizationId || "LAB-FAC-1001",
+      laboratory_name: order.selected_lab_name || order.laboratory_name || verifierActor.organizationName || "ABC Diagnostics — Rourkela Central Lab",
       status: "RELEASED",
       version: 1,
       sample_ids: sampleIds,
@@ -692,7 +708,7 @@ export class LaboratoryService {
     reports.push(newReport);
     saveLabReports(reports);
 
-    // Update parent order to COMPLETED
+    // Update parent order to COMPLETED / RELEASED
     const orders = getAllLabOrders();
     const orderIndex = orders.findIndex((o) => o.id === order.id);
     if (orderIndex !== -1) {
@@ -791,4 +807,45 @@ export class LaboratoryService {
 
     return { success: true, data: updatedReport };
   }
+
+  /**
+   * 11. Patient selects an authorized laboratory for testing.
+   */
+  static selectLaboratory(
+    orderId: string,
+    laboratoryId: string,
+    laboratoryName: string,
+    patientActor: StoredIdentity | null
+  ): LaboratoryServiceResponse<HealthcareLabOrder> {
+    if (!patientActor) {
+      return { success: false, error: "Authentication required.", errorCode: "UNAUTHENTICATED" };
+    }
+
+    const actorId = patientActor.identifier || patientActor.id;
+    const res = selectLaboratoryForOrder({
+      orderId,
+      laboratoryId,
+      laboratoryName,
+      actorId,
+      actorName: patientActor.fullName,
+      actorRole: patientActor.role,
+    });
+
+    if (!res.success) {
+      return { success: false, error: res.error, errorCode: "SELECTION_FAILED" };
+    }
+
+    return { success: true, data: res.order };
+  }
+
+  /**
+   * 12. Retrieve orders assigned to a specific laboratory facility.
+   */
+  static getLaboratoryOrders(
+    laboratoryId: string,
+    actor?: StoredIdentity | null
+  ): HealthcareLabOrder[] {
+    return getLaboratoryLabOrders(laboratoryId);
+  }
 }
+

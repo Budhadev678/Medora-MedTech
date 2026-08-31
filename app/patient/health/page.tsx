@@ -41,10 +41,13 @@ import {
 } from "@/lib/services/clinical-continuity-service";
 import { 
   HealthcarePrescription, 
-  getPatientPrescriptions 
+  getPatientPrescriptions,
+  selectPharmacyForPrescription,
 } from "@/lib/data/prescription-store";
 import { 
-  getPatientLabReports 
+  getPatientLabReports,
+  getPatientLabOrders,
+  selectLaboratoryForOrder,
 } from "@/lib/data/lab-order-store";
 import { LabReportService } from "@/lib/services/lab-report-service";
 import { 
@@ -60,7 +63,8 @@ import {
   TimelineFilterOptions, 
   EncounterClinicalBundle,
   PatientStructuredHealthSummary,
-  HealthcareLabReport
+  HealthcareLabReport,
+  HealthcareLabOrder,
 } from "@/types/database.types";
 
 export type HealthTab = "overview" | "visits" | "prescriptions" | "lab_reports" | "documents" | "timeline";
@@ -101,6 +105,7 @@ export default function PatientHealthHubPage() {
   const [bundles, setBundles] = useState<EncounterClinicalBundle[]>([]);
   const [prescriptions, setPrescriptions] = useState<HealthcarePrescription[]>([]);
   const [reports, setReports] = useState<HealthcareLabReport[]>([]);
+  const [labOrders, setLabOrders] = useState<HealthcareLabOrder[]>([]);
   const [documents, setDocuments] = useState<HealthcareMedicalDocument[]>([]);
   const [summary, setSummary] = useState<PatientStructuredHealthSummary | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +130,32 @@ export default function PatientHealthHubPage() {
   const [shareDurationHours, setShareDurationHours] = useState(24);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
+
+  // Pharmacy Selection State
+  const [selectedRxForPharmacy, setSelectedRxForPharmacy] = useState<HealthcarePrescription | null>(null);
+  const [selectedPharmacyFacilityId, setSelectedPharmacyFacilityId] = useState<string>("PHARM-FAC-1001");
+  const [isPharmacyModalOpen, setIsPharmacyModalOpen] = useState(false);
+  const [pharmacyActionLoading, setPharmacyActionLoading] = useState(false);
+  const [pharmacyMessage, setPharmacyMessage] = useState<string | null>(null);
+
+  // Laboratory Selection State
+  const [selectedOrderForLab, setSelectedOrderForLab] = useState<HealthcareLabOrder | null>(null);
+  const [selectedLabFacilityId, setSelectedLabFacilityId] = useState<string>("LAB-FAC-1001");
+  const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+  const [labActionLoading, setLabActionLoading] = useState(false);
+  const [labMessage, setLabMessage] = useState<string | null>(null);
+
+  const REGISTERED_PHARMACIES = [
+    { id: "PHARM-FAC-1001", name: "ABC Pharmacy — Rourkela Central", type: "Hospital & Retail Pharmacy", location: "Main Road, Central Campus" },
+    { id: "PHARM-FAC-1002", name: "ABC Pharmacy — Sector 19", type: "Retail Chemist", location: "Sector 19 Market" },
+    { id: "PHARM-FAC-1003", name: "City Hospital In-House Dispensary", type: "Hospital Dispensary", location: "Ground Floor, City Hospital" },
+  ];
+
+  const REGISTERED_LABORATORIES = [
+    { id: "LAB-FAC-1001", name: "ABC Diagnostics — Rourkela Central Lab", type: "Central Pathology & Biochemistry Lab", location: "Plot 42, Civil Township" },
+    { id: "LAB-FAC-1002", name: "ABC Diagnostics — Civil Township Collection Center", type: "Sample Collection Hub", location: "Civil Township Hub" },
+    { id: "LAB-ORG-1002", name: "Apex Clinical Labs", type: "Super-Specialty Diagnostics", location: "12 Healthcare Avenue" },
+  ];
 
   const refreshAllHealthData = () => {
     if (!user) return;
@@ -153,7 +184,66 @@ export default function PatientHealthHubPage() {
     setSummary(ClinicalContinuityService.getPatientStructuredHealthSummary(pId, actor as any));
     setPrescriptions(getPatientPrescriptions(pId, false));
     setReports(getPatientLabReports(pId, false));
+    setLabOrders(getPatientLabOrders(pId, false));
     setDocuments(getPatientMedicalDocuments(pId, true));
+  };
+
+  const handleConfirmPharmacySelection = () => {
+    if (!selectedRxForPharmacy || !user) return;
+    const pharm = REGISTERED_PHARMACIES.find((p) => p.id === selectedPharmacyFacilityId) || REGISTERED_PHARMACIES[0];
+    setPharmacyActionLoading(true);
+    setPharmacyMessage(null);
+
+    const res = selectPharmacyForPrescription({
+      prescriptionId: selectedRxForPharmacy.id,
+      pharmacyId: pharm.id,
+      pharmacyName: pharm.name,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
+    setPharmacyActionLoading(false);
+    if (res.success) {
+      setPharmacyMessage(`Prescription successfully routed to ${pharm.name}.`);
+      refreshAllHealthData();
+      setTimeout(() => {
+        setIsPharmacyModalOpen(false);
+        setSelectedRxForPharmacy(null);
+        setPharmacyMessage(null);
+      }, 1500);
+    } else {
+      setPharmacyMessage(res.error || "Failed to select pharmacy.");
+    }
+  };
+
+  const handleConfirmLabSelection = () => {
+    if (!selectedOrderForLab || !user) return;
+    const lab = REGISTERED_LABORATORIES.find((l) => l.id === selectedLabFacilityId) || REGISTERED_LABORATORIES[0];
+    setLabActionLoading(true);
+    setLabMessage(null);
+
+    const res = selectLaboratoryForOrder({
+      orderId: selectedOrderForLab.id,
+      laboratoryId: lab.id,
+      laboratoryName: lab.name,
+      actorId: user.identifier || user.id,
+      actorName: user.fullName,
+      actorRole: user.role,
+    });
+
+    setLabActionLoading(false);
+    if (res.success) {
+      setLabMessage(`Diagnostic order successfully routed to ${lab.name}.`);
+      refreshAllHealthData();
+      setTimeout(() => {
+        setIsLabModalOpen(false);
+        setSelectedOrderForLab(null);
+        setLabMessage(null);
+      }, 1500);
+    } else {
+      setLabMessage(res.error || "Failed to select laboratory.");
+    }
   };
 
   useEffect(() => {
@@ -656,6 +746,63 @@ export default function PatientHealthHubPage() {
                       </div>
                     </div>
 
+                    {/* Pharmacy Routing & Live Fulfillment Status */}
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          {rx.selected_pharmacy_id ? (
+                            <div className="flex items-center gap-1.5 text-teal-900 font-medium">
+                              <Store className="h-4 w-4 text-teal-700 shrink-0" />
+                              <span>
+                                <strong>Selected Pharmacy:</strong> {rx.selected_pharmacy_name || rx.selected_pharmacy_id}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-slate-500 italic text-[11px]">
+                              <Store className="h-4 w-4 text-slate-400 shrink-0" />
+                              <span>No pharmacy assigned yet. Select a pharmacy to route this prescription.</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedRxForPharmacy(rx);
+                              setSelectedPharmacyFacilityId(rx.selected_pharmacy_id || "PHARM-FAC-1001");
+                              setIsPharmacyModalOpen(true);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 font-bold text-teal-800 border-teal-300 hover:bg-teal-50 rounded-xl gap-1"
+                          >
+                            <Store className="h-3 w-3" />
+                            <span>{rx.selected_pharmacy_id ? "Change Pharmacy" : "Choose Pharmacy"}</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {rx.selected_pharmacy_id && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 text-[11px]">
+                          <span className="text-slate-500">Dispensing Status:</span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold ${
+                              rx.status === "DISPENSED"
+                                ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                                : "bg-blue-50 text-blue-800 border-blue-200"
+                            }`}
+                          >
+                            {rx.status === "DISPENSED" ? "✓ Dispensed & Ready for Pickup" : "● Order Received by Pharmacy"}
+                          </Badge>
+                          {rx.dispensed_at && (
+                            <span className="text-slate-500">
+                              (Dispensed on {new Date(rx.dispensed_at).toLocaleDateString()})
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
@@ -684,93 +831,217 @@ export default function PatientHealthHubPage() {
         )}
 
         {/* ============================================================ */}
-        {/* TAB 4: LAB REPORTS                                           */}
+        {/* TAB 4: LAB REPORTS & DIAGNOSTIC ORDERS                       */}
         {/* ============================================================ */}
         {activeTab === "lab_reports" && (
-          <div className="space-y-4">
-            {reports.length > 0 ? (
-              <div className="space-y-3.5">
-                {reports.map((rpt) => (
-                  <div
-                    key={rpt.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3 hover:border-slate-300 transition-all"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded">
-                          {rpt.id}
+          <div className="space-y-6">
+            {/* Active Diagnostic Orders Section */}
+            {labOrders.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-blue-600" />
+                    <span>Prescribed Diagnostic Test Orders ({labOrders.length})</span>
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] font-bold text-blue-700 bg-blue-50 border-blue-200">
+                    Patient Lab Routing
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  {labOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="rounded-2xl border border-blue-200/80 bg-white p-4 shadow-2xs space-y-3"
+                    >
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded">
+                            {order.order_reference}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold ${
+                              order.status === "COMPLETED" || order.status === "RELEASED"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                : order.status === "PATIENT_SELECTED_LAB" || order.status === "SAMPLE_COLLECTED"
+                                ? "bg-blue-50 text-blue-800 border-blue-300"
+                                : "bg-amber-50 text-amber-800 border-amber-300"
+                            }`}
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
+                        <span className="text-[11px] text-slate-500">
+                          {new Date(order.created_at).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </span>
-                        <Badge className="bg-emerald-600 text-white text-[9px] font-bold">
-                          {rpt.status.toUpperCase()} V{rpt.version}
-                        </Badge>
                       </div>
-                      <span className="text-[11px] text-slate-500">
-                        {rpt.released_at ? new Date(rpt.released_at).toLocaleDateString() : "N/A"}
-                      </span>
-                    </div>
 
-                    <div className="text-xs space-y-0.5">
-                      <h4 className="font-bold text-slate-900 text-sm">{rpt.laboratory_name}</h4>
-                      <p className="text-[11px] text-slate-500">Ordering Doctor: {rpt.ordering_provider_name}</p>
-                    </div>
+                      <div className="text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 text-sm">
+                            Ordered by: {order.ordering_provider_name}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-500">
+                            Priority: <strong className="text-slate-800">{order.priority}</strong>
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600">
+                          <strong>Clinical Indication:</strong> {order.reason || (order as any).clinical_reason || "Diagnostic evaluation"}
+                        </p>
+                      </div>
 
-                    {/* Results table */}
-                    <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
-                      <table className="w-full text-left">
-                        <thead className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-100">
-                          <tr>
-                            <th className="p-2">Test Name</th>
-                            <th className="p-2">Result</th>
-                            <th className="p-2">Reference Range</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {rpt.results.map((res, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50">
-                              <td className="p-2 font-medium text-slate-900">{res.test_name}</td>
-                              <td className="p-2 font-mono font-bold text-slate-800">{res.value} {res.unit}</td>
-                              <td className="p-2 text-slate-500 text-[11px]">{res.reference_range || "Standard"}</td>
-                            </tr>
+                      {/* Ordered Tests */}
+                      <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 space-y-1.5 text-xs">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                          Requested Test Investigations
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {order.items.map((item, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 shadow-2xs"
+                            >
+                              {item.test_name} {item.specimen_type ? `(${item.specimen_type})` : ""}
+                            </span>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        </div>
+                      </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-500">
-                        Verified by {rpt.verified_by_name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => {
-                            setSelectedReport(rpt);
-                            setShowShareModal(true);
-                          }}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7 text-indigo-700 border-indigo-300 font-bold rounded-xl"
-                        >
-                          <Share2 className="h-3.5 w-3.5 mr-1 text-indigo-600" /> Share
-                        </Button>
-                        <Link href={`/reports/${rpt.id}`}>
-                          <Button size="sm" className="bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl text-xs h-7">
-                            <Eye className="h-3.5 w-3.5 mr-1" /> View Official Report
+                      {/* Laboratory Routing Card */}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div>
+                          {order.selected_lab_id || order.laboratory_id ? (
+                            <div className="flex items-center gap-1.5 text-blue-950 font-medium">
+                              <FlaskConical className="h-4 w-4 text-blue-700 shrink-0" />
+                              <span>
+                                <strong>Selected Laboratory:</strong> {order.selected_lab_name || order.laboratory_name || order.selected_lab_id}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-slate-500 italic text-[11px]">
+                              <FlaskConical className="h-4 w-4 text-slate-400 shrink-0" />
+                              <span>No diagnostic laboratory selected yet. Choose a registered lab.</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedOrderForLab(order);
+                              setSelectedLabFacilityId(order.selected_lab_id || order.laboratory_id || "LAB-FAC-1001");
+                              setIsLabModalOpen(true);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 font-bold text-blue-800 border-blue-300 hover:bg-blue-50 rounded-xl gap-1"
+                          >
+                            <FlaskConical className="h-3 w-3" />
+                            <span>{order.selected_lab_id || order.laboratory_id ? "Change Lab" : "Choose Laboratory"}</span>
                           </Button>
-                        </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            ) : (
-              <EmptyState
-                icon={<FlaskConical className="h-6 w-6 text-indigo-600" />}
-                title="No Lab Reports Available"
-                description="Verified diagnostic reports released by accredited laboratories will appear here."
-                actionHref="/patient/appointments/book"
-                actionLabel="Book Care Appointment"
-              />
             )}
+
+            {/* Certified Released Reports Section */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                <span>Certified Laboratory Reports ({reports.length})</span>
+              </h3>
+
+              {reports.length > 0 ? (
+                <div className="space-y-3.5">
+                  {reports.map((rpt) => (
+                    <div
+                      key={rpt.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3 hover:border-slate-300 transition-all"
+                    >
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded">
+                            {rpt.id}
+                          </span>
+                          <Badge className="bg-emerald-600 text-white text-[9px] font-bold">
+                            {rpt.status.toUpperCase()} V{rpt.version}
+                          </Badge>
+                        </div>
+                        <span className="text-[11px] text-slate-500">
+                          {rpt.released_at ? new Date(rpt.released_at).toLocaleDateString() : "N/A"}
+                        </span>
+                      </div>
+
+                      <div className="text-xs space-y-0.5">
+                        <h4 className="font-bold text-slate-900 text-sm">{rpt.laboratory_name}</h4>
+                        <p className="text-[11px] text-slate-500">Ordering Doctor: {rpt.ordering_provider_name}</p>
+                      </div>
+
+                      {/* Results table */}
+                      <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
+                        <table className="w-full text-left">
+                          <thead className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-100">
+                            <tr>
+                              <th className="p-2">Test Name</th>
+                              <th className="p-2">Result</th>
+                              <th className="p-2">Reference Range</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {rpt.results.map((res, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="p-2 font-medium text-slate-900">{res.test_name}</td>
+                                <td className="p-2 font-mono font-bold text-slate-800">{res.value} {res.unit}</td>
+                                <td className="p-2 text-slate-500 text-[11px]">{res.reference_range || "Standard"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500">
+                          Verified by {rpt.verified_by_name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedReport(rpt);
+                              setShowShareModal(true);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 text-indigo-700 border-indigo-300 font-bold rounded-xl"
+                          >
+                            <Share2 className="h-3.5 w-3.5 mr-1 text-indigo-600" /> Share
+                          </Button>
+                          <Link href={`/reports/${rpt.id}`}>
+                            <Button size="sm" className="bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl text-xs h-7">
+                              <Eye className="h-3.5 w-3.5 mr-1" /> View Official Report
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<FlaskConical className="h-6 w-6 text-indigo-600" />}
+                  title="No Certified Lab Reports Available"
+                  description="Verified diagnostic reports released by accredited laboratories will appear here."
+                  actionHref="/patient/appointments/book"
+                  actionLabel="Book Care Appointment"
+                />
+              )}
+            </div>
           </div>
         )}
 
@@ -1198,6 +1469,185 @@ export default function PatientHealthHubPage() {
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>Download Secure Copy</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ============================================================ */}
+        {/* MODAL: PHARMACY SELECTION (PHASE 1 / PROMPT 3)               */}
+        {/* ============================================================ */}
+        {isPharmacyModalOpen && selectedRxForPharmacy && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
+                    <Store className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">Select Pharmacy for Dispensing</h3>
+                    <span className="text-[11px] text-slate-500 font-mono">{selectedRxForPharmacy.prescription_reference}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPharmacyModalOpen(false);
+                    setSelectedRxForPharmacy(null);
+                  }}
+                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {pharmacyMessage && (
+                <div className={`p-3 rounded-xl text-xs font-semibold ${pharmacyMessage.includes("successfully") ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                  {pharmacyMessage}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Choose Registered Pharmacy</label>
+                <div className="space-y-2">
+                  {REGISTERED_PHARMACIES.map((pharm) => (
+                    <label
+                      key={pharm.id}
+                      className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                        selectedPharmacyFacilityId === pharm.id
+                          ? "border-teal-600 bg-teal-50/50 shadow-xs"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="pharmacy_choice"
+                        value={pharm.id}
+                        checked={selectedPharmacyFacilityId === pharm.id}
+                        onChange={() => setSelectedPharmacyFacilityId(pharm.id)}
+                        className="mt-1 text-teal-600 focus:ring-teal-500"
+                      />
+                      <div className="text-xs space-y-0.5 flex-1">
+                        <span className="font-bold text-slate-900 block">{pharm.name}</span>
+                        <span className="text-[11px] text-slate-500 block">{pharm.type} • {pharm.location}</span>
+                        <span className="font-mono text-[10px] text-teal-700 font-semibold">{pharm.id}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsPharmacyModalOpen(false);
+                    setSelectedRxForPharmacy(null);
+                  }}
+                  className="text-xs rounded-xl"
+                  disabled={pharmacyActionLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleConfirmPharmacySelection}
+                  disabled={pharmacyActionLoading}
+                  className="text-xs bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl"
+                >
+                  {pharmacyActionLoading ? "Routing..." : "Confirm & Send to Pharmacy"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* MODAL: LABORATORY SELECTION (PHASE 1 / PROMPT 3)             */}
+        {/* ============================================================ */}
+        {isLabModalOpen && selectedOrderForLab && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in-50">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
+                    <FlaskConical className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">Select Diagnostic Laboratory</h3>
+                    <span className="text-[11px] text-slate-500 font-mono">{selectedOrderForLab.order_reference}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLabModalOpen(false);
+                    setSelectedOrderForLab(null);
+                  }}
+                  className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {labMessage && (
+                <div className={`p-3 rounded-xl text-xs font-semibold ${labMessage.includes("successfully") ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                  {labMessage}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Choose Registered Laboratory Facility</label>
+                <div className="space-y-2">
+                  {REGISTERED_LABORATORIES.map((lab) => (
+                    <label
+                      key={lab.id}
+                      className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                        selectedLabFacilityId === lab.id
+                          ? "border-blue-600 bg-blue-50/50 shadow-xs"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="lab_choice"
+                        value={lab.id}
+                        checked={selectedLabFacilityId === lab.id}
+                        onChange={() => setSelectedLabFacilityId(lab.id)}
+                        className="mt-1 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="text-xs space-y-0.5 flex-1">
+                        <span className="font-bold text-slate-900 block">{lab.name}</span>
+                        <span className="text-[11px] text-slate-500 block">{lab.type} • {lab.location}</span>
+                        <span className="font-mono text-[10px] text-blue-700 font-semibold">{lab.id}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsLabModalOpen(false);
+                    setSelectedOrderForLab(null);
+                  }}
+                  className="text-xs rounded-xl"
+                  disabled={labActionLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleConfirmLabSelection}
+                  disabled={labActionLoading}
+                  className="text-xs bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl"
+                >
+                  {labActionLoading ? "Routing..." : "Confirm & Send to Laboratory"}
                 </Button>
               </div>
             </div>

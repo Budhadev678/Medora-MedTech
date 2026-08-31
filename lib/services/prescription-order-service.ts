@@ -27,6 +27,9 @@ import {
   getEncounterPrescriptions as getEncounterPrescriptionsInStore,
   getPatientPrescriptions as getPatientPrescriptionsInStore,
   getPrescriptionForPharmacy as getPrescriptionForPharmacyInStore,
+  selectPharmacyForPrescription as selectPharmacyForPrescriptionInStore,
+  dispensePrescription as dispensePrescriptionInStore,
+  getPharmacyPrescriptions as getPharmacyPrescriptionsInStore,
   PharmacyPrescriptionPayload,
 } from "@/lib/data/prescription-store";
 import {
@@ -766,4 +769,64 @@ export class PrescriptionOrderService {
     }
     return getPatientMedicalOrdersInStore(patientId, false);
   }
+
+  /**
+   * Patient selects a registered pharmacy for fulfilling the prescription.
+   */
+  public static async selectPharmacy(
+    prescriptionId: string,
+    pharmacyId: string,
+    pharmacyName: string,
+    actor: StoredIdentity | null
+  ): Promise<{ success: boolean; prescription?: HealthcarePrescription; error?: string }> {
+    if (!actor) {
+      return { success: false, error: "Authentication required." };
+    }
+    const actorId = actor.identifier || actor.id;
+    return selectPharmacyForPrescriptionInStore({
+      prescriptionId,
+      pharmacyId,
+      pharmacyName,
+      actorId,
+      actorName: actor.fullName,
+      actorRole: actor.role,
+    });
+  }
+
+  /**
+   * Pharmacy dispenses a verified digital prescription.
+   */
+  public static async dispensePrescription(
+    prescriptionId: string,
+    pharmacyId: string,
+    actor: StoredIdentity | null
+  ): Promise<{ success: boolean; prescription?: HealthcarePrescription; error?: string }> {
+    if (!actor) {
+      return { success: false, error: "Authentication required." };
+    }
+    const allowedRoles = ["pharmacy_staff", "pharmacist", "pharmacy", "hospital_admin", "admin", "staff"];
+    if (!allowedRoles.includes(actor.role)) {
+      return { success: false, error: "Only authorized pharmacy staff can dispense prescriptions." };
+    }
+    const actorId = actor.identifier || actor.id;
+    return dispensePrescriptionInStore({
+      prescriptionId,
+      pharmacyId,
+      actorId,
+      actorName: actor.fullName,
+      actorRole: actor.role,
+    });
+  }
+
+  /**
+   * Retrieves prescriptions assigned to a specific pharmacy facility.
+   */
+  public static getPharmacyPrescriptions(
+    pharmacyId: string,
+    actor: StoredIdentity | null
+  ): HealthcarePrescription[] {
+    if (!actor) return [];
+    return getPharmacyPrescriptionsInStore(pharmacyId);
+  }
 }
+

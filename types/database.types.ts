@@ -994,6 +994,8 @@ export type AuditEventType =
   | "PRESCRIPTION_CANCELLED"
   | "PRESCRIPTION_VIEWED"
   | "PRESCRIPTION_ACCESSED"
+  | "PRESCRIPTION_DISPENSED"
+  | "PHARMACY_SELECTED"
   | "ORDER_CREATED"
   | "ORDER_UPDATED"
   | "ORDER_CANCELLED"
@@ -1007,6 +1009,7 @@ export type AuditEventType =
   | "LAB_ORDER_REJECTED"
   | "LAB_ORDER_CANCELLED"
   | "LAB_ORDER_VIEWED"
+  | "LABORATORY_SELECTED"
   | "REFERRAL_CREATED"
   | "REFERRAL_UPDATED"
   | "REFERRAL_FINALIZED"
@@ -1421,6 +1424,10 @@ export type PrescriptionStatus =
   | "READY_FOR_REVIEW"
   | "ISSUED"
   | "FINALIZED"
+  | "PATIENT_SELECTED_PHARMACY"
+  | "PROCESSING"
+  | "READY_FOR_PICKUP"
+  | "DISPENSED"
   | "COMPLETED"
   | "AMENDED"
   | "SUPERSEDED"
@@ -1492,6 +1499,7 @@ export interface HealthcarePrescription {
   patient_id: string; // FK -> patients.medora_id (PAT-1001)
   patient_name: string;
   encounter_id: string; // FK -> HealthcareEncounter (ENC-1001)
+  appointment_id?: string; // FK -> Appointment (apt-xxxx)
   clinical_record_id?: string; // FK -> ClinicalRecord (CR-1001)
   prescriber_id: string; // FK -> doctors.identifier (DOC-1001)
   prescriber_name: string;
@@ -1508,6 +1516,11 @@ export interface HealthcarePrescription {
   refills_allowed: number;
   refills_used: number;
   notes?: string;
+  selected_pharmacy_id?: string; // FK -> Pharmacy facility / org ID
+  selected_pharmacy_name?: string;
+  pharmacy_selected_at?: string;
+  dispensed_at?: string;
+  dispensed_by?: string;
   verification_token?: string;
   digital_signature_hash?: string;
   supersedes_prescription_id?: string;
@@ -1681,6 +1694,7 @@ export type LabOrderStatus =
   | "DRAFT"
   | "FINALIZED"
   | "ORDERED"
+  | "PATIENT_SELECTED_LAB"
   | "ACCEPTED"
   | "SAMPLE_PENDING"
   | "SAMPLE_COLLECTED"
@@ -1690,6 +1704,7 @@ export type LabOrderStatus =
   | "VERIFICATION_PENDING"
   | "REPORT_READY"
   | "RELEASED"
+  | "COMPLETED"
   | "CANCELLED"
   | "REJECTED";
 
@@ -1767,6 +1782,7 @@ export interface HealthcareLabOrder {
   patient_id: string; // FK -> patients.medora_id (PAT-1001)
   patient_name: string;
   encounter_id: string; // FK -> HealthcareEncounter (ENC-1001)
+  appointment_id?: string; // FK -> Appointment (apt-xxxx)
   clinical_record_id?: string; // FK -> ClinicalRecord (CR-1001)
   ordering_provider_id: string; // FK -> doctors.identifier (DOC-1001)
   ordering_provider_name: string;
@@ -1778,6 +1794,9 @@ export interface HealthcareLabOrder {
   department_name?: string;
   laboratory_id?: string; // Optional assigned lab (preserving patient choice)
   laboratory_name?: string;
+  selected_lab_id?: string; // FK -> laboratory organization/facility
+  selected_lab_name?: string;
+  lab_selected_at?: string;
   priority: LabOrderPriority;
   reason: string; // e.g. "Baseline cardiovascular risk evaluation"
   instructions?: string; // e.g. "12-hour overnight fasting required"

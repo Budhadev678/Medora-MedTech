@@ -265,6 +265,8 @@ export function getEncounterPrescriptions(encounterId: string): HealthcarePrescr
   return all.filter((p) => p.encounter_id && p.encounter_id.toUpperCase() === cleanId);
 }
 
+export const getPrescriptionsByEncounterId = getEncounterPrescriptions;
+
 export interface SavePrescriptionDraftParams {
   encounterId: string;
   items: PrescriptionItem[];
@@ -349,6 +351,7 @@ export function savePrescriptionDraft(
     patient_id: encounter.patient_id,
     patient_name: encounter.patient_name,
     encounter_id: encounterId,
+    appointment_id: encounter.appointment_id,
     prescriber_id: actorId,
     prescriber_name: prescriber.fullName,
     prescriber_role: prescriber.doctorData?.qualifications
@@ -476,6 +479,7 @@ export function issuePrescription(
     finalPrescription.status = "ISSUED";
     finalPrescription.version = finalPrescription.version || 1;
     finalPrescription.version_history = finalPrescription.version_history || [];
+    finalPrescription.appointment_id = encounter.appointment_id || finalPrescription.appointment_id;
     finalPrescription.facility_id = encounter.facility_id || finalPrescription.facility_id || "FAC-1001";
     finalPrescription.facility_name = encounter.facility_name || encounter.organization_name;
     finalPrescription.issued_at = nowIso;
@@ -491,6 +495,7 @@ export function issuePrescription(
       patient_id: encounter.patient_id,
       patient_name: encounter.patient_name,
       encounter_id: encounterId,
+      appointment_id: encounter.appointment_id,
       prescriber_id: actorId,
       prescriber_name: prescriber.fullName,
       prescriber_role: prescriber.doctorData?.qualifications
@@ -622,6 +627,7 @@ export function finalizePrescription(
     finalRx.status = "FINALIZED";
     finalRx.version = finalRx.version || 1;
     finalRx.version_history = finalRx.version_history || [];
+    finalRx.appointment_id = encounter.appointment_id || finalRx.appointment_id;
     finalRx.facility_id = encounter.facility_id || finalRx.facility_id || "FAC-1001";
     finalRx.facility_name = encounter.facility_name || encounter.organization_name;
     finalRx.finalized_at = nowIso;
@@ -643,6 +649,7 @@ export function finalizePrescription(
       patient_id: encounter.patient_id,
       patient_name: encounter.patient_name,
       encounter_id: encounterId,
+      appointment_id: encounter.appointment_id,
       prescriber_id: actorId,
       prescriber_name: prescriber.fullName,
       prescriber_role: prescriber.doctorData?.qualifications
@@ -1159,3 +1166,142 @@ export function getPrescriptionForPharmacy(
 
   return { success: true, data: payload };
 }
+
+/**
+ * Patient assigns a registered Pharmacy to fulfill the prescription.
+ * Enforces patient authorization & connects the prescription to the selected pharmacy.
+ */
+export function selectPharmacyForPrescription(params: {
+  prescriptionId: string;
+  pharmacyId: string;
+  pharmacyName: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+}): { success: boolean; prescription?: HealthcarePrescription; error?: string } {
+  const { prescriptionId, pharmacyId, pharmacyName, actorId, actorName, actorRole } = params;
+  const all = getAllPrescriptions();
+  const index = all.findIndex((p) => p.id === prescriptionId || p.prescription_reference === prescriptionId);
+
+  if (index < 0) {
+    return { success: false, error: `Prescription ${prescriptionId} not found.` };
+  }
+
+  const rx = all[index];
+  if (actorRole === "patient" && rx.patient_id.toLowerCase() !== actorId.toLowerCase()) {
+    return { success: false, error: "Access denied. You can only select pharmacy for your own prescriptions." };
+  }
+
+  const nowIso = new Date().toISOString();
+  rx.selected_pharmacy_id = pharmacyId;
+  rx.selected_pharmacy_name = pharmacyName;
+  rx.pharmacy_selected_at = nowIso;
+  rx.status = "PATIENT_SELECTED_PHARMACY";
+  rx.updated_at = nowIso;
+
+  all[index] = rx;
+  savePrescriptions(all);
+
+  // Sync with Pharmacy Intake Store
+  try {
+    const { createPrescriptionIntake } = require("@/lib/data/pharmacy-intake-store");
+    createPrescriptionIntake({
+      prescriptionId: rx.id,
+      prescriptionVersion: rx.version || 1,
+      patientId: rx.patient_id,
+      patientName: rx.patient_name,
+      prescriberId: rx.prescriber_id,
+      prescriberName: rx.prescriber_name,
+      facilityId: pharmacyId,
+      actorId,
+      actorName,
+      actorRole,
+    });
+  } catch (e) {}
+
+  appendAuditEvent(
+    "PHARMACY_SELECTED",
+    actorId,
+    actorName,
+    actorRole,
+    `Patient selected pharmacy ${pharmacyName} (${pharmacyId}) for prescription ${rx.id}`,
+    rx.patient_id,
+    rx.organization_id,
+    rx.organization_name,
+    rx.id,
+    { pharmacyId, pharmacyName, selectedAt: nowIso }
+  );
+
+  return { success: true, prescription: rx };
+}
+
+/**
+ * Pharmacy Dispenses medication for a verified prescription order.
+ */
+export function dispensePrescription(params: {
+  prescriptionId: string;
+  pharmacyId: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+}): { success: boolean; prescription?: HealthcarePrescription; error?: string } {
+  const { prescriptionId, pharmacyId, actorId, actorName, actorRole } = params;
+  const all = getAllPrescriptions();
+  const index = all.findIndex((p) => p.id === prescriptionId || p.prescription_reference === prescriptionId);
+
+  if (index < 0) {
+    return { success: false, error: `Prescription ${prescriptionId} not found.` };
+  }
+
+  const rx = all[index];
+  // Anti-IDOR check: Unselected pharmacy cannot dispense
+  if (
+    rx.selected_pharmacy_id &&
+    rx.selected_pharmacy_id.toLowerCase() !== pharmacyId.toLowerCase() &&
+    rx.facility_id?.toLowerCase() !== pharmacyId.toLowerCase() &&
+    actorRole !== "admin"
+  ) {
+    return { success: false, error: "Access denied. This prescription is not assigned to your pharmacy." };
+  }
+
+  const nowIso = new Date().toISOString();
+  rx.status = "DISPENSED";
+  rx.dispensed_at = nowIso;
+  rx.dispensed_by = actorName || actorId;
+  rx.updated_at = nowIso;
+
+  all[index] = rx;
+  savePrescriptions(all);
+
+  appendAuditEvent(
+    "PRESCRIPTION_DISPENSED",
+    actorId,
+    actorName,
+    actorRole,
+    `Pharmacy ${pharmacyId} dispensed prescription ${rx.id} to patient ${rx.patient_name}`,
+    rx.patient_id,
+    rx.organization_id,
+    rx.organization_name,
+    rx.id,
+    { pharmacyId, dispensedAt: nowIso }
+  );
+
+  return { success: true, prescription: rx };
+}
+
+/**
+ * Retrieve prescriptions assigned to a specific pharmacy facility.
+ * STRICT PHARMACY ISOLATION: Only returns prescriptions where selected_pharmacy_id matches.
+ */
+export function getPharmacyPrescriptions(pharmacyId: string): HealthcarePrescription[] {
+  if (!pharmacyId) return [];
+  const cleanId = pharmacyId.trim().toLowerCase();
+  const all = getAllPrescriptions();
+
+  return all.filter((p) => {
+    const isSelected = (p.selected_pharmacy_id || "").toLowerCase() === cleanId;
+    const isHospitalPharmacy = (p.facility_id || "").toLowerCase() === cleanId && !p.selected_pharmacy_id;
+    return (isSelected || isHospitalPharmacy) && p.status !== "DRAFT" && p.status !== "CANCELLED";
+  });
+}
+

@@ -366,7 +366,67 @@ export function getDoctorLabOrders(
 export function getLaboratoryLabOrders(laboratoryId: string): HealthcareLabOrder[] {
   const all = getAllLabOrders();
   const cleanLab = (laboratoryId || "").trim().toUpperCase();
-  return all.filter((o) => (o.laboratory_id || "").toUpperCase() === cleanLab);
+  return all.filter((o) => {
+    const isAssigned = (o.laboratory_id || "").toUpperCase() === cleanLab;
+    const isSelected = (o.selected_lab_id || "").toUpperCase() === cleanLab;
+    return (isAssigned || isSelected) && o.status !== "DRAFT" && o.status !== "CANCELLED";
+  });
+}
+
+/**
+ * Patient assigns an authorized diagnostic laboratory to process the order.
+ * Enforces patient authorization & connects the order strictly to the selected laboratory.
+ */
+export function selectLaboratoryForOrder(params: {
+  orderId: string;
+  laboratoryId: string;
+  laboratoryName: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+}): { success: boolean; order?: HealthcareLabOrder; error?: string } {
+  const { orderId, laboratoryId, laboratoryName, actorId, actorName, actorRole } = params;
+  const orders = getAllLabOrders();
+  const index = orders.findIndex((o) => o.id === orderId.trim() || o.order_reference === orderId.trim());
+
+  if (index === -1) {
+    return { success: false, error: `Lab order ${orderId} not found.` };
+  }
+
+  const order = orders[index];
+  if (actorRole === "patient" && order.patient_id.toUpperCase() !== actorId.trim().toUpperCase()) {
+    return { success: false, error: "Access denied. You can only select laboratory for your own orders." };
+  }
+
+  const now = new Date().toISOString();
+  const updatedOrder: HealthcareLabOrder = {
+    ...order,
+    laboratory_id: laboratoryId,
+    laboratory_name: laboratoryName,
+    selected_lab_id: laboratoryId,
+    selected_lab_name: laboratoryName,
+    lab_selected_at: now,
+    status: order.status === "DRAFT" ? "ORDERED" : order.status,
+    updated_at: now,
+  };
+
+  orders[index] = updatedOrder;
+  saveLabOrders(orders);
+
+  appendAuditEvent(
+    "LABORATORY_SELECTED",
+    actorId,
+    actorName,
+    actorRole,
+    `Patient selected laboratory ${laboratoryName} (${laboratoryId}) for order ${order.id}`,
+    order.patient_id,
+    order.organization_id,
+    order.organization_name,
+    order.id,
+    { laboratoryId, laboratoryName, selectedAt: now }
+  );
+
+  return { success: true, order: updatedOrder };
 }
 
 // ============================================================
@@ -664,6 +724,7 @@ export function placeLabOrder(
     patient_id: params.patientId || encounter?.patient_id || "PAT-1002",
     patient_name: params.patientName || encounter?.patient_name || "Priya Sharma",
     encounter_id: params.encounterId,
+    appointment_id: params.appointmentId || encounter?.appointment_id,
     ordering_provider_id: params.actorId || (encounter as any)?.attending_doctor_id || "DOC-1001",
     ordering_provider_name: params.actorName || (encounter as any)?.attending_doctor_name || "Dr. Ananya Sharma",
     ordering_provider_role: params.actorRole || "doctor",

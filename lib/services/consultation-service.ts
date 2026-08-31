@@ -12,6 +12,11 @@ import {
   ClinicalFollowUpPlan,
   QueueEntry,
   Appointment,
+  HealthcarePrescription,
+  PrescriptionItem,
+  HealthcareLabOrder,
+  LabOrderItem,
+  LabOrderPriority,
 } from "@/types/database.types";
 import {
   getAllEncounters,
@@ -29,6 +34,15 @@ import {
   amendClinicalRecord,
   getPatientClinicalRecords,
 } from "@/lib/data/clinical-record-store";
+import {
+  finalizePrescription,
+  getPrescriptionsByEncounterId,
+  getAllPrescriptions,
+} from "@/lib/data/prescription-store";
+import {
+  placeLabOrder,
+  getAllLabOrders,
+} from "@/lib/data/lab-order-store";
 import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
 import { AppointmentStore } from "@/lib/data/appointment-store";
 import { ConsultationHistoryStore } from "@/lib/data/consultation-history-store";
@@ -54,6 +68,8 @@ export interface CompleteConsultationResult {
   success: boolean;
   encounter?: HealthcareEncounter;
   clinical_record?: ClinicalRecord;
+  prescription?: HealthcarePrescription;
+  lab_order?: HealthcareLabOrder;
   duration_minutes?: number;
   error_code?: string;
   message: string;
@@ -357,8 +373,7 @@ export class ConsultationService {
           patient_id: encounter.patient_id,
           organization_id: encounter.organization_id,
           has_diagnoses: Boolean(draftData.diagnoses && draftData.diagnoses.length > 0),
-          has_vitals: Boolean(draftData.vitals && draftData.vitals.systolic_bp_mmhg),
-          has_sketch: Boolean(draftData.freehand_drawing),
+          has_vitals: Boolean(draftData.vitals && draftData.vitals.systolic_bp_mmhg),          has_sketch: Boolean(draftData.freehand_drawing),
         },
       });
     }
@@ -369,6 +384,7 @@ export class ConsultationService {
   /**
    * Completes an active consultation with final clinical documentation.
    * Transitions Encounter, Clinical Record, Queue Entry, and Appointment to COMPLETED.
+   * Finalizes Prescriptions and Lab Orders if present.
    * Does NOT auto-start the next patient, preserving complete doctor autonomy.
    */
   public static async completeConsultation(
@@ -384,6 +400,13 @@ export class ConsultationService {
       diagnoses?: ClinicalDiagnosis[];
       treatment_plan?: string;
       follow_up_plan?: ClinicalFollowUpPlan;
+      prescriptions?: PrescriptionItem[];
+      prescription_notes?: string;
+      refills_allowed?: number;
+      lab_orders?: LabOrderItem[];
+      lab_reason?: string;
+      lab_instructions?: string;
+      lab_priority?: LabOrderPriority;
     },
     actor: StoredIdentity | null
   ): Promise<CompleteConsultationResult> {
@@ -486,6 +509,74 @@ export class ConsultationService {
       }
     }
 
+    // 6. Finalize Prescriptions if supplied or draft exists
+    let finalizedPrescription: HealthcarePrescription | undefined = undefined;
+    const rxItems = finalDocumentation.prescriptions;
+    if (rxItems && rxItems.length > 0) {
+      const rxRes = finalizePrescription({
+        encounterId,
+        items: rxItems,
+        notes: finalDocumentation.prescription_notes || "",
+        refillsAllowed: finalDocumentation.refills_allowed || 0,
+        actorId,
+        actorName: actor.fullName,
+        actorRole: actor.role,
+      });
+      if (rxRes.success) {
+        finalizedPrescription = rxRes.prescription;
+      }
+    } else {
+      const draftRxs = getPrescriptionsByEncounterId(encounterId).filter((p: HealthcarePrescription) => p.status === "DRAFT");
+      if (draftRxs.length > 0 && draftRxs[0].items.length > 0) {
+        const rxRes = finalizePrescription({
+          encounterId,
+          prescriptionId: draftRxs[0].id,
+          items: draftRxs[0].items,
+          notes: draftRxs[0].notes || "",
+          refillsAllowed: draftRxs[0].refills_allowed || 0,
+          actorId,
+          actorName: actor.fullName,
+          actorRole: actor.role,
+        });
+        if (rxRes.success) {
+          finalizedPrescription = rxRes.prescription;
+        }
+      }
+    }
+
+    // 7. Place / Finalize Lab Orders if test items supplied or draft exists
+    let placedLabOrder: HealthcareLabOrder | undefined = undefined;
+    const labItems = finalDocumentation.lab_orders;
+    if (labItems && labItems.length > 0) {
+      const labRes = placeLabOrder({
+        encounterId,
+        appointmentId: encounter.appointment_id,
+        patientId: encounter.patient_id,
+        patientName: encounter.patient_name,
+        actorId,
+        actorName: actor.fullName,
+        actorRole: actor.role,
+        organizationId: encounter.organization_id,
+        organizationName: encounter.organization_name,
+        items: labItems,
+        reason: finalDocumentation.lab_reason || "Clinical consultation diagnostic evaluation",
+        instructions: finalDocumentation.lab_instructions || "",
+        priority: finalDocumentation.lab_priority || "ROUTINE",
+      });
+      if (labRes.success) {
+        placedLabOrder = labRes.order;
+      }
+    } else {
+      const allLabOrders = getAllLabOrders();
+      const draftOrders = allLabOrders.filter((o: HealthcareLabOrder) => o.encounter_id === encounterId && o.status === "DRAFT");
+      if (draftOrders.length > 0 && draftOrders[0].items.length > 0) {
+        const labRes = placeLabOrder(draftOrders[0].id);
+        if (labRes.success) {
+          placedLabOrder = labRes.order;
+        }
+      }
+    }
+
     // Compute duration in minutes
     const durationMinutes = Math.max(
       1,
@@ -496,7 +587,8 @@ export class ConsultationService {
     ConsultationHistoryStore.recordCompletedConsultation({
       doctor_id: encounter.provider_id,
       doctor_name: encounter.provider_name,
-      organization_identifier: encounter.organization_id,      facility_id: encounter.facility_id || "FAC-1001",
+      organization_identifier: encounter.organization_id,
+      facility_id: encounter.facility_id || "FAC-1001",
       department_id: encounter.department_id || "DEP-CARD-1001",
       department_name: encounter.department_name || "Cardiology OPD",
       date: encounter.started_at.split("T")[0],
@@ -504,7 +596,7 @@ export class ConsultationService {
       completed_at: nowIso,
     });
 
-    // 6. Record Immutable Audit Event
+    // 8. Record Immutable Audit Event
     AuditLedger.recordEvent({
       actor_id: actorId,
       actor_name: actor.fullName,
@@ -518,6 +610,8 @@ export class ConsultationService {
         doctor_id: encounter.provider_id,
         duration_minutes: durationMinutes,
         diagnoses_count: finalDocumentation.diagnoses?.length || 0,
+        has_prescription: !!finalizedPrescription,
+        has_lab_order: !!placedLabOrder,
         completed_at: nowIso,
       },
     });
@@ -526,6 +620,8 @@ export class ConsultationService {
       success: true,
       encounter: updatedEncounter || encounter,
       clinical_record: completeRecordRes.record,
+      prescription: finalizedPrescription,
+      lab_order: placedLabOrder,
       duration_minutes: durationMinutes,
       message: `Consultation completed successfully for ${encounter.patient_name} (${durationMinutes} min).`,
     };
