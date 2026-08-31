@@ -496,8 +496,7 @@ export class ConsultationService {
     ConsultationHistoryStore.recordCompletedConsultation({
       doctor_id: encounter.provider_id,
       doctor_name: encounter.provider_name,
-      organization_identifier: encounter.organization_id,
-      facility_id: encounter.facility_id || "FAC-1001",
+      organization_identifier: encounter.organization_id,      facility_id: encounter.facility_id || "FAC-1001",
       department_id: encounter.department_id || "DEP-CARD-1001",
       department_name: encounter.department_name || "Cardiology OPD",
       date: encounter.started_at.split("T")[0],
@@ -566,8 +565,7 @@ export class ConsultationService {
     }
 
     const targetRecord = getClinicalRecordByEncounterId(encounterId);
-    if (!targetRecord) {
-      return { success: false, error: "Clinical record not found for this encounter." };
+    if (!targetRecord) {      return { success: false, error: "Clinical record not found for this encounter." };
     }
 
     const result = amendClinicalRecord({
@@ -606,6 +604,180 @@ export class ConsultationService {
     }
 
     return result;
+  }
+
+  /**
+   * Starts or retrieves an authoritative consultation linked to a specific Appointment.
+   * Prevents duplicate encounters when re-opened, persists draft, and connects to appointment entity.
+   */
+  public static async startOrGetConsultationForAppointment(
+    appointmentId: string,
+    actor: StoredIdentity | null
+  ): Promise<StartConsultationResult> {
+    if (!actor) {
+      return { success: false, error_code: "UNAUTHORIZED", message: "Authentication required." };
+    }
+
+    if (actor.role !== "doctor" && actor.role !== "admin") {
+      return {
+        success: false,
+        error_code: "FORBIDDEN",
+        message: "Only authorized medical doctors can conduct clinical consultations.",
+      };
+    }
+
+    const appointment = AppointmentStore.getAppointmentById(appointmentId);
+    if (!appointment) {
+      return { success: false, error_code: "NOT_FOUND", message: `Appointment ${appointmentId} not found.` };
+    }
+
+    const actorId = actor.identifier || actor.id;
+    // Doctor authorization validation: Actor must match the appointment's doctor (or be a verified admin)
+    if (
+      actor.role === "doctor" &&
+      appointment.doctor_id.toLowerCase() !== actorId.toLowerCase() &&
+      appointment.doctor_id.toLowerCase() !== actor.id.toLowerCase()
+    ) {
+      return {
+        success: false,
+        error_code: "WRONG_DOCTOR",
+        message: `Doctor mismatch: You are signed in as ${actor.fullName}, but this appointment is assigned to ${appointment.doctor_name}.`,
+      };
+    }
+
+    const nowIso = new Date().toISOString();
+
+    // 1. Check if an encounter already exists for this appointment
+    const allEncounters = getAllEncounters();
+    let encounter = allEncounters.find(
+      (e) => e.appointment_id && e.appointment_id.toLowerCase() === appointment.id.toLowerCase()
+    );
+
+    if (!encounter) {
+      // Also check if there is an active draft encounter for this patient + doctor
+      encounter = allEncounters.find(
+        (e) =>
+          e.patient_id.toLowerCase() === appointment.patient_id.toLowerCase() &&
+          e.provider_id.toLowerCase() === appointment.doctor_id.toLowerCase() &&
+          (e.status === "ACTIVE" || e.status === "DRAFT")
+      );
+    }
+
+    if (!encounter) {
+      // Create new canonical encounter bound to the appointment
+      const nextNum = allEncounters.length + 1001;
+      const newId = `ENC-${nextNum}`;
+      const patientUser = findIdentityById(appointment.patient_id);
+
+      encounter = {
+        id: newId,
+        encounter_reference: newId,
+        patient_id: appointment.patient_id,
+        patient_name: appointment.patient_name || patientUser?.fullName || "Patient",
+        patient_gender: patientUser?.patientData?.gender,
+        patient_dob: patientUser?.patientData?.dob,
+        patient_blood_group: patientUser?.patientData?.bloodGroup,
+        provider_id: appointment.doctor_id,
+        provider_name: appointment.doctor_name,
+        provider_role: "Attending Consultant",
+        organization_id: appointment.organization_identifier || appointment.organization_id || "HSP-1001",
+        organization_name: appointment.organization_name || "Healthcare Facility",
+        facility_id: appointment.facility_id || "FAC-1001",
+        facility_name: appointment.organization_name || "City Hospital",
+        department_id: appointment.department_id || "DEP-CARDIO",
+        department_name: appointment.department_name || "General OPD",
+        encounter_type: "CONSULTATION",
+        status: "ACTIVE",
+        source_type: "APPOINTMENT",
+        appointment_id: appointment.id,
+        reason_for_visit: appointment.reason_for_visit || "Clinical Consultation",
+        location: appointment.opd_room || "OPD Consulting Room",
+        started_at: nowIso,
+        created_by: actorId,
+        created_by_role: actor.role,
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+
+      allEncounters.unshift(encounter);
+      saveEncounters(allEncounters);
+    }
+
+    // Ensure encounter is active if not completed
+    if (encounter.status !== "COMPLETED" && encounter.status !== "FINALIZED") {
+      encounter.status = "ACTIVE";
+      encounter.appointment_id = encounter.appointment_id || appointment.id;
+      encounter.started_at = encounter.started_at || nowIso;
+      encounter.updated_at = nowIso;
+      const idx = allEncounters.findIndex((e) => e.id === encounter?.id);
+      if (idx >= 0) {
+        allEncounters[idx] = encounter;
+        saveEncounters(allEncounters);
+      }
+
+      // Update Appointment status to IN_CONSULTATION
+      if (appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED") {
+        appointment.status = "IN_CONSULTATION";
+        appointment.updated_at = nowIso;
+        AppointmentStore.saveAppointment(appointment);
+      }
+    }
+
+    // 2. Initialize or retrieve draft ClinicalRecord
+    let clinicalRecord = getClinicalRecordByEncounterId(encounter.id);
+    if (!clinicalRecord) {
+      const initDraftRes = saveClinicalRecordDraft({
+        encounterId: encounter.id,
+        chiefComplaint: appointment.reason_for_visit || encounter.reason_for_visit || "Clinical Consultation",
+        symptoms: [],
+        vitals: {
+          temperature_celsius: 36.8,
+          heart_rate_bpm: 74,
+          systolic_bp_mmhg: 120,
+          diastolic_bp_mmhg: 80,
+          respiratory_rate_bpm: 16,
+          spo2_percent: 99,
+          recorded_at: nowIso,
+          recorded_by: actorId,
+          recorded_by_name: actor.fullName,
+        },
+        observations: "",
+        clinicalNotes: "",
+        assessment: "",
+        diagnoses: [],
+        treatmentPlan: "",
+        followUpPlan: { required: false },
+        actorId,
+        actorName: actor.fullName,
+        actorRole: actor.role,
+      });
+      if (initDraftRes.success && initDraftRes.record) {
+        clinicalRecord = initDraftRes.record;
+      }
+    }
+
+    AuditLedger.recordEvent({
+      actor_id: actorId,
+      actor_name: actor.fullName,
+      action: "CONSULTATION_STARTED",
+      resource_type: "HEALTHCARE_ENCOUNTER",
+      resource_id: encounter.id,
+      details: {
+        appointment_id: appointment.id,
+        patient_id: appointment.patient_id,
+        doctor_id: appointment.doctor_id,
+        organization_id: encounter.organization_id,
+        started_at: nowIso,
+      },
+    });
+
+    return {
+      success: true,
+      encounter,
+      clinical_record: clinicalRecord || undefined,
+      appointment,
+      message: `Consultation loaded for appointment ${appointment.appointment_no} (${appointment.patient_name}).`,
+    };
   }
 
   /**

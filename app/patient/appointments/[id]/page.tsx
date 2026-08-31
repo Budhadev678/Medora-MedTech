@@ -34,7 +34,9 @@ import { AppointmentStore } from "@/lib/data/appointment-store";
 import { QueueStore, getTodayDateStr } from "@/lib/data/queue-store";
 import { AppointmentBookingService } from "@/lib/services/appointment-booking-service";
 import { QueueManagementService } from "@/lib/services/queue-management-service";
-import { Appointment, QueueEntry } from "@/types/database.types";
+import { getEncounterByAppointmentId } from "@/lib/data/encounter-store";
+import { getClinicalRecordByEncounterId } from "@/lib/data/clinical-record-store";
+import { HealthcareEncounter, ClinicalRecord, Appointment, QueueEntry } from "@/types/database.types";
 import { getRemainingCurrentWeekDates } from "@/lib/utils";
 import { ConsultationSharingPrompt } from "@/components/patient/consultation-sharing-prompt";
 
@@ -47,6 +49,8 @@ export default function AppointmentDetailPage() {
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [queueEntry, setQueueEntry] = useState<QueueEntry | null>(null);
+  const [encounter, setEncounter] = useState<HealthcareEncounter | null>(null);
+  const [clinicalRecord, setClinicalRecord] = useState<ClinicalRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   
@@ -68,6 +72,12 @@ export default function AppointmentDetailPage() {
       setAppointment(appt);
       const q = QueueStore.getQueueEntryByAppointmentId(appt.id);
       setQueueEntry(q);
+      const enc = getEncounterByAppointmentId(appt.id);
+      setEncounter(enc);
+      if (enc) {
+        const rec = getClinicalRecordByEncounterId(enc.id);
+        setClinicalRecord(rec);
+      }
     }
     setIsLoading(false);
   };
@@ -78,10 +88,14 @@ export default function AppointmentDetailPage() {
     window.addEventListener("medora-appointment-updated", handleUpdate);
     window.addEventListener("medora-appointments-updated", handleUpdate);
     window.addEventListener("medora-queue-updated", handleUpdate);
+    window.addEventListener("medora-encounters-updated", handleUpdate);
+    window.addEventListener("medora-clinical-records-updated", handleUpdate);
     return () => {
       window.removeEventListener("medora-appointment-updated", handleUpdate);
       window.removeEventListener("medora-appointments-updated", handleUpdate);
       window.removeEventListener("medora-queue-updated", handleUpdate);
+      window.removeEventListener("medora-encounters-updated", handleUpdate);
+      window.removeEventListener("medora-clinical-records-updated", handleUpdate);
     };
   }, [appointmentId]);
 
@@ -403,6 +417,94 @@ export default function AppointmentDetailPage() {
             </Button>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* COMPLETED CLINICAL CONSULTATION OUTCOME (PHASE 1 / PROMPT 2) */}
+        {/* ============================================================ */}
+        {(appointment.status === "COMPLETED" || clinicalRecord?.status === "COMPLETED" || encounter?.status === "FINALIZED") && (
+          <Card className="rounded-3xl border-emerald-200 bg-emerald-50/40 shadow-xs overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-emerald-100 bg-white/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-extrabold text-slate-900">
+                      Completed Clinical Consultation
+                    </CardTitle>
+                    <CardDescription className="text-[11px] text-slate-500 font-medium">
+                      Official consultation outcome authorized by {appointment.doctor_name}
+                    </CardDescription>
+                  </div>
+                </div>
+                <Badge className="bg-emerald-600 text-white font-bold text-[10px] w-fit">
+                  ● Consultation Completed
+                </Badge>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 space-y-4 text-xs">
+              {/* Diagnoses */}
+              {clinicalRecord?.diagnoses && clinicalRecord.diagnoses.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-900 block">
+                    Clinical Diagnoses / Findings
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {clinicalRecord.diagnoses.map((d) => (
+                      <span
+                        key={d.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-emerald-200 font-bold text-slate-900 text-xs shadow-2xs"
+                      >
+                        {d.icd10_code && (
+                          <span className="font-mono text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">
+                            {d.icd10_code}
+                          </span>
+                        )}
+                        <span>{d.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Doctor's Treatment Plan & Instructions */}
+              {(clinicalRecord?.treatment_plan || clinicalRecord?.clinical_notes) && (
+                <div className="space-y-1 bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
+                  <span className="text-[11px] uppercase font-bold tracking-wider text-slate-700 block">
+                    Doctor's Advice & Treatment Instructions
+                  </span>
+                  <p className="text-slate-800 font-medium leading-relaxed">
+                    {clinicalRecord?.treatment_plan || clinicalRecord?.clinical_notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Follow-up Plan */}
+              {clinicalRecord?.follow_up_plan?.instructions && (
+                <div className="space-y-1 bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
+                  <span className="text-[11px] uppercase font-bold tracking-wider text-slate-700 block">
+                    Follow-Up Instructions
+                  </span>
+                  <p className="text-slate-800 font-medium leading-relaxed">
+                    {clinicalRecord.follow_up_plan.instructions}
+                  </p>
+                </div>
+              )}
+
+              {/* Action: View full record in My Health */}
+              <div className="pt-2 flex items-center justify-end">
+                <Link href="/patient/health?tab=visits">
+                  <Button size="sm" className="bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold gap-1.5 shadow-xs">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>View in My Health Journey</span>
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Contextual Consultation Previous Records Sharing */}
         <ConsultationSharingPrompt

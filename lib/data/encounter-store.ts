@@ -241,8 +241,18 @@ export function getOrganizationEncounters(
 export function getEncounterById(encounterId: string): HealthcareEncounter | null {
   if (!encounterId) return null;
   const all = getAllEncounters();
-  const cleanId = String(encounterId).trim();
-  return all.find((e) => e.id === cleanId || e.encounter_reference === cleanId) || null;
+  const cleanId = String(encounterId).trim().toLowerCase();
+  return all.find((e) => e.id.toLowerCase() === cleanId || e.encounter_reference?.toLowerCase() === cleanId) || null;
+}
+
+/**
+ * Retrieve an encounter linked to a specific appointment ID.
+ */
+export function getEncounterByAppointmentId(appointmentId: string): HealthcareEncounter | null {
+  if (!appointmentId) return null;
+  const cleanId = String(appointmentId).trim().toLowerCase();
+  const all = getAllEncounters();
+  return all.find((e) => e.appointment_id && e.appointment_id.toLowerCase() === cleanId) || null;
 }
 
 export interface CreateEncounterParams {

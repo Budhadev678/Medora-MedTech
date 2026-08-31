@@ -81,12 +81,14 @@ import {
 import { getAllIdentities, findIdentityById, StoredIdentity } from "@/lib/data/identity-store";
 import { getPatientHealthJourney } from "@/lib/services/health-journey-service";
 import { AccessEngine } from "@/lib/services/access-engine";
+import { ConsultationService } from "@/lib/services/consultation-service";
 import { useLocalization } from "@/lib/localization";
 
 function DoctorConsultationsContent() {
   const { user } = useAuth();
   const { t } = useLocalization();
   const searchParams = useSearchParams();
+  const paramAppointmentId = searchParams?.get("aptId") || searchParams?.get("appointmentId");
   const paramEncounterId = searchParams?.get("encounterId");
   const paramPatientId = searchParams?.get("patientId");
 
@@ -217,6 +219,16 @@ function DoctorConsultationsContent() {
 
   // Auto-open encounter if query params are provided from Queue/Appointments
   useEffect(() => {
+    if (paramAppointmentId && user) {
+      ConsultationService.startOrGetConsultationForAppointment(paramAppointmentId, user).then((res) => {
+        if (res.success && res.encounter) {
+          refreshEncounters();
+          handleOpenRecordEditor(res.encounter);
+        }
+      });
+      return;
+    }
+
     if (encounters.length === 0) return;
     if (paramEncounterId) {
       const match = encounters.find(e => e.id === paramEncounterId);
@@ -229,7 +241,7 @@ function DoctorConsultationsContent() {
         handleOpenRecordEditor(match);
       }
     }
-  }, [paramEncounterId, paramPatientId, encounters]);
+  }, [paramAppointmentId, paramEncounterId, paramPatientId, encounters, user]);
 
   // Open Clinical Record Editor
   const handleOpenRecordEditor = (encounter: HealthcareEncounter) => {
@@ -421,46 +433,36 @@ function DoctorConsultationsContent() {
   };
 
   // Handle Complete Clinical Record
-  const handleCompleteRecord = () => {
-    if (!user || !activeEncounterForRecord) return;
-
-    saveClinicalRecordDraft({
-      encounterId: activeEncounterForRecord.id,
-      chiefComplaint: recordComplaint,
-      symptoms,
-      vitals,
-      observations,
-      clinicalNotes,
-      assessment,
-      diagnoses,
-      treatmentPlan,
-      followUpPlan,
-      actorId: user.identifier || user.id,
-      actorName: user.fullName,
-      actorRole: user.role,
-    });
-
-    const currentRecord = getClinicalRecordByEncounterId(activeEncounterForRecord.id);
-    if (!currentRecord) {
-      setRecordSaveStatus("Please save the record before completing.");
-      return;
-    }
+  const handleCompleteRecord = async () => {
+    if (!user || !activeEncounterForRecord || isSubmitting) return;
 
     setIsSubmitting(true);
-    const res = completeClinicalRecord({
-      recordId: currentRecord.id,
-      actorId: user.identifier || user.id,
-      actorName: user.fullName,
-      actorRole: user.role,
-    });
+    setRecordSaveStatus(null);
+
+    const res = await ConsultationService.completeConsultation(
+      activeEncounterForRecord.id,
+      {
+        chief_complaint: recordComplaint,
+        symptoms,
+        vitals,
+        observations,
+        clinical_notes: clinicalNotes,
+        assessment,
+        diagnoses,
+        treatment_plan: treatmentPlan,
+        follow_up_plan: followUpPlan,
+      },
+      user
+    );
 
     setIsSubmitting(false);
-    if (res.success && res.record) {
-      setActiveRecord(res.record);
-      setRecordSaveStatus("Clinical Record completed and signed off.");
+    if (res.success && res.clinical_record) {
+      setActiveRecord(res.clinical_record);
+      setRecordSaveStatus("Consultation completed, signed off, and patient medical record updated.");
+      refreshEncounters();
       setTimeout(() => setRecordSaveStatus(null), 4000);
     } else {
-      setRecordSaveStatus(res.error || "Failed to complete clinical record.");
+      setRecordSaveStatus(res.message || "Failed to complete clinical consultation.");
     }
   };
 
