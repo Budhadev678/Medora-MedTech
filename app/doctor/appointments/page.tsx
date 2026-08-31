@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   Calendar, 
   Clock, 
@@ -13,7 +14,8 @@ import {
   MapPin,
   Stethoscope,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { RoleGuard } from "@/components/shared/role-guard";
@@ -23,18 +25,40 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AppointmentStore } from "@/lib/data/appointment-store";
 import { Appointment } from "@/types/database.types";
+import { ConsultationService } from "@/lib/services/consultation-service";
 
 export default function DoctorAppointmentsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFacility, setSelectedFacility] = useState<string>("all");
+  const [openingAptId, setOpeningAptId] = useState<string | null>(null);
 
   const doctorId = user?.identifier || user?.id || "DOC-1001";
 
   const loadAppointments = () => {
     const records = AppointmentStore.getAppointmentsForDoctor(doctorId);
     setAppointments(records);
+  };
+
+  const handleOpenConsultation = async (apt: Appointment) => {
+    if (!user) return;
+    setOpeningAptId(apt.id);
+    try {
+      const res = await ConsultationService.startOrGetConsultationForAppointment(apt.id, user);
+      if (res.success && res.encounter) {
+        router.push(`/doctor/consultations/${res.encounter.id}`);
+        return;
+      }
+      // Fallback
+      router.push(`/doctor/consultations?patientId=${apt.patient_id}&aptId=${apt.id}`);
+    } catch {
+      router.push(`/doctor/consultations?patientId=${apt.patient_id}&aptId=${apt.id}`);
+    } finally {
+      // Small timeout before releasing loading state if navigation is pending
+      setTimeout(() => setOpeningAptId(null), 2000);
+    }
   };
 
   useEffect(() => {
@@ -187,12 +211,24 @@ export default function DoctorAppointmentsPage() {
                         Details
                       </Button>
                     </Link>
-                    <Link href={`/doctor/consultations?patientId=${apt.patient_id}&aptId=${apt.id}`}>
-                      <Button size="sm" className="h-8 text-xs font-bold bg-teal-700 hover:bg-teal-800 rounded-xl">
-                        <span>Consultation</span>
-                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                      </Button>
-                    </Link>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleOpenConsultation(apt)}
+                      disabled={openingAptId === apt.id}
+                      className="h-8 text-xs font-bold bg-teal-700 hover:bg-teal-800 rounded-xl transition-all"
+                    >
+                      {openingAptId === apt.id ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          <span>Opening...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Consultation</span>
+                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               ))

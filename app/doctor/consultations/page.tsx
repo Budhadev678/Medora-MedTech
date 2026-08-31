@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Stethoscope, 
   Plus, 
@@ -85,6 +85,7 @@ import { ConsultationService } from "@/lib/services/consultation-service";
 import { useLocalization } from "@/lib/localization";
 
 function DoctorConsultationsContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const { t } = useLocalization();
   const searchParams = useSearchParams();
@@ -217,31 +218,30 @@ function DoctorConsultationsContent() {
     };
   }, [user, selectedOrgId, activeEncounterForRecord]);
 
-  // Auto-open encounter if query params are provided from Queue/Appointments
+  // Auto-open clinical workspace encounter if query params are provided from Queue/Appointments
   useEffect(() => {
     if (paramAppointmentId && user) {
       ConsultationService.startOrGetConsultationForAppointment(paramAppointmentId, user).then((res) => {
         if (res.success && res.encounter) {
-          refreshEncounters();
-          handleOpenRecordEditor(res.encounter);
+          router.push(`/doctor/consultations/${res.encounter.id}`);
         }
       });
       return;
     }
 
-    if (encounters.length === 0) return;
     if (paramEncounterId) {
-      const match = encounters.find(e => e.id === paramEncounterId);
-      if (match && activeEncounterForRecord?.id !== match.id) {
-        handleOpenRecordEditor(match);
-      }
-    } else if (paramPatientId) {
+      router.push(`/doctor/consultations/${paramEncounterId}`);
+      return;
+    }
+
+    if (encounters.length === 0) return;
+    if (paramPatientId) {
       const match = encounters.find(e => e.patient_id === paramPatientId && e.status !== "CANCELLED");
-      if (match && activeEncounterForRecord?.id !== match.id) {
-        handleOpenRecordEditor(match);
+      if (match) {
+        router.push(`/doctor/consultations/${match.id}`);
       }
     }
-  }, [paramAppointmentId, paramEncounterId, paramPatientId, encounters, user]);
+  }, [paramAppointmentId, paramEncounterId, paramPatientId, encounters, user, router]);
 
   // Open Clinical Record Editor
   const handleOpenRecordEditor = (encounter: HealthcareEncounter) => {
@@ -383,6 +383,9 @@ function DoctorConsultationsContent() {
     setShowStartModal(false);
     setReasonInput("");
     refreshEncounters();
+    if (res.encounter) {
+      router.push(`/doctor/consultations/${res.encounter.id}`);
+    }
   };
 
   // Handle Complete Encounter

@@ -16,11 +16,13 @@ import {
   Phone,
   Layers,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Appointment, AppointmentStatus } from "@/types/database.types";
 import { FrontendAppointmentService } from "@/lib/services/frontend-appointment-service";
 import { AppointmentBookingService } from "@/lib/services/appointment-booking-service";
 import { AppointmentStore } from "@/lib/data/appointment-store";
+import { ConsultationService } from "@/lib/services/consultation-service";
 import { QueueManagementService } from "@/lib/services/queue-management-service";
 import { AppointmentStatusBadge } from "@/components/appointment/appointment-status-badge";
 import { formatDate } from "@/lib/utils";
@@ -124,6 +126,23 @@ export default function DoctorAppointmentDetailPage() {
     }
   };
 
+  const handleOpenConsultation = async () => {
+    if (!appointment || !user || isActing) return;
+    setIsActing(true);
+    try {
+      const res = await ConsultationService.startOrGetConsultationForAppointment(appointment.id, user);
+      if (res.success && res.encounter) {
+        router.push(`/doctor/consultations/${res.encounter.id}`);
+        return;
+      }
+      router.push(`/doctor/consultations?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
+    } catch {
+      router.push(`/doctor/consultations?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
+    } finally {
+      setIsActing(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
       {/* Breadcrumb Navigation */}
@@ -156,56 +175,52 @@ export default function DoctorAppointmentDetailPage() {
           <button
             type="button"
             onClick={() => setActionMessage(null)}
-            className="text-slate-400 hover:text-slate-700 font-bold"
+            className="text-slate-400 hover:text-slate-600 font-bold"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Main Container */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-bold text-slate-600 bg-slate-200/70 px-2.5 py-0.5 rounded-md">
-                {appointment.appointment_no}
-              </span>
-              <AppointmentStatusBadge status={appointment.status} />
+      {/* Appointment Information Card */}
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
+        <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-800 font-mono font-bold text-sm">
+              {appointment.token_number ? `#${appointment.token_number}` : "OPD"}
             </div>
-            <div className="text-xs text-slate-500">
-              Source: {appointment.booking_source || "PATIENT"} | Registered Date: {formatDate(appointment.created_at || appointment.appointment_date)}
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900">
+                  {appointment.patient_name}
+                </h1>
+                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-teal-50 text-teal-700">
+                  {appointment.appointment_no}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Scheduled Consultation with {appointment.doctor_name}
+              </p>
             </div>
           </div>
 
-          {appointment.token_number && (
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">OPD Token</div>
-              <div className="text-2xl font-mono font-bold text-teal-800">#{appointment.token_number}</div>
-            </div>
-          )}
+          <div>
+            <AppointmentStatusBadge status={appointment.status} />
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="p-5 sm:p-6 space-y-6">
-          {/* Patient Details & Contact */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-5 border-b border-slate-100">
+        <div className="p-5 sm:p-6 space-y-5">
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <div className="text-[11px] uppercase tracking-wider font-bold text-slate-400">Patient Demographics</div>
-              <div className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <User className="h-4 w-4 text-blue-700" />
+              <div className="text-[11px] uppercase tracking-wider font-bold text-slate-400">Patient Details</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <User className="h-4 w-4 text-slate-700" />
                 {appointment.patient_name}
               </div>
               <div className="text-xs text-slate-500 font-mono">
                 Patient Identifier: {appointment.patient_id}
               </div>
-              {appointment.patient_phone && (
-                <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" />
-                  {appointment.patient_phone}
-                </div>
-              )}
             </div>
 
             <div className="space-y-1">
@@ -218,18 +233,6 @@ export default function DoctorAppointmentDetailPage() {
                 <Layers className="h-3.5 w-3.5 text-slate-400" />
                 {appointment.department_name} ({appointment.opd_room || "Room 102"})
               </div>
-              <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                {formatDate(appointment.appointment_date)} at {appointment.slot_display_time || appointment.scheduled_time}
-              </div>
-            </div>
-          </div>
-
-          {/* Clinical Reason */}
-          <div className="space-y-2">
-            <div className="text-[11px] uppercase tracking-wider font-bold text-slate-400">Presenting Complaint / Reason</div>
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800">
-              {appointment.reason_for_visit || "General Outpatient Clinical Consultation"}
             </div>
           </div>
         </div>
@@ -281,13 +284,25 @@ export default function DoctorAppointmentDetailPage() {
             </Button>
           )}
 
-          <Link href={`/doctor/consultations?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`}>
-            <Button size="sm" className="bg-teal-700 hover:bg-teal-800 text-xs h-9 rounded-xl font-bold">
-              <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
-              Clinical Consultation Desk
-              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </Link>
+          <Button 
+            size="sm" 
+            onClick={handleOpenConsultation}
+            disabled={isActing}
+            className="bg-teal-700 hover:bg-teal-800 text-xs h-9 rounded-xl font-bold gap-1.5"
+          >
+            {isActing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Opening Clinical Workspace...</span>
+              </>
+            ) : (
+              <>
+                <Stethoscope className="h-3.5 w-3.5" />
+                <span>Clinical Consultation Desk</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
