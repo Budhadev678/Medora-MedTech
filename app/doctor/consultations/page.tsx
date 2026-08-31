@@ -82,6 +82,7 @@ import { getAllIdentities, findIdentityById, StoredIdentity } from "@/lib/data/i
 import { getPatientHealthJourney } from "@/lib/services/health-journey-service";
 import { AccessEngine } from "@/lib/services/access-engine";
 import { ConsultationService } from "@/lib/services/consultation-service";
+import { AppointmentStore } from "@/lib/data/appointment-store";
 import { useLocalization } from "@/lib/localization";
 
 function DoctorConsultationsContent() {
@@ -218,9 +219,13 @@ function DoctorConsultationsContent() {
     };
   }, [user, selectedOrgId, activeEncounterForRecord]);
 
-  // Auto-open clinical workspace encounter if query params are provided from Queue/Appointments
+  // Auto-open clinical workspace encounter whenever Consultation Suite is accessed
   useEffect(() => {
-    if (paramAppointmentId && user) {
+    if (!user) return;
+    const docId = user.identifier || user.id || "DOC-1001";
+
+    // 1. If explicit appointmentId param
+    if (paramAppointmentId) {
       ConsultationService.startOrGetConsultationForAppointment(paramAppointmentId, user).then((res) => {
         if (res.success && res.encounter) {
           router.push(`/doctor/consultations/${res.encounter.id}`);
@@ -229,16 +234,38 @@ function DoctorConsultationsContent() {
       return;
     }
 
+    // 2. If explicit encounterId param
     if (paramEncounterId) {
       router.push(`/doctor/consultations/${paramEncounterId}`);
       return;
     }
 
-    if (encounters.length === 0) return;
-    if (paramPatientId) {
+    // 3. If explicit patientId param
+    if (paramPatientId && encounters.length > 0) {
       const match = encounters.find(e => e.patient_id === paramPatientId && e.status !== "CANCELLED");
       if (match) {
         router.push(`/doctor/consultations/${match.id}`);
+        return;
+      }
+    }
+
+    // 4. Default: Redirect immediately into the active/latest Clinical Workspace
+    if (encounters.length > 0) {
+      const activeEncounter = encounters.find(e => e.status === "ACTIVE" || e.status === "IN_PROGRESS") || encounters[0];
+      if (activeEncounter) {
+        router.push(`/doctor/consultations/${activeEncounter.id}`);
+        return;
+      }
+    } else {
+      // If no encounters yet, find doctor's first scheduled appointment to launch workspace
+      const appointments = AppointmentStore.getAppointmentsForDoctor(docId);
+      const targetApt = appointments.find((a: any) => a.status === "IN_CONSULTATION" || a.status === "CONFIRMED" || a.status === "CHECKED_IN") || appointments[0];
+      if (targetApt) {
+        ConsultationService.startOrGetConsultationForAppointment(targetApt.id, user).then((res) => {
+          if (res.success && res.encounter) {
+            router.push(`/doctor/consultations/${res.encounter.id}`);
+          }
+        });
       }
     }
   }, [paramAppointmentId, paramEncounterId, paramPatientId, encounters, user, router]);
@@ -737,10 +764,11 @@ function DoctorConsultationsContent() {
                         <Link href={`/doctor/consultations/${encounter.id}`}>
                           <Button
                             size="sm"
-                            className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8 shadow-2xs"
+                            className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold gap-1.5 h-8 shadow-2xs rounded-xl"
                           >
-                            <FileEdit className="h-3.5 w-3.5" />
-                            <span>{clinicalRec ? "Edit Record" : "Record"}</span>
+                            <Stethoscope className="h-3.5 w-3.5" />
+                            <span>Clinical Workspace</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
 
