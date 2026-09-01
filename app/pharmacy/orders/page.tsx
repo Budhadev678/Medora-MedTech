@@ -44,9 +44,13 @@ export default function PharmacyOrderQueuePage() {
   useEffect(() => {
     refresh();
     const handleUpdate = () => refresh();
+    window.addEventListener("medora-pharmacy-orders-updated", handleUpdate);
+    window.addEventListener("medora-pharmacy-intakes-updated", handleUpdate);
     window.addEventListener("medora-pharmacy-updated", handleUpdate);
     window.addEventListener("medora-prescriptions-updated", handleUpdate);
     return () => {
+      window.removeEventListener("medora-pharmacy-orders-updated", handleUpdate);
+      window.removeEventListener("medora-pharmacy-intakes-updated", handleUpdate);
       window.removeEventListener("medora-pharmacy-updated", handleUpdate);
       window.removeEventListener("medora-prescriptions-updated", handleUpdate);
     };

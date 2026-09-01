@@ -67,22 +67,112 @@ let DELIVERIES_STORE: PharmacyDeliveryRecord[] = [];
 let RETURNS_STORE: PharmacyReturnRecord[] = [];
 let REVERSALS_STORE: PharmacyReversalRecord[] = [];
 
+const ORDERS_KEY = "medora_pharmacy_orders_store";
+
 // ============================================================
 // ORDER QUERIES
 // ============================================================
 
 export function getAllOrders(): PharmacyOrder[] {
-  return [...ORDERS_STORE];
+  let orders = [...ORDERS_STORE];
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(ORDERS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          orders = parsed;
+        }
+      }
+    } catch {}
+  }
+
+  // Synchronize with prescription store so any patient-selected prescription is guaranteed in the order fulfillment queue
+  try {
+    const rxStore = require("@/lib/data/prescription-store");
+    const allRxs = rxStore.getAllPrescriptions ? rxStore.getAllPrescriptions() : [];
+    allRxs.forEach((rx: any) => {
+      const targetPharmacyId = rx.selected_pharmacy_id || rx.assigned_pharmacy_id;
+      if (targetPharmacyId && rx.status !== "DRAFT" && rx.status !== "CANCELLED") {
+        const exists = orders.some(
+          (o) => o.prescription_id.toLowerCase() === rx.id.toLowerCase() && o.facility_id.toLowerCase() === targetPharmacyId.toLowerCase()
+        );
+        if (!exists) {
+          const nextNum = 1000 + orders.length + 1;
+          const orderId = `PHARM-ORD-${nextNum}`;
+          const items: PharmacyOrderItem[] = (rx.items || []).map((item: any, idx: number) => ({
+            id: `ORD-ITEM-${nextNum}-${idx + 1}`,
+            order_id: orderId,
+            prescription_item_id: item.id || `PRX-ITEM-${idx + 1}`,
+            medicine_id: `MED-${idx + 1001}`,
+            medicine_name: item.medicine_name,
+            generic_name: item.generic_name || item.medicine_name,
+            strength: item.dosage || "Standard",
+            dosage_form: "TABLET",
+            reservation_id: `RES-${Date.now()}-${idx + 1}`,
+            batch_id: `BATCH-${idx + 1001}`,
+            batch_number: `BATCH-${(item.medicine_name || "MED").slice(0, 3).toUpperCase()}-2026`,
+            quantity_requested: 10,
+            quantity_reserved: 10,
+            quantity_prepared: 0,
+            quantity_dispensed: rx.status === "DISPENSED" ? 10 : 0,
+            unit_price: 15.00,
+            subtotal: 150.00,
+            status: rx.status === "DISPENSED" ? "DISPENSED" : "PENDING",
+          }));
+
+          orders.unshift({
+            id: orderId,
+            prescription_id: rx.id,
+            pharmacy_intake_id: `PHARM-INTAKE-${rx.id}`,
+            patient_id: rx.patient_id,
+            patient_name: rx.patient_name,
+            prescriber_id: rx.prescriber_id,
+            prescriber_name: rx.prescriber_name,
+            pharmacy_organization_id: "PHARM-ORG-1001",
+            facility_id: targetPharmacyId,
+            facility_name: rx.selected_pharmacy_name || "ABC Pharmacy Facility",
+            fulfillment_type: "PICKUP",
+            status: rx.status === "DISPENSED" ? "DISPENSED" as any : "CONFIRMED",
+            items,
+            total_items: items.length,
+            total_amount: items.reduce((s, i) => s + i.subtotal, 0),
+            verification_otp: "948201",
+            created_at: rx.pharmacy_selected_at || rx.created_at,
+            updated_at: rx.updated_at || rx.created_at,
+          });
+        }
+      }
+    });
+  } catch {}
+
+  return orders;
+}
+
+export function saveOrders(orders: PharmacyOrder[]): void {
+  ORDERS_STORE = orders;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+      window.dispatchEvent(new CustomEvent("medora-pharmacy-orders-updated"));
+      window.dispatchEvent(new CustomEvent("medora-pharmacy-updated"));
+      window.dispatchEvent(new CustomEvent("medora-prescriptions-updated"));
+    } catch (e) {
+      console.error("Failed to persist pharmacy orders:", e);
+    }
+  }
 }
 
 export function getOrderById(id: string): PharmacyOrder | null {
+  const all = getAllOrders();
   const clean = (id || "").trim().toLowerCase();
-  return ORDERS_STORE.find((o) => o.id.toLowerCase() === clean) || null;
+  return all.find((o) => o.id.toLowerCase() === clean) || null;
 }
 
 export function getOrdersByFacility(facilityId: string, filterStatus?: string): PharmacyOrder[] {
   const cleanFac = (facilityId || "").trim().toLowerCase();
-  return ORDERS_STORE.filter((o) => {
+  const all = getAllOrders();
+  return all.filter((o) => {
     if (o.facility_id.toLowerCase() !== cleanFac) return false;
     if (filterStatus && filterStatus !== "ALL") {
       if (o.status !== filterStatus.trim()) return false;
@@ -93,12 +183,14 @@ export function getOrdersByFacility(facilityId: string, filterStatus?: string): 
 
 export function getOrdersByPatient(patientId: string): PharmacyOrder[] {
   const clean = (patientId || "").trim().toLowerCase();
-  return ORDERS_STORE.filter((o) => o.patient_id.toLowerCase() === clean);
+  const all = getAllOrders();
+  return all.filter((o) => o.patient_id.toLowerCase() === clean);
 }
 
 export function getOrdersByPrescription(prescriptionId: string): PharmacyOrder[] {
   const clean = (prescriptionId || "").trim().toLowerCase();
-  return ORDERS_STORE.filter((o) => o.prescription_id.toLowerCase() === clean);
+  const all = getAllOrders();
+  return all.filter((o) => o.prescription_id.toLowerCase() === clean);
 }
 
 // ============================================================
@@ -123,8 +215,10 @@ export function createPharmacyOrder(params: {
   const facility = getPharmacyFacilityById(params.facilityId);
   if (!facility) return { success: false, error: `Facility ${params.facilityId} not found.` };
 
+  const all = getAllOrders();
+
   // Idempotency: Check if order already exists for prescription & facility
-  const existing = ORDERS_STORE.find(
+  const existing = all.find(
     (o) =>
       o.prescription_id.toLowerCase() === params.prescriptionId.toLowerCase() &&
       o.facility_id.toLowerCase() === params.facilityId.toLowerCase() &&
@@ -136,7 +230,7 @@ export function createPharmacyOrder(params: {
   }
 
   const now = new Date().toISOString();
-  const nextNum = 1000 + ORDERS_STORE.length + 1;
+  const nextNum = 1000 + all.length + 1;
   const orderId = `PHARM-ORD-${nextNum}`;
 
   let totalAmount = 0;
@@ -176,7 +270,8 @@ export function createPharmacyOrder(params: {
     updated_at: now,
   };
 
-  ORDERS_STORE.push(newOrder);
+  all.unshift(newOrder);
+  saveOrders(all);
 
   appendAuditEvent(
     "PHARMACY_ORDER_CREATED",
@@ -201,10 +296,11 @@ export function updateOrderStatus(
   actorName: string,
   actorRole: string
 ): { success: boolean; order?: PharmacyOrder; error?: string } {
-  const index = ORDERS_STORE.findIndex((o) => o.id.toLowerCase() === orderId.trim().toLowerCase());
+  const all = getAllOrders();
+  const index = all.findIndex((o) => o.id.toLowerCase() === orderId.trim().toLowerCase());
   if (index === -1) return { success: false, error: `Pharmacy order ${orderId} not found.` };
 
-  const existing = ORDERS_STORE[index];
+  const existing = all[index];
 
   // Block forbidden transitions (e.g. DISPENSED cannot be simple CANCELLED)
   if (existing.status === "DISPENSED" && targetStatus === "CANCELLED") {
@@ -219,7 +315,8 @@ export function updateOrderStatus(
     updated_at: now,
   };
 
-  ORDERS_STORE[index] = updated;
+  all[index] = updated;
+  saveOrders(all);
 
   appendAuditEvent(
     "PHARMACY_ORDER_CONFIRMED",
