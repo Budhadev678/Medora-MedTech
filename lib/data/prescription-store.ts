@@ -1241,7 +1241,6 @@ export function selectPharmacyForPrescription(params: {
 
   // Sync with Pharmacy Intake Store
   try {
-    const { createPrescriptionIntake } = require("@/lib/data/pharmacy-intake-store");
     createPrescriptionIntake({
       prescriptionId: rx.id,
       prescriptionVersion: rx.version || 1,

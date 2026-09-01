@@ -43,6 +43,13 @@ export default function PharmacyOrderQueuePage() {
 
   useEffect(() => {
     refresh();
+    const handleUpdate = () => refresh();
+    window.addEventListener("medora-pharmacy-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-pharmacy-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+    };
   }, [selectedFacilityId, filterStatus]);
 
   const filteredOrders = orders.filter((item) => {

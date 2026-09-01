@@ -42,6 +42,15 @@ export default function PharmacyPrescriptionQueuePage() {
 
   useEffect(() => {
     refresh();
+    const handleUpdate = () => refresh();
+    window.addEventListener("medora-pharmacy-intakes-updated", handleUpdate);
+    window.addEventListener("medora-pharmacy-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-pharmacy-intakes-updated", handleUpdate);
+      window.removeEventListener("medora-pharmacy-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+    };
   }, [selectedFacilityId, filterStatus]);
 
   const filteredIntakes = intakes.filter((item) => {

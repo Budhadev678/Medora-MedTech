@@ -37,18 +37,81 @@ let INTAKES_STORE: PharmacyPrescriptionIntake[] = [
 
 let CLARIFICATIONS_STORE: PrescriptionClarificationRequest[] = [];
 
+const INTAKES_KEY = "medora_pharmacy_intakes_store";
+
 export function getAllIntakes(): PharmacyPrescriptionIntake[] {
-  return [...INTAKES_STORE];
+  let intakes = [...INTAKES_STORE];
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(INTAKES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          intakes = parsed;
+        }
+      }
+    } catch {}
+  }
+
+  // Synchronize with prescription store so any prescription routed to a pharmacy is guaranteed to be in the intake queue
+  try {
+    const rxStore = require("@/lib/data/prescription-store");
+    const allRxs = rxStore.getAllPrescriptions ? rxStore.getAllPrescriptions() : [];
+    allRxs.forEach((rx: any) => {
+      const targetPharmacyId = rx.selected_pharmacy_id || rx.assigned_pharmacy_id;
+      if (targetPharmacyId && rx.status !== "DRAFT" && rx.status !== "CANCELLED") {
+        const exists = intakes.some(
+          (i) => i.prescription_id.toLowerCase() === rx.id.toLowerCase() && i.facility_id.toLowerCase() === targetPharmacyId.toLowerCase()
+        );
+        if (!exists) {
+          const intakeId = `PHARM-INTAKE-${1000 + intakes.length + 1}`;
+          intakes.unshift({
+            id: intakeId,
+            prescription_id: rx.id,
+            prescription_version: rx.version || 1,
+            patient_id: rx.patient_id,
+            patient_name: rx.patient_name,
+            prescriber_id: rx.prescriber_id,
+            prescriber_name: rx.prescriber_name,
+            pharmacy_organization_id: "PHARM-ORG-1001",
+            facility_id: targetPharmacyId,
+            status: rx.status === "DISPENSED" ? "DISPENSED" as any : "RECEIVED",
+            received_at: rx.pharmacy_selected_at || rx.issued_at || rx.created_at,
+            created_at: rx.pharmacy_selected_at || rx.created_at,
+            updated_at: rx.updated_at || rx.created_at,
+          });
+        }
+      }
+    });
+  } catch {}
+
+  return intakes;
+}
+
+export function saveIntakes(intakes: PharmacyPrescriptionIntake[]): void {
+  INTAKES_STORE = intakes;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(INTAKES_KEY, JSON.stringify(intakes));
+      window.dispatchEvent(new CustomEvent("medora-pharmacy-intakes-updated"));
+      window.dispatchEvent(new CustomEvent("medora-pharmacy-updated"));
+      window.dispatchEvent(new CustomEvent("medora-prescriptions-updated"));
+    } catch (e) {
+      console.error("Failed to persist pharmacy intakes:", e);
+    }
+  }
 }
 
 export function getIntakeById(id: string): PharmacyPrescriptionIntake | null {
+  const all = getAllIntakes();
   const clean = (id || "").trim().toLowerCase();
-  return INTAKES_STORE.find((i) => i.id.toLowerCase() === clean) || null;
+  return all.find((i) => i.id.toLowerCase() === clean) || null;
 }
 
 export function getIntakesByFacility(facilityId: string, filterStatus?: string): PharmacyPrescriptionIntake[] {
   const cleanFac = (facilityId || "").trim().toLowerCase();
-  return INTAKES_STORE.filter((i) => {
+  const all = getAllIntakes();
+  return all.filter((i) => {
     if (i.facility_id.toLowerCase() !== cleanFac) return false;
     if (filterStatus && filterStatus !== "ALL") {
       if (i.status.toUpperCase() !== filterStatus.trim().toUpperCase()) return false;
@@ -59,12 +122,14 @@ export function getIntakesByFacility(facilityId: string, filterStatus?: string):
 
 export function getIntakesByPrescription(prescriptionId: string): PharmacyPrescriptionIntake[] {
   const clean = (prescriptionId || "").trim().toLowerCase();
-  return INTAKES_STORE.filter((i) => i.prescription_id.toLowerCase() === clean);
+  const all = getAllIntakes();
+  return all.filter((i) => i.prescription_id.toLowerCase() === clean);
 }
 
 export function getIntakesByPatient(patientId: string): PharmacyPrescriptionIntake[] {
   const clean = (patientId || "").trim().toLowerCase();
-  return INTAKES_STORE.filter((i) => i.patient_id.toLowerCase() === clean);
+  const all = getAllIntakes();
+  return all.filter((i) => i.patient_id.toLowerCase() === clean);
 }
 
 /**
@@ -78,9 +143,9 @@ export function createPrescriptionIntake(params: {
   prescriberId: string;
   prescriberName: string;
   facilityId: string;
-  actorId: string;
-  actorName: string;
-  actorRole: string;
+  actorId?: string;
+  actorName?: string;
+  actorRole?: string;
 }): { success: boolean; intake?: PharmacyPrescriptionIntake; error?: string } {
   const facility = getPharmacyFacilityById(params.facilityId);
   if (!facility) return { success: false, error: `Pharmacy facility ${params.facilityId} not found.` };
@@ -89,8 +154,10 @@ export function createPrescriptionIntake(params: {
     return { success: false, error: `Pharmacy facility ${facility.name} is currently ${facility.operational_status}. Cannot accept intake.` };
   }
 
+  const all = getAllIntakes();
+
   // Idempotent lookup for same prescription & facility
-  const existing = INTAKES_STORE.find(
+  const existing = all.find(
     (i) => i.prescription_id.toLowerCase() === params.prescriptionId.toLowerCase() && i.facility_id.toLowerCase() === params.facilityId.toLowerCase()
   );
 
@@ -99,7 +166,7 @@ export function createPrescriptionIntake(params: {
   }
 
   const now = new Date().toISOString();
-  const nextNum = 1000 + INTAKES_STORE.length + 1;
+  const nextNum = 1000 + all.length + 1;
   const newIntake: PharmacyPrescriptionIntake = {
     id: `PHARM-INTAKE-${nextNum}`,
     prescription_id: params.prescriptionId,
@@ -118,13 +185,14 @@ export function createPrescriptionIntake(params: {
     updated_at: now,
   };
 
-  INTAKES_STORE.push(newIntake);
+  all.unshift(newIntake);
+  saveIntakes(all);
 
   appendAuditEvent(
     "PRESCRIPTION_RECEIVED_BY_PHARMACY",
-    params.actorId,
-    params.actorName,
-    params.actorRole,
+    params.actorId || "SYSTEM",
+    params.actorName || "System",
+    params.actorRole || "system",
     `Pharmacy ${facility.name} received prescription intake for ${params.prescriptionId} (Patient: ${params.patientName})`,
     params.patientId,
     facility.organization_id,
@@ -147,10 +215,11 @@ export function updateIntakeStatus(params: {
   actorName: string;
   actorRole: string;
 }): { success: boolean; intake?: PharmacyPrescriptionIntake; error?: string } {
-  const index = INTAKES_STORE.findIndex((i) => i.id.toLowerCase() === params.intakeId.trim().toLowerCase());
+  const all = getAllIntakes();
+  const index = all.findIndex((i) => i.id.toLowerCase() === params.intakeId.trim().toLowerCase());
   if (index === -1) return { success: false, error: `Pharmacy intake ${params.intakeId} not found.` };
 
-  const existing = INTAKES_STORE[index];
+  const existing = all[index];
 
   // Prevent illegal transitions from terminal states
   if (existing.status === "CANCELLED" || existing.status === "INVALID") {
@@ -169,7 +238,8 @@ export function updateIntakeStatus(params: {
     updated_at: now,
   };
 
-  INTAKES_STORE[index] = updated;
+  all[index] = updated;
+  saveIntakes(all);
 
   const eventType =
     params.status === "VALID"

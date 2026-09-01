@@ -54,7 +54,13 @@ export default function PharmacyWorkQueuePage() {
     loadData();
     const handleUpdate = () => loadData();
     window.addEventListener("medora-pharmacy-updated", handleUpdate);
-    return () => window.removeEventListener("medora-pharmacy-updated", handleUpdate);
+    window.addEventListener("medora-pharmacy-intakes-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-pharmacy-updated", handleUpdate);
+      window.removeEventListener("medora-pharmacy-intakes-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+    };
   }, []);
 
   const pendingIntakes = intakes.filter(

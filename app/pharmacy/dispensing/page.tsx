@@ -37,6 +37,15 @@ export default function PharmacyDispensingPage() {
 
   useEffect(() => {
     refreshData();
+    const handleUpdate = () => refreshData();
+    window.addEventListener("medora-dispensing-updated", handleUpdate);
+    window.addEventListener("medora-pharmacy-updated", handleUpdate);
+    window.addEventListener("medora-prescriptions-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("medora-dispensing-updated", handleUpdate);
+      window.removeEventListener("medora-pharmacy-updated", handleUpdate);
+      window.removeEventListener("medora-prescriptions-updated", handleUpdate);
+    };
   }, []);
 
   const filteredRecords = records.filter((r) => {
